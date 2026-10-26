@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: to_h with a block · staff initials
+Rewrite initials(staff) with to_h and a block: no map into pairs, no Hash[].

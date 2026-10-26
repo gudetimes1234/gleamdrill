@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: next in a block · config lines
+Rewrite settings_lines(lines) with next to skip blank and comment lines: no nested if !.

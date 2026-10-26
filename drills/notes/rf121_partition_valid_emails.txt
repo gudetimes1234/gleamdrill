@@ -1,0 +1,2 @@
+partition keeps the original order inside each half, and it always returns exactly two arrays, even when one is empty. That makes `good, bad = list.partition { ... }` safe to destructure on any input.
+Source: Ruby docs, Enumerable#partition.

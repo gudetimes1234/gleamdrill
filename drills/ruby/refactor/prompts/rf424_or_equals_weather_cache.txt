@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: ||= memoise · weather cache
+Rewrite WeatherCache#temperature to cache per city with @cache[city] ||=: no key? check, no return.

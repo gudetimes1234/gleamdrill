@@ -1,0 +1,2 @@
+Repeating ticket[:status] == three times is easy to typo and hard to extend. %i[new open reopened] is the list of open statuses as data; pull it into a constant like OPEN_STATUSES once more than one method needs it.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer %w and %i literals for word and symbol arrays.

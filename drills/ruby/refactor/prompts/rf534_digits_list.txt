@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: Integer#digits · digit list
+Rewrite digits_of(number) with Integer#digits: no to_s, no chars.

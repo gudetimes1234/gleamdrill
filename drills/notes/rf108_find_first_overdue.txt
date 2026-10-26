@@ -1,0 +1,2 @@
+The manual version keeps walking the whole list after it has its answer; find stops at the first match. select { }.first would also work but builds a whole array first. Use find_index when you want the position instead of the element.
+Source: Ruby docs, Enumerable#find and Enumerable#find_index.

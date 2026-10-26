@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: &:method shorthand
+Rewrite upcased(words) and lengths(words) with the &: shorthand.

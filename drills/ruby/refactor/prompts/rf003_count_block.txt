@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: count with a block
+Rewrite count_adults(ages) with count and a block: no counter.

@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: take_while · log until the first error
+Rewrite before_first_error(lines) with take_while: no each, no break.

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: case/when ranges · grades
+Rewrite grade(score) as case/when with ranges: no elsif, no >=.

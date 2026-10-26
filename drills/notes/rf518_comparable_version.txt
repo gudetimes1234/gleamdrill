@@ -1,0 +1,2 @@
+Define <=> (return -1, 0 or 1) and include Comparable, and you get <, <=, ==, >, >=, between? and clamp; sort, min and max use <=> directly. Comparing arrays compares element by element, which is exactly "major first, then minor".
+Source: Ruby docs, Comparable and Array#<=>.

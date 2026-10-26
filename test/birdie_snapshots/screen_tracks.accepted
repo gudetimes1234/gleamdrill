@@ -186,6 +186,22 @@ test_name: tracks_screen_test
     <div class="track-card ">
       <button class="link-button track-card-open" type="button">
         <span class="track-card-name">
+          Ruby Refactoring
+        </span>
+        <span class="track-card-tag">
+          rf
+        </span>
+      </button>
+      <p class="track-card-empty">
+        Nothing queued yet.
+      </p>
+      <button class="btn-secondary track-card-starter" type="button">
+        Start with twenty easy ones
+      </button>
+    </div>
+    <div class="track-card ">
+      <button class="link-button track-card-open" type="button">
+        <span class="track-card-name">
           System Design
         </span>
         <span class="track-card-tag">

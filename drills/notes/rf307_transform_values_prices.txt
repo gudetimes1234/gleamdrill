@@ -1,0 +1,2 @@
+transform_values keeps every key and maps only the values, returning a new hash, so the empty result hash and the loop go away. transform_values! does the same in place.
+Source: Ruby docs, Hash#transform_values.

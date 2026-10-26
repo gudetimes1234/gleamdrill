@@ -1,0 +1,2 @@
+Extract Function: Fowler's printOwing. Each paragraph of the long method (print the banner, add up what's owed, print the details) becomes a method named for what it does, and owing_report reads as the list of steps. The sum gets the rf02 treatment on the way.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Extract Function.

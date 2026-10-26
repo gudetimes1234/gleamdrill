@@ -1,0 +1,2 @@
+Naming a value only to return it on the next line adds two lines and no meaning: the method name already says what it is. The last expression evaluated is the return value, so just write the expression.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Methods: no explicit return.

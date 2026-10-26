@@ -1,0 +1,2 @@
+group_by turns a list into key => [elements with that key], where the block computes the key. Groups come in first-seen order, and elements keep their order inside each group.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: group_by over building buckets by hand.

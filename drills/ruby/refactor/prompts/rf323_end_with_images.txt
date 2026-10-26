@@ -1,0 +1,3 @@
+section: Strings
+title: end_with? · image files
+Rewrite image_file?(name) with one end_with? call given every suffix: no [-4..] slices, no || chain.

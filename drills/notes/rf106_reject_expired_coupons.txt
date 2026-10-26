@@ -1,0 +1,2 @@
+An each that skips with next and pushes the rest is reject in disguise. On a hash, select and reject return a hash, not an array of pairs; reject! and select! change the receiver and return nil when nothing changed, so don't chain off them.
+Source: Ruby docs, Enumerable#reject and Hash#reject.

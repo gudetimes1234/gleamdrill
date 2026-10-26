@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: unless, not if ! · directory list
+Rewrite ensure_dir(dirs, path) with an unless block: no if !, no else.

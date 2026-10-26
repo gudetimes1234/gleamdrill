@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_with_index · letter positions
+Rewrite positions_of(letters, target) with each_with_index (then filter_map or select): no while loop, no letters[i].

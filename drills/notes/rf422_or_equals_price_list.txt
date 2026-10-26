@@ -1,0 +1,2 @@
+`@prices ||= load` runs load the first time and returns the stored value after that, and the assignment is also the return value. Gotcha: if load can return nil or false, ||= runs it again every call; use `defined?(@prices) ? @prices : (@prices = load)` for those.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Assignment & Comparison: use ||= to initialize variables only if they're not already initialized.

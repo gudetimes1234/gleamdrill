@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: (1..n).sum · triangle numbers
+Rewrite triangle(n) as the sum of a range: no while loop, no counter.

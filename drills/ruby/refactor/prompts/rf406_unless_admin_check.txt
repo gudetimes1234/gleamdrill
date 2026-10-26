@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: unless, not if ! · admin check
+Rewrite delete_post(user, posts, id) with a one-line guard using unless: no if not, no if !.

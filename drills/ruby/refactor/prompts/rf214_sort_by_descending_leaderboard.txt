@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sort_by descending · leaderboard
+Rewrite leaderboard(players) with sort_by, highest points first (negate the key, or reverse): no <=>.

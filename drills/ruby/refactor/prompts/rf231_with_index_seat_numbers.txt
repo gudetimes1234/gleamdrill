@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: with_index · seat numbers
+Rewrite seat_map(guests) with each.with_index(1) and to_h: no counter variable, no each with a hash.

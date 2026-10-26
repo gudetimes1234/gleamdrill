@@ -1,0 +1,2 @@
+A splat parameter gathers every remaining positional argument into an array, so there's no cap and no compact. It's always an array, empty when nothing is passed, never nil.
+Source: Ruby docs, Methods: array/hash argument (splat).

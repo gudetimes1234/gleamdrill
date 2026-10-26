@@ -1,0 +1,2 @@
+none? is the opposite of any?: true when the block is true for no element. select(...).length == 0 builds a whole array just to measure it, while none? stops at the first negative. All three predicates also take a pattern instead of a block, e.g. readings.none?(Float) or words.any?(/ruby/).
+Source: Ruby docs, Enumerable#none?.

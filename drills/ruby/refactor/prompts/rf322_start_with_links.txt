@@ -1,0 +1,3 @@
+section: Strings
+title: start_with? · links
+Rewrite link_kind(url) with start_with?: no url[0, n] slices compared to a string.

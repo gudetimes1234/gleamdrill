@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: case/when classes · describe
+Rewrite describe(value) as case/when on classes: no is_a?, no nil?, no elsif.

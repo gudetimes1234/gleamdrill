@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: custom exception class · stock
+Give reserve an OutOfStock error class, and make reserve_or_keep rescue that class (method-level) instead of checking the message.

@@ -1,0 +1,3 @@
+section: Strings
+title: scan · mentions
+Rewrite mentions(post) with scan and a capture group: no split, no each.

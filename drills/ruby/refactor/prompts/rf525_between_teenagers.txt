@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: between? · teenagers
+Rewrite teenager?(age) as one between? call: no guard returns, no < or >.

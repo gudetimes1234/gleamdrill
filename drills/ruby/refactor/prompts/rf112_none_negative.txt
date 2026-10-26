@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: none? · negative readings
+Rewrite valid_readings?(readings) with none?: no select, no comparing a size to zero.

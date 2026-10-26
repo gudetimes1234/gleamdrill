@@ -1,0 +1,2 @@
+A when clause takes several values separated by commas and matches if any of them does, so `x == a || x == b` becomes `when a, b`. Keep a long list in a constant and splat it: `when *IMAGE_EXTS`.
+Source: Ruby docs, the case expression (doc/syntax/control_expressions.rdoc).

@@ -1,0 +1,2 @@
+A reader is named for what it returns (total), not for the act of fetching it (get_total); a setter is total=, not set_total. Naming a predicate empty? also matches Array, Hash and String, so a Basket reads like any other collection.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Naming Conventions and Classes & Modules: no get_/set_ prefixes.

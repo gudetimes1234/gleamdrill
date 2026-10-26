@@ -1,0 +1,2 @@
+The block for to_h must return a two-element array, and split("=", 2) already is one, so the block can be just the split. A line with no "=" gives a one-element array and to_h raises ArgumentError, which is louder than a silent nil value.
+Source: Ruby docs, Enumerable#to_h and String#split (limit argument).

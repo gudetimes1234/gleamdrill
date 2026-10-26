@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: min_by · cheapest flight
+Rewrite cheapest(flights) with min_by: no while loop, no best index.

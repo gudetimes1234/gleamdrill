@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: flat_map · order SKUs
+Rewrite skus(orders) with flat_map: no nested each, no push.

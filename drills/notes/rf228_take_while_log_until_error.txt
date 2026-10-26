@@ -1,0 +1,2 @@
+take_while keeps elements from the front until the block first returns false, then stops for good: later lines are never looked at, even if they would pass. That stop-at-first-failure is what separates it from select.
+Source: Ruby docs, Enumerable#take_while.

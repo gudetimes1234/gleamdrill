@@ -1,0 +1,2 @@
+`@cache[key] ||= compute(key)` memoises per argument: a hash keyed by the input. It differs from key? in one case: a stored nil or false counts as missing, so those results are recomputed every time.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Assignment & Comparison: use ||= to initialize variables only if they're not already initialized.

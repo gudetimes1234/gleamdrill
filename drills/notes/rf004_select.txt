@@ -1,0 +1,2 @@
+An each with an if and a push is select. The block is just the condition, and the result keeps the input's order.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer select/filter over each with a conditional push.

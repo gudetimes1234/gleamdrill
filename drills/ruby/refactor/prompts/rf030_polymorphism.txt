@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace conditional with polymorphism
+Turn the case in plumage(bird) into a Bird class with one subclass per kind, each with its own plumage. Keep plumage(bird) as the entry point.

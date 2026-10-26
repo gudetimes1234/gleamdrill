@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: find · first long word
+Rewrite first_long_word(words, min) with find (or detect): no while loop, no break.

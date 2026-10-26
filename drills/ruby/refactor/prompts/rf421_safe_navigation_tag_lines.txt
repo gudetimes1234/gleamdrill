@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Safe navigation · tag lines
+Rewrite tag_line(post) with &. and || for the fallback: no if, no nil?.

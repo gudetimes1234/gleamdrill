@@ -1,0 +1,2 @@
+An empty array, an each, a push and a return is map spelled out by hand. map says "one out for each one in" and the accumulator disappears.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer map over each with an accumulator.

@@ -1,0 +1,2 @@
+With a block, gsub passes each match to it and puts the block's result in its place, so the rest of the text, spacing included, is never touched. Splitting on spaces and joining back quietly loses runs of spaces and tabs.
+Source: Ruby docs, String#gsub.

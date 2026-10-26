@@ -1,0 +1,2 @@
+When the body is one short statement, put it first and the condition after: `total -= 10 if coupon == "SAVE10"`. The action reads first, and the three-line block with its own end disappears.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: favor modifier if/unless when you have a single-line body.

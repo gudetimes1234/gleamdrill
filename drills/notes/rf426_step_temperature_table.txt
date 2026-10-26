@@ -1,0 +1,2 @@
+`from.step(to, by)` counts in jumps of by and includes to when it lands on it; `(from..to).step(by)` is the range spelling. A negative by counts down. With floats, step avoids drift because it computes each value from the start instead of adding repeatedly.
+Source: Ruby docs, Numeric#step and Range#step.

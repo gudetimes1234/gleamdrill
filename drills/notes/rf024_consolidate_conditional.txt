@@ -1,0 +1,2 @@
+Consolidate Conditional Expression. Three checks with the same result are one condition. Join them with ||, then extract it into a predicate whose name says why they are together: ineligible_for_disability?.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Consolidate Conditional Expression.

@@ -1,0 +1,2 @@
+Hash.new([]) is the classic trap: every missing key shares that one array, and `h[k] << x` never even stores the key. The block form runs per missing key, so `hash[node] = []` gives each node its own list and saves it.
+Source: Ruby docs, Hash.new; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections.

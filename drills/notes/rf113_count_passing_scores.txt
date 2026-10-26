@@ -1,0 +1,2 @@
+A zero, an each and a += 1 behind an if is count with a block. count has three forms: no argument counts everything, count(x) counts elements == x, and count { } counts the ones the block is true for.
+Source: Ruby docs, Enumerable#count.

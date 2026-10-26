@@ -1,0 +1,2 @@
+A keyword's default can be any expression and is evaluated on each call, so `greeting: "Hello"` replaces the whole `opts ||= {}` plus fetch dance. Leave the default off (`greeting:`) and the keyword becomes required.
+Source: Ruby docs, Methods: keyword arguments.

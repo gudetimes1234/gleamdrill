@@ -1,0 +1,3 @@
+section: Objects
+title: to_s override · money
+Rename Money#to_string to to_s, so receipt_line can just interpolate the money.

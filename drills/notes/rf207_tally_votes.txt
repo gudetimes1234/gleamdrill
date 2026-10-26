@@ -1,0 +1,2 @@
+tally counts how often each element occurs and returns { element => count }, keys in the order they were first seen. It is the one-word answer to "how many of each?".
+Source: Ruby docs, Enumerable#tally (since Ruby 2.7).

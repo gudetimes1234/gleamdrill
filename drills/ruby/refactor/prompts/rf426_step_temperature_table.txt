@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: step · temperature table
+Rewrite conversion_table(from, to, by) with step and map: no while, no += by.

@@ -1,0 +1,2 @@
+sum takes a block, so mapping and adding are one call, and an empty list sums to 0 with no starting value to set up.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer sum over inject(:+) or a running total.

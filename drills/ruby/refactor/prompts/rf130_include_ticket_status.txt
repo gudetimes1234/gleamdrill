@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: include? · ticket status
+Rewrite open_tickets(tickets) so the select block uses include? on a list of statuses: no chained == and ||.

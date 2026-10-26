@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: group_by · orders by status
+Rewrite orders_by_status(orders) with group_by: no each, no pushing into buckets.

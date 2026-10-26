@@ -1,0 +1,2 @@
+sum with a block adds up whatever the block returns, so you skip the map step too. An empty collection sums to 0; pass a start value like sum(0.0) when you want a float back even for an empty cart.
+Source: Ruby docs, Enumerable#sum.

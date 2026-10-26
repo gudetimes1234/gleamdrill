@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: group_by, not buckets by hand
+Rewrite by_initial(names) with group_by.

@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: group_by · words by length
+Rewrite words_by_length(words) with a single group_by: no uniq, no select per length.

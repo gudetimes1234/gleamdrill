@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: zip · quiz score
+Rewrite score(answers, key) with zip and count: no index, no counter.

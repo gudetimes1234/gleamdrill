@@ -1,0 +1,2 @@
+any? with a block stops at the first true, just like the early return did, and always answers true or false. Without a block it asks whether any element is truthy, so [nil, false].any? is false.
+Source: Ruby docs, Enumerable#any?.

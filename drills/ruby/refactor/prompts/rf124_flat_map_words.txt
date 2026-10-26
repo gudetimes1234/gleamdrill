@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: flat_map · words in lines
+Rewrite words_in(lines) with flat_map: no each, no concat.

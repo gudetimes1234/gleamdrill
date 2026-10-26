@@ -1,0 +1,2 @@
+digits returns the base-10 digits least significant first: 1234.digits is [4, 3, 2, 1], which doesn't matter for a sum. It raises Math::DomainError on a negative number, so take abs first if negatives can come in.
+Source: Ruby docs, Integer#digits.

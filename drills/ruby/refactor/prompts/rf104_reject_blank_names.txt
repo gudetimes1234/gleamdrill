@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: reject · blank names
+Rewrite present_names(names) with reject: no each, no push, no unless inside a loop.

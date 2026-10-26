@@ -1,0 +1,2 @@
+min_by returns the element with the smallest key, not the key itself, and nil for an empty collection, so the empty? guard goes too. On a tie it keeps the first one it saw.
+Source: Ruby docs, Enumerable#min_by.

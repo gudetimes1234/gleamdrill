@@ -1,0 +1,3 @@
+section: Strings
+title: delete · phone numbers
+Rewrite digits_only(phone) with String#delete and a negated character set: no each_char loop, no +=.

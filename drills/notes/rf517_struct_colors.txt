@@ -1,0 +1,2 @@
+A Struct names the fields an array only numbers, and still behaves like a tuple when you want it to: to_a, deconstruction, `*color`. Unlike Data it is mutable (color.red = 10), so reach for Data.define when the value should never change.
+Source: Ruby docs, Struct.

@@ -1,0 +1,2 @@
+Data.define (Ruby 3.2+) makes a small immutable value class: readers, keyword or positional new, == by value, a readable inspect. A misspelt `p.z` raises NoMethodError where `p[:z]` just gives nil.
+Source: Ruby docs, Data.

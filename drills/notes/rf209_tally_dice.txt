@@ -1,0 +1,2 @@
+group_by(&:itself) followed by mapping each group to its size is tally the long way round, and it builds every group array just to throw it away. Reach for group_by when you need the members, tally when you only need the counts.
+Source: Ruby docs, Enumerable#tally and Enumerable#group_by.

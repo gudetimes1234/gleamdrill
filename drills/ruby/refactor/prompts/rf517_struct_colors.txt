@@ -1,0 +1,3 @@
+section: Objects
+title: Struct · colors
+Replace the [red, green, blue] array in rgb, to_hex and grayscale? with a Struct, so no code indexes [0], [1], [2].

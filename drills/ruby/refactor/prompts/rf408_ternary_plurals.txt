@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Ternary · plurals
+Rewrite pluralize(count, word) with a ternary for the suffix: no if, no reassigning a default.

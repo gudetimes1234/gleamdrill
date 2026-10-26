@@ -1,0 +1,2 @@
+`raise Klass, "message"` is the short form of `raise Klass.new("message")`. Subclassing ArgumentError instead of StandardError is fine when the failure really is a bad argument: `rescue ArgumentError` catches it too.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: raise with class and message, not Klass.new.

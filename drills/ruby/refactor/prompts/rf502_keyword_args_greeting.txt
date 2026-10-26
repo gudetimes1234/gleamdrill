@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: keyword arguments · greeting
+Rewrite greet(name, opts = nil) with keyword arguments greeting: and mark:, each with its default: no fetch, no opts.

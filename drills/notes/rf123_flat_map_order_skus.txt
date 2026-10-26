@@ -1,0 +1,2 @@
+Nested each loops pushing into one result are a flat_map: the block returns an array per order and flat_map joins them end to end. orders.flat_map(&:lines) says the same with the shorthand. Its alias is collect_concat.
+Source: Ruby docs, Enumerable#flat_map (alias collect_concat).

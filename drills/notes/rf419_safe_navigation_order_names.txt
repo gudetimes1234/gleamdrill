@@ -1,0 +1,2 @@
+&. does not protect the rest of the chain: `order&.customer.name` still calls name on nil when order is nil. Put &. on every link that can be nil.
+Source: Ruby docs, Calling methods (doc/syntax/calling_methods.rdoc), Safe navigation operator.

@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: take_while · opening win streak
+Rewrite opening_streak(results) with take_while and count/size: no for loop, no break.

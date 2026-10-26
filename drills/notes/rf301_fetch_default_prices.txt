@@ -1,0 +1,2 @@
+fetch(key, default) falls back only when the key is absent, so a stored nil comes back as nil; `prices[sku] || 0` would turn it into 0. The default argument is evaluated on every call, even when the key is there, so keep it cheap (a literal) or use the block form.
+Source: Ruby docs, Hash#fetch.

@@ -1,0 +1,2 @@
+`[[x, lo].max, hi].min` makes the reader work out which bound is which; clamp(lo, hi) says it. It also takes a range: alpha.clamp(0.0..1.0), and an endless one like clamp(0..) clamps only from below.
+Source: Ruby docs, Comparable#clamp.

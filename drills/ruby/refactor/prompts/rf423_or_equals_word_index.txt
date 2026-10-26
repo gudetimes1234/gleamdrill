@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: ||= buckets · word index
+Rewrite index_by_letter(words) so the bucket is created with ||=: no key? check, no if.

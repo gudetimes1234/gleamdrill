@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: all? · paid invoices
+Rewrite all_paid?(invoices) with all?: no each, no ok flag.

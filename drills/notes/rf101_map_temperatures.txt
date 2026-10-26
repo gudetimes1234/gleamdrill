@@ -1,0 +1,2 @@
+A while loop with an index, a push and a return value is the long way to write map. map always gives back an array of the same length, so there is no off-by-one to get wrong and no counter to bump.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer map over a loop with an accumulator.

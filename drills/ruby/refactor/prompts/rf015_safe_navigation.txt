@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Safe navigation
+Rewrite city_of(user) with &.: no if, no nil checks.

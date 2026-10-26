@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: custom exception class · withdrawals
+Give withdraw(balance, amount) its own error: define a StandardError subclass and raise it with a message, not a bare string.

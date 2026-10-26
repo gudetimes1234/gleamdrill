@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: double splat ** · html tag
+Rewrite tag(name, attrs = {}) to collect its attributes with a double splat (**attrs).

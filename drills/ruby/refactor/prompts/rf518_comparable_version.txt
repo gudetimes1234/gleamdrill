@@ -1,0 +1,3 @@
+section: Objects
+title: Comparable with <=> · versions
+Replace Version's hand-written <, > and == with include Comparable and one <=>.

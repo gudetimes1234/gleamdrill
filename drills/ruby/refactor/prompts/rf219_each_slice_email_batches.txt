@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_slice · email batches
+Rewrite batches(emails, size) with each_slice: no while loop, no offset arithmetic.

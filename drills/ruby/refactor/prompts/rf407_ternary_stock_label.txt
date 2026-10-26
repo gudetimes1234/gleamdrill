@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Ternary · stock label
+Rewrite stock_label(count) as one ternary expression: no if/else, no temporary variable.

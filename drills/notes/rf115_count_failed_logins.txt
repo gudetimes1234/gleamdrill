@@ -1,0 +1,2 @@
+The block can hold any condition, compound ones included. Don't confuse count with size or length: those just measure the collection, while count with a block walks it and tests each element.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer count with a block over a counter.

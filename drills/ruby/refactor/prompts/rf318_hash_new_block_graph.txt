@@ -1,0 +1,3 @@
+section: Hashes
+title: Hash.new with a block · graph
+Rewrite adjacency(edges) with Hash.new and a block that stores a fresh array per node: no nil? checks.

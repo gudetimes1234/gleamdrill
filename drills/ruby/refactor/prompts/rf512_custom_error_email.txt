@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: custom exception class · emails
+Rewrite check_email(email) to raise a custom error class with `raise Klass, "message"`: no RuntimeError.new(...).

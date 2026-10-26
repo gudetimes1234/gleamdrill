@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_with_object · users by id
+Rewrite index_by_id(users) with each_with_object({}): no while loop, no counter.

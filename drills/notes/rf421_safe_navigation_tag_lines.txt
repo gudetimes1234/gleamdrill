@@ -1,0 +1,2 @@
+&. works with arguments and blocks too (`tags&.join(", ")`, `list&.map { ... }`), and when the receiver is nil the arguments are not even evaluated. Pair it with || to swap the nil for a default.
+Source: Ruby docs, Calling methods (doc/syntax/calling_methods.rdoc), Safe navigation operator.

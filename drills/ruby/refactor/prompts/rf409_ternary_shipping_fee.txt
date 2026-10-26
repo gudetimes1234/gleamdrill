@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Ternary · shipping fee
+Rewrite shipping_fee(order) as one ternary: no if/else, no return.

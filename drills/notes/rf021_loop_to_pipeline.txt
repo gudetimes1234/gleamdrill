@@ -1,0 +1,2 @@
+Replace Loop with Pipeline. A loop that skips some lines, filters and collects is a chain: drop the header, reject the blanks, split, select, map. Each step names one idea, and the first-line flag is gone. Block parameters destructure each array, and `{ city:, phone: }` (Ruby 3.1) is shorthand for city: city.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Loop with Pipeline (Fowler's own offices example).

@@ -1,0 +1,2 @@
+tally (Ruby 2.7) is the frequency map: element => how many times it appears, keyed in first-seen order. It replaces the Hash.new(0) and += 1 idiom.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: tally for counting.

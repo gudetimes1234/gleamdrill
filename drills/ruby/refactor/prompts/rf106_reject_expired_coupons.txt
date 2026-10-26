@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: reject · expired coupons
+Rewrite active_coupons(coupons, today) with reject: no each, no next, no push.

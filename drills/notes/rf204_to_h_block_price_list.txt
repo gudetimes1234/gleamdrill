@@ -1,0 +1,2 @@
+to_h with a block maps and builds the hash in one pass: the block returns a [key, value] pair for each element. It replaces both the each-into-a-hash loop and the older map { ... }.to_h, which builds a throwaway array of pairs first.
+Source: Ruby docs, Enumerable#to_h (block form since Ruby 2.6).

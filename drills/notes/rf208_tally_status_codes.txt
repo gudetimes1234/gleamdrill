@@ -1,0 +1,2 @@
+tally counts the elements themselves, so to count by some property you map to that property first and tally the result. Ruby 3.1 also lets you pass a hash to tally into, e.g. tally(existing), to keep adding to running counts.
+Source: Ruby docs, Enumerable#tally.

@@ -1,0 +1,2 @@
+zip pairs the arrays up position by position, [[a1, b1], [a2, b2], ...], so you walk both at once with no index. Then count with a block counts the pairs that match.
+Source: Ruby docs, Array#zip and Enumerable#count.

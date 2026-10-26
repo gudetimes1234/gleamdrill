@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: ||= memoise · price list
+Rewrite PriceList#prices to memoise with @prices ||=: no nil? check, no if.

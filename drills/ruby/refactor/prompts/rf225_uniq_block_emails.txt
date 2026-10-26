@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: uniq with a block · signup emails
+Rewrite unique_emails(emails) with uniq and a block, ignoring case: no seen list, no include?.

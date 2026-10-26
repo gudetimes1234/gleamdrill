@@ -1,0 +1,2 @@
+find (alias detect) returns the first element the block is true for and stops looking right there, or nil when nothing matches. That nil is the gotcha: callers have to handle it, often with &. or a guard clause.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer find over select.first or a loop with return.

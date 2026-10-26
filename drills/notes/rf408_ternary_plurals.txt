@@ -1,0 +1,2 @@
+"Set a default, then maybe overwrite it" is a two-way value written in three steps; a ternary gives the variable one assignment. A ternary can sit inside interpolation too, but naming it (`suffix = ...`) keeps the string readable.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: prefer the ternary operator over if/then/else/end for trivial conditionals.

@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: even? · scores
+Rewrite even_scores(scores) with even?: no % 2.

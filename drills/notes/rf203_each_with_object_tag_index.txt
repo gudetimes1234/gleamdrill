@@ -1,0 +1,2 @@
+Hash.new { |hash, key| hash[key] = [] } builds and stores a fresh array the first time a key is read. Never use Hash.new([]) for this: every missing key would share one array, and << on it would not even store the key.
+Source: Ruby docs, Hash.new (the block form).

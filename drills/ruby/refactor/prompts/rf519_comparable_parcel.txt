@@ -1,0 +1,3 @@
+section: Objects
+title: Comparable with <=> · parcels
+Replace Parcel's four hand-written operators with include Comparable and a <=> on weight.

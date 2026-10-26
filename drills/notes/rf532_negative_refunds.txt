@@ -1,0 +1,2 @@
+negative? is strictly below zero, so 0 and 0.0 don't count; positive? is strictly above. Paired with count(&:negative?) the whole loop is one call.
+Source: Ruby docs, Numeric#negative? and Enumerable#count.

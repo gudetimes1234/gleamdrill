@@ -1,0 +1,2 @@
+Replace Nested Conditional with Guard Clauses. Each unusual case leaves at once with `return x if cond`, and the normal case is the last line, unindented. The result variable and every else go away.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Nested Conditional with Guard Clauses. The Ruby Style Guide also prefers guard clauses.

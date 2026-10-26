@@ -1,0 +1,2 @@
+zip then to_h is the standard way to glue a list of keys to a list of values. The receiver sets the length: a shorter second array is padded with nil, and extra values past the headers are dropped.
+Source: Ruby docs, Array#zip and Array#to_h.

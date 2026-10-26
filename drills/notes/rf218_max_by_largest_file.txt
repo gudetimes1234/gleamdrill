@@ -1,0 +1,2 @@
+On a hash, max_by yields |key, value| and returns the winning [key, value] pair, so take .first of it or destructure it. On an empty hash it returns nil, so use &.first or destructuring, which turn nil into a nil name.
+Source: Ruby docs, Enumerable#max_by.

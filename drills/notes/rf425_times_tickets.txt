@@ -1,0 +1,2 @@
+`count.times` yields 0 to count - 1, and `(1..count)` gives 1 to count, so pick whichever start you need instead of writing i + 1. Both return enumerables, so `.map` builds the array with no accumulator, and both are empty for 0.
+Source: Ruby docs, Integer#times and Range#each; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Loops: avoid while with a counter.

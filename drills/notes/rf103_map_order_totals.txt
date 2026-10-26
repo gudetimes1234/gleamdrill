@@ -1,0 +1,2 @@
+Pre-sizing an array and filling slots by index is how you would do it in C. map builds the array for you, one element per order, in order. Calling map on a hash still gives an array; reach for to_h or transform_values when you want a hash back.
+Source: Ruby docs, Enumerable#map and Hash#transform_values.

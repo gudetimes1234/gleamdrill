@@ -1,0 +1,2 @@
+filter_map on a hash yields key and value like each, and returns an Array of the truthy block results. Gotcha: it drops false as well as nil, so a block whose real answer can be false needs select then map instead.
+Source: Ruby docs, Enumerable#filter_map.

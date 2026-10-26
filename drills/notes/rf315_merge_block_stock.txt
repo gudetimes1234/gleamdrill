@@ -1,0 +1,2 @@
+merge's block is called only for keys found in both hashes, with the key, the receiver's value and the argument's value, and its result is what gets stored. Keys found in one hash only are copied as they are.
+Source: Ruby docs, Hash#merge.

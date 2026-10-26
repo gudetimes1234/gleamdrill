@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: with_index, not for
+Rewrite numbered(lines) without for or [i]: map.with_index(1) or each_with_index.

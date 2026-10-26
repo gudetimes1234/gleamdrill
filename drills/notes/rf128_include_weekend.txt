@@ -1,0 +1,2 @@
+A chain of x == a || x == b is a membership test; put the candidates in a list and ask include?. The list reads as data, and adding Fri for a long weekend is one word. For numbers, a range does the same: (1..5).include?(n), or cover? for a fast endpoint check.
+Source: Ruby docs, Array#include? and Range#cover?.

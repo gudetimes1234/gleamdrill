@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: argument forwarding · price tag
+Rewrite price_tag so it forwards its arguments to format_price (with ... or *, **) instead of repeating every keyword.

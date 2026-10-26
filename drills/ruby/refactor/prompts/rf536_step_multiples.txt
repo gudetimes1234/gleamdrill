@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: step · multiples
+Rewrite multiples(every, upto) with step: no while loop, no push.

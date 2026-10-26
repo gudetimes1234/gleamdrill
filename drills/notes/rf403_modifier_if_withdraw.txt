@@ -1,0 +1,2 @@
+A raise or return with a modifier if is a guard clause: it states the rule in one line at the top and the happy path follows unindented. `raise X if bad` reads like the sentence you would say out loud.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: favor modifier if/unless for single-line bodies; prefer guard clauses.

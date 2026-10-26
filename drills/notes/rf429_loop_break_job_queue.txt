@@ -1,0 +1,2 @@
+`loop do ... end` is Ruby's infinite loop; break leaves it, and `break value` makes value the result of loop. Unlike while, loop is a block, so variables created inside it stay inside, and it also stops cleanly when an enumerator raises StopIteration.
+Source: Ruby docs, Kernel#loop; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Loops: use Kernel#loop instead of while true.

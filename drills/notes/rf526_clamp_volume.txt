@@ -1,0 +1,2 @@
+clamp(min, max) returns min when below, max when above, and the value itself otherwise: an if/elsif/else in one call. Like between? it comes from Comparable.
+Source: Ruby docs, Comparable#clamp.

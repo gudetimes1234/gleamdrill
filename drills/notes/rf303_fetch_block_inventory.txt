@@ -1,0 +1,2 @@
+fetch with no default raises KeyError for a missing key; a block lets you raise your own error with a better message instead. Either way the lookup and the "must be there" rule are one expression, and a stored 0 or false is never mistaken for missing.
+Source: Ruby docs, Hash#fetch.

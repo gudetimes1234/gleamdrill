@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sum · cart total
+Rewrite cart_total(items) with sum and a block: no each, no running total.

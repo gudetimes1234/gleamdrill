@@ -1,0 +1,2 @@
+Gotcha: when the pattern has a capture group, scan returns an array of group arrays ([["ann"], ["bo"]]), hence the flatten. A lookbehind, scan(/(?<=@)\w+/), has no group and returns plain strings.
+Source: Ruby docs, String#scan.

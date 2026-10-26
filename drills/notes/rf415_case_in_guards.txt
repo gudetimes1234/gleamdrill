@@ -1,0 +1,2 @@
+A guard (`in pattern if cond`) is checked only after the pattern matches and its names are bound, so the condition can use them. If the guard fails, matching moves on to the next in, which is why the plain `{ country: "NO" }` branch catches the cheaper Norwegian orders.
+Source: Ruby docs, Pattern matching (doc/syntax/pattern_matching.rdoc), Guard clauses.

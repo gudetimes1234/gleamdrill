@@ -1,0 +1,3 @@
+section: Hashes
+title: transform_values · prices
+Rewrite discounted(prices, percent) with transform_values: no each, no new hash filled by hand.

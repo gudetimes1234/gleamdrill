@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: include? · weekend days
+Rewrite weekend?(day) with include? on a list of days: no chained == and ||.

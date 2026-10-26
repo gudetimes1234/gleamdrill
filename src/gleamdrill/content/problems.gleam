@@ -9,6 +9,7 @@ import gleamdrill/content/problems/neetcode_haskell
 import gleamdrill/content/problems/neetcode_python
 import gleamdrill/content/problems/neetcode_ruby
 import gleamdrill/content/problems/neetcode_ts
+import gleamdrill/content/problems/ruby_refactoring
 import gleamdrill/content/problems/system_design
 import gleamdrill/content/problems/system_design_board
 import wire.{ProblemRef}
@@ -34,6 +35,7 @@ fn build() -> List(Category) {
     neetcode_go.category(),
     neetcode_haskell.category(),
     neetcode_ruby.category(),
+    ruby_refactoring.category(),
     system_design.category(),
     system_design_board.category(),
   ]

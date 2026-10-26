@@ -1,0 +1,2 @@
+Hash.new(0) is safe for counters because += stores a new Integer; it is mutable defaults that need the block. Gotcha: the default proc travels with the hash you return, so a caller reading a missing region gets a new empty hash added rather than nil.
+Source: Ruby docs, Hash.new and Hash#default_proc.

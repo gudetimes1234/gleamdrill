@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: %i[] literal · sizes
+Rewrite the size list in size_index(size) as a %i[] literal.

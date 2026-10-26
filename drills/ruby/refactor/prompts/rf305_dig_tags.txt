@@ -1,0 +1,3 @@
+section: Hashes
+title: dig · post tags
+Rewrite first_tag_name(post) with dig through the hash and the array: no nil? or empty? guard.

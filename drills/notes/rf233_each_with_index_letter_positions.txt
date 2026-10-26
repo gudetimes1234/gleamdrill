@@ -1,0 +1,2 @@
+Without a block, each_with_index returns an enumerator of [element, index] pairs that you can chain into any Enumerable method: select, filter_map, map. That is how you get "the indexes where" in one line.
+Source: Ruby docs, Enumerable#each_with_index.

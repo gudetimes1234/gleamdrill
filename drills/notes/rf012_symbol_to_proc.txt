@@ -1,0 +1,2 @@
+When a block only calls one method on its argument, &:name says the same thing: the symbol becomes a proc with Symbol#to_proc.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Blocks: use the &:method shorthand.

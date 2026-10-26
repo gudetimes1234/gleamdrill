@@ -1,0 +1,2 @@
+The group_by block's return value becomes the key, so any expression works: here File.extname, which returns "" for a file with no extension. Those files still get a group, under the "" key.
+Source: Ruby docs, Enumerable#group_by and File.extname.

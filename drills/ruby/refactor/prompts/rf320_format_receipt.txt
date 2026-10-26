@@ -1,0 +1,3 @@
+section: Strings
+title: format · receipt line
+Rewrite receipt_line(item, price) with one format string (%-12s, %8.2f): no cents arithmetic, no padding by hand.

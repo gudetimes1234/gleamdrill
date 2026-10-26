@@ -1,0 +1,2 @@
+(1..n).sum adds the range, and for an integer range Ruby uses the formula n(n+1)/2 instead of looping, so it's instant even for huge n. 1..0 is just an empty range, and its sum is 0.
+Source: Ruby docs, Range#sum.

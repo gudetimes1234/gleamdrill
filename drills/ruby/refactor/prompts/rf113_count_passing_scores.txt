@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: count · passing scores
+Rewrite passing_count(scores, pass_mark) with count and a block: no each, no counter.

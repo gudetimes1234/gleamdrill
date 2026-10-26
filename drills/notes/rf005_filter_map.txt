@@ -1,0 +1,2 @@
+filter_map (Ruby 2.7) keeps each truthy block result, so a select followed by a map becomes one pass with no array in between. `x if cond` gives nil when cond is false, and that element drops out.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: filter_map over select.map.

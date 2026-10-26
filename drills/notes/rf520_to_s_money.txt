@@ -1,0 +1,2 @@
+Interpolation, puts and join all call to_s, so defining to_s makes the object print itself everywhere. Methods like to_string or describe have to be remembered and called at every use.
+Source: Ruby docs, Object#to_s.

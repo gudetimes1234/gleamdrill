@@ -1,0 +1,3 @@
+section: Strings
+title: format · progress
+Rewrite progress(done, total) with format and %02d (or interpolation with rjust): no string +, no to_s.

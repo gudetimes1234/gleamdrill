@@ -1,0 +1,3 @@
+section: Strings
+title: Interpolation, not +
+Rewrite greeting(name, count) as one interpolated string: no +, no to_s.

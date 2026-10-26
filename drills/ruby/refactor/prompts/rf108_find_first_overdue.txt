@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: find · first overdue invoice
+Rewrite first_overdue(invoices) with find: no each, no found variable.

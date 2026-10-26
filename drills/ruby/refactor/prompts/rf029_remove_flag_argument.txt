@@ -1,0 +1,3 @@
+section: Refactorings
+title: Remove flag argument
+Split delivery_date(order, rush) into rush_delivery_date(order) and regular_delivery_date(order).

@@ -1,0 +1,2 @@
+In Ruby the trailing ? already says "this answers yes or no", so the is_ prefix is noise: admin?, not is_admin or is_admin?. Predicates should return true or false (or at least something truthy or falsy).
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Naming Conventions: predicate methods end in ?, no is_ prefix.

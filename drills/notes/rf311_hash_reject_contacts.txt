@@ -1,0 +1,2 @@
+reject is select with the test flipped, and like select it returns a new Hash and leaves the receiver alone. reject! and delete_if change the hash in place, which is the copy-then-delete dance done for you; Hash#compact alone drops only the nil values.
+Source: Ruby docs, Hash#reject and Hash#compact.

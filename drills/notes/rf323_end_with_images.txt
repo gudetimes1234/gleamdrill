@@ -1,0 +1,2 @@
+end_with? accepts any number of suffixes and is true if one matches, so a chain of || comparisons becomes one call. Unlike start_with?, it does not take a Regexp; use match? with \z for that.
+Source: Ruby docs, String#end_with?.

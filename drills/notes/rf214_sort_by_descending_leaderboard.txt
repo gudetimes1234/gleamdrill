@@ -1,0 +1,2 @@
+For a numeric key, sort_by { |p| -p.points } sorts descending in one go. Negation does not work for strings, so there use sort_by(&:name).reverse instead (or max_by(n) / min_by(n) when you only need the top few).
+Source: Ruby docs, Enumerable#sort_by and Array#reverse.

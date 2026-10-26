@@ -1,0 +1,2 @@
+`a && a.b && a.b.c` names every step twice and calls a.b twice. `a&.b&.c` is the same for nil, with one difference: && also stops on false, while &. only skips nil, so `false&.to_s` is "false".
+Source: Ruby docs, Calling methods (doc/syntax/calling_methods.rdoc), Safe navigation operator.

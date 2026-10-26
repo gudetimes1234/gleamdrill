@@ -1,0 +1,2 @@
+The same refactoring again: three levels of nesting, where only the innermost branch is the real work. Put the edge cases up front as guards, and the one interesting answer (5) is left on its own.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Nested Conditional with Guard Clauses.

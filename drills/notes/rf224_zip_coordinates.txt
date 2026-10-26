@@ -1,0 +1,2 @@
+A block with two params destructures each zipped pair, so map { |x, y| ... } gets x and y directly. zip also takes more than one array: xs.zip(ys, zs) gives triples.
+Source: Ruby docs, Array#zip.

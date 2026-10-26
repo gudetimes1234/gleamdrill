@@ -1,0 +1,3 @@
+section: Hashes
+title: merge with a block · rounds
+Rewrite best_of(round1, round2) with merge and a block that keeps the higher score: no keys union, no each.

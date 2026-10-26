@@ -1,0 +1,2 @@
+A run of early `return false` / `return true` steps is often just && (all must hold) or || (any may hold). Gotcha: `a && b` returns b itself, not true, so if b can be nil or a string, use `!!b` or a predicate to get a real boolean.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Methods: omit return where not required.

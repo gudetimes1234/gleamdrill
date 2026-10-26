@@ -8,12 +8,15 @@
 # prints one JSON report as the last line:
 #   {"cases":[{label, expected, actual, passed}], "stdout": "...", "error": null | {phase, line, message}}
 # A harness checks the names it calls with `need`, then records each case
-# with `tc(label, expected, actual)`; values compare by `inspect`.
+# with `tc(label, expected, actual)`; values compare by `inspect`. A
+# refactoring drill also checks the code itself with `uses` and `avoids`,
+# which match a pattern against solution.rb with its comments taken out.
 
 require "json"
 require "stringio"
 
 module Drill
+  DIR = ARGV[0] || "."
   LIMIT = 4000
   CASES = []
   OUTPUT = StringIO.new
@@ -27,6 +30,15 @@ module Drill
     cases = error ? [] : CASES
     STDOUT.write("\n" + JSON.generate({ cases: cases, stdout: text, error: error }) + "\n")
     STDOUT.flush
+  end
+
+  # solution.rb without its comments, so a style check never matches a note.
+  def self.code
+    @code ||= begin
+      require "ripper"
+      source = File.read(File.join(DIR, "solution.rb"))
+      Ripper.lex(source).reject { |token| token[1] == :on_comment }.map { |token| token[2] }.join
+    end
   end
 
   # The line in solution.rb an exception came from, if it came from there.
@@ -45,6 +57,16 @@ def tc(label, expected, actual)
   e = expected.inspect
   a = actual.inspect
   Drill::CASES << { label: label, expected: e, actual: a, passed: e == a }
+end
+
+# A style case: the code must match `pattern`.
+def uses(pattern, what)
+  tc "style: uses #{what}", "yes", Drill.code.match?(pattern) ? "yes" : "no"
+end
+
+# A style case: the code must not match `pattern`.
+def avoids(pattern, what)
+  tc "style: no #{what}", "yes", Drill.code.match?(pattern) ? "no" : "yes"
 end
 
 def need(*names)
@@ -101,7 +123,7 @@ class RandomNode
   end
 end
 
-dir = ARGV[0] || "."
+dir = Drill::DIR
 begin
   $stdout = Drill::OUTPUT
   load File.join(dir, "solution.rb")

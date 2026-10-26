@@ -1,0 +1,2 @@
+%w[a an the of] is an array of strings split on whitespace: no quotes, no commas. It doesn't interpolate; %W does (`%W[#{x} y]`). The style guide prefers square brackets for both.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Percent Literals: %w for arrays of words.

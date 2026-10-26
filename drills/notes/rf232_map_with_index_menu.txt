@@ -1,0 +1,2 @@
+map.with_index(1) is map with a running number starting at 1: the block gets the element and its number, and the result is still a plain mapped array. Note there is no map_with_index method; it is map (an enumerator) chained with with_index.
+Source: Ruby docs, Enumerator#with_index.

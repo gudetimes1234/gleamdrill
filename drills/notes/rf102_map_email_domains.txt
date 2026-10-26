@@ -1,0 +1,2 @@
+map (alias collect) returns a new array and leaves the input alone. map! rewrites the array in place, which is rarely what you want on an argument someone passed you. Note that map keeps duplicates; chain .uniq if you want each domain once.
+Source: Ruby docs, Enumerable#map and Array#map!.

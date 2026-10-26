@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: keyword arguments · shipping
+Rewrite shipping_cost(weight, options = {}) with keyword arguments express: and insured: instead of an options hash.

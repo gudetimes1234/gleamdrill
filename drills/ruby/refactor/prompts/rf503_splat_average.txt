@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: splat * · average
+Rewrite average so it takes any number of arguments with a splat (*numbers): no list of nil defaults.

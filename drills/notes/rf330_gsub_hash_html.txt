@@ -1,0 +1,2 @@
+Given a hash as its second argument, gsub looks each match up in it, so one pass handles every character. One pass also kills the ordering bug of chained gsubs, where escaping & last would mangle the &lt; you just wrote. The standard library already has CGI.escapeHTML.
+Source: Ruby docs, String#gsub.

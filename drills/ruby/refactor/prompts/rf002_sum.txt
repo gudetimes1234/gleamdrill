@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sum, not a running total
+Rewrite total_quantity(items) with sum and a block.

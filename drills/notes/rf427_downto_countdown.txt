@@ -1,0 +1,2 @@
+upto and downto are the counting loops: `1.upto(5)` and `5.downto(1)`, both including the end. A descending range like `(5..1)` is empty, which is the classic trap; use downto or `(1..5).reverse_each` instead.
+Source: Ruby docs, Integer#downto and Integer#upto.

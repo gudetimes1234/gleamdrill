@@ -1,0 +1,2 @@
+`start.step(limit, by)` counts from start to limit inclusive in steps of by; (start..limit).step(by) is the same with a Range, and % on a range is shorthand for it: ((3..10) % 3).to_a. Without a block step returns an enumerator, hence the to_a.
+Source: Ruby docs, Numeric#step and Range#step.

@@ -1,0 +1,2 @@
+Two guards plus a final true is a range check spread over three lines. between? returns the boolean directly. Mind the edges: between? includes both, while a range with three dots, 13...20, leaves the end out.
+Source: Ruby docs, Comparable#between?.

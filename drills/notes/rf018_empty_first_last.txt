@@ -1,0 +1,2 @@
+empty?, first and last say what you mean, and work on any Enumerable-ish thing that has them. A short if/else that picks between two values reads well as a ternary.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer first/last over [0]/[-1]; use empty? over size == 0.

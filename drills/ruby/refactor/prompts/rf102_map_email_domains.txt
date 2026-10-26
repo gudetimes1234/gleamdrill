@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: map · email domains
+Rewrite email_domains(emails) with map: no for loop, no push.

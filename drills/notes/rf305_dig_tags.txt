@@ -1,0 +1,2 @@
+Array has dig too, so one dig can mix hash keys and array indexes, which is exactly the shape of parsed JSON. An empty array at index 0 gives nil, and dig stops there.
+Source: Ruby docs, Hash#dig and Array#dig.

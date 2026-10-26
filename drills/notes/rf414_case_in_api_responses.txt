@@ -1,0 +1,2 @@
+`in { status: "ok", data: }` checks that status is "ok", that the key data exists, and binds its value to a local called data. Unlike array patterns, hash patterns ignore extra keys; write `**nil` at the end to forbid them.
+Source: Ruby docs, Pattern matching (doc/syntax/pattern_matching.rdoc), Hash patterns.

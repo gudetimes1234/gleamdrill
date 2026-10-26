@@ -1,0 +1,3 @@
+section: Objects
+title: inspect override · cards
+Rename Card#debug_string to inspect, so hand_summary can be just cards.inspect.

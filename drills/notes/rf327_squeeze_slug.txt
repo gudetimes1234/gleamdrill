@@ -1,0 +1,2 @@
+tr swaps characters for characters and is the plain tool when no pattern is involved; squeeze("-") collapses each run of dashes to one. With no argument squeeze collapses runs of any repeated character, which here would also eat the double letters in "hello".
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Strings: prefer tr over gsub for single characters; Ruby docs, String#squeeze.

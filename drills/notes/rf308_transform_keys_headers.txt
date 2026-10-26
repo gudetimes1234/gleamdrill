@@ -1,0 +1,2 @@
+transform_keys rewrites only the keys and leaves the values alone. Gotcha: if two keys map to the same new key they collapse into one, and the later value wins. It also takes a hash of renames: transform_keys(old: :new).
+Source: Ruby docs, Hash#transform_keys.

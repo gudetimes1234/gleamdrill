@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: partition · adults and minors
+Rewrite adults_and_minors(members) with partition: one pass, no select plus reject.

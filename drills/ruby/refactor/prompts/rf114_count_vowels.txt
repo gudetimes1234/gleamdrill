@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: count · vowels
+Rewrite vowel_count(text) with count: no select, no length of a filtered array.

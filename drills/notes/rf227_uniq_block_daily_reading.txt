@@ -1,0 +1,2 @@
+A nested loop that checks "have I kept one like this?" is quadratic; uniq with a block is one pass. Watch the order: uniq keeps the first match, so sort first if you want, say, the warmest reading per day.
+Source: Ruby docs, Array#uniq.

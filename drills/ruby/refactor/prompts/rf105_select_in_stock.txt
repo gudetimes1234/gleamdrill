@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: select · products in stock
+Rewrite in_stock(products) with select: no while loop, no index, no push.

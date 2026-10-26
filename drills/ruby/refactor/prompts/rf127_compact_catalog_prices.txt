@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: compact · catalog prices
+Rewrite prices_for(skus, catalog) with map and compact: no index loop, no nil check.

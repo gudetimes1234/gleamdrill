@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Return the condition · overdue invoices
+Rewrite overdue?(invoice, today) to return the condition: no ? true : false, no == false.

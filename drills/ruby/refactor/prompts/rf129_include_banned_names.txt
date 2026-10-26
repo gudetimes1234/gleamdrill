@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: include? · banned names
+Rewrite banned?(username, banned) with include?: no each, no found flag.

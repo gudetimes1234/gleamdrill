@@ -1,0 +1,2 @@
+select (alias filter) keeps the elements the block is true for, in their original order, and returns a new array. The block is only the condition, so `product.stock > 0` or `product.stock.positive?` is all you write.
+Source: Ruby docs, Enumerable#select (alias filter).

@@ -1,0 +1,2 @@
+ensure runs on every way out of the method: normal return, exception, even return from inside. Its own value is thrown away, so the method still returns what yield gave, unless ensure itself says return (don't).
+Source: Ruby docs, Exceptions: ensure; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: implicit begin.

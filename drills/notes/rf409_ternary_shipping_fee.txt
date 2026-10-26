@@ -1,0 +1,2 @@
+A ternary is for two simple outcomes. Never nest one inside another (`a ? b : c ? d : e`): at three outcomes, switch to case/when or if/elsif.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: use one expression per branch in a ternary; avoid nested ternaries.

@@ -1,0 +1,2 @@
+next inside a block ends this iteration and moves on, so each skip becomes a one-line guard and the real work stays at the left margin. In map, `next value` makes value the element for that iteration.
+Source: Ruby docs, Control expressions (doc/syntax/control_expressions.rdoc), next; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: use next in loops instead of conditional blocks.

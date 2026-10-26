@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: flat_map · post tags
+Rewrite all_tags(posts) with flat_map: no map followed by flatten.

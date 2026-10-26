@@ -1,0 +1,2 @@
+each_with_object hands the block the same object every time and returns it at the end, so you never have to remember to return the accumulator. Unlike inject, the block doesn't have to return it either. The memo comes second: |element, memo|.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: each_with_object for building a hash or array.

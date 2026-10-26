@@ -1,0 +1,2 @@
+drop_while is the mirror of take_while: it skips elements from the front while the block is true, then returns everything after, without testing the rest. The two together split a list at the first failure, which is what chunk_while and slice_when generalise.
+Source: Ruby docs, Enumerable#drop_while.

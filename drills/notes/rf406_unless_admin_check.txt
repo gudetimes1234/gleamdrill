@@ -1,0 +1,2 @@
+`not` is a low-precedence keyword (like `and`/`or`) and almost never what you want in a condition; `unless` is the Ruby way to branch on a negative. Avoid `unless` with a compound condition like `unless a && !b`, though: those read better as a plain if.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: favor unless over if for negative conditions; avoid the and/or/not keywords.

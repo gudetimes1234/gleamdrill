@@ -1,0 +1,3 @@
+section: Hashes
+title: merge with a block · stock
+Rewrite combine_stock(warehouse, store) with merge and a block that adds clashing counts: no each, no key? check.

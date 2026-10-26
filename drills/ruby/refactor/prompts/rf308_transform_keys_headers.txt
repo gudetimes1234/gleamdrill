@@ -1,0 +1,3 @@
+section: Hashes
+title: transform_keys · headers
+Rewrite normalize_headers(headers) with transform_keys: no map to pairs, no to_h.

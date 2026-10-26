@@ -1,0 +1,3 @@
+section: Strings
+title: sub · file extension
+Rewrite with_extension(filename, ext) with sub and a pattern anchored at \z: no rindex, no slicing.

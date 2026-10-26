@@ -1,0 +1,2 @@
+each_slice(n) cuts a collection into consecutive chunks of n, with a shorter last chunk if it does not divide evenly. Without a block it returns an enumerator, so add .to_a for the array, or chain .map straight off it.
+Source: Ruby docs, Enumerable#each_slice.

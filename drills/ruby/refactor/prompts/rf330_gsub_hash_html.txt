@@ -1,0 +1,3 @@
+section: Strings
+title: gsub with a hash · HTML
+Rewrite escape_html(text) as one gsub with a character class and a replacement hash: no chain of gsubs.

@@ -1,0 +1,2 @@
+Rescuing RuntimeError and inspecting the message is fragile: reword the message and the rescue silently stops matching. With a class, `rescue OutOfStock` catches exactly your failure and lets every other error through.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: rescue specific exceptions.

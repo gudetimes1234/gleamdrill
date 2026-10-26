@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: times or a range · tickets
+Rewrite make_tickets(count) with times or a range and map: no while, no counter.

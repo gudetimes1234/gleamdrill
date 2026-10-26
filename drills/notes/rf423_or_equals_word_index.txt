@@ -1,0 +1,2 @@
+`h[k] ||= []` returns the bucket, new or old, so `(h[k] ||= []) << x` creates and appends in one line. Hash.new { |h, k| h[k] = [] } does the same for every key, and for this exact job group_by is shorter still.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Assignment & Comparison: use ||= to initialize variables only if they're not already initialized.

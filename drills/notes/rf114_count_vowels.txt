@@ -1,0 +1,2 @@
+select(...).length builds a throwaway array only to count it; count with a block counts as it goes. For characters there is an even shorter tool: String#count takes a character set, so text.downcase.count("aeiou") works too.
+Source: Ruby docs, Enumerable#count and String#count.

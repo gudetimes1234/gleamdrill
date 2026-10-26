@@ -1,0 +1,2 @@
+select and reject with the same condition walk the list twice and repeat the condition, so the two can drift apart. partition evaluates the block once per element and splits in one pass. If you need more than two groups, use group_by.
+Source: Ruby docs, Enumerable#partition and Enumerable#group_by.

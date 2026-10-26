@@ -1,0 +1,2 @@
+`a ||= b` assigns only when a is nil or false. It is the idiom for defaults and for memoising (`@cache ||= compute`). Don't use it for booleans that may really be false: `enabled ||= true` overwrites a false.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Assignment & Comparison: use ||= to initialize variables only if they're not already initialized.

@@ -1,0 +1,2 @@
+The same refactoring again: filter, order, take n, project. sort_by with a negated key sorts high to low, and first(n) stops at the end of a short list by itself.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Loop with Pipeline.

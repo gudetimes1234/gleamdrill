@@ -1,0 +1,2 @@
+max_by and min_by return the element whose block value is largest or smallest, and nil for an empty list. No best-so-far variable and no nil check. max_by(n) gives the top n.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: max_by/min_by over a manual scan.

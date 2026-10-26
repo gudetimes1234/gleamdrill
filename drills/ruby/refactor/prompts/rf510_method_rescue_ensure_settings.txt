@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: method-level rescue and ensure · settings
+Rewrite read_setting with rescue and ensure on the method body: no begin/end.

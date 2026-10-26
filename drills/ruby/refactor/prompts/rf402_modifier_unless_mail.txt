@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Modifier unless · mail opt-out
+Rewrite notify(user, outbox) with a modifier unless: no unless ... end block, no if !.

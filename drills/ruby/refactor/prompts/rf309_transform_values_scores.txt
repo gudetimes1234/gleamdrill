@@ -1,0 +1,3 @@
+section: Hashes
+title: transform_values · scores
+Rewrite best_scores(scores) with transform_values: no keys.each, no lookup by key.

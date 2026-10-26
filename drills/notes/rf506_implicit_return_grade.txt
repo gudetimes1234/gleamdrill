@@ -1,0 +1,2 @@
+In Ruby if and case are expressions: the branch that runs is the value, and the last expression in a method is what it returns. Keep return for leaving early (a guard clause), not for the last line.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Methods: no explicit return.

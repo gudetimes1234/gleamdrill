@@ -1,0 +1,2 @@
+unless works as a block too, for bodies longer than one line. Never give it an else: "unless x ... else ..." is a double negative, so write it as `if x ... else ...` with the positive case first.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: favor unless over if for negative conditions; do not use unless with else.

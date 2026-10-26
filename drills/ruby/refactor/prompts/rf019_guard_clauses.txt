@@ -1,0 +1,3 @@
+section: Refactorings
+title: Guard clauses
+Replace the nested ifs in pay_amount(employee) with guard clauses: no else, no result variable.

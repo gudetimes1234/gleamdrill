@@ -1,0 +1,2 @@
+map then inject(0) { |acc, n| acc + n } is two passes and a hand-written addition; sum with a block does both in one step. words.sum(&:length) is the same thing with the method shorthand.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer sum over inject(:+).

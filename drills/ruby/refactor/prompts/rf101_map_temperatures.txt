@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: map · temperatures
+Rewrite to_fahrenheit(celsius) with map: no while loop, no index, no push.

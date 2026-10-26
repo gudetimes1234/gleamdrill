@@ -1,0 +1,2 @@
+Ruby code almost never uses for. map.with_index(1) maps with a counter that starts at 1. Use each_with_index when you only loop, and each_with_index.map when the index should start at 0.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: never use for, use each.

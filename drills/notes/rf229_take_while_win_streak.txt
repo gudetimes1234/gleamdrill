@@ -1,0 +1,2 @@
+"How many in a row from the start" is take_while(...).size. Don't reach for count with a block here: count(&:win?) would also count the wins after the first loss.
+Source: Ruby docs, Enumerable#take_while.

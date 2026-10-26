@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: any? · admins
+Rewrite any_admin?(users) with any?: no each, no return true / false.

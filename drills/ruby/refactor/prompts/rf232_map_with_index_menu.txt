@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: map.with_index · numbered menu
+Rewrite menu_lines(dishes) with map.with_index(1): no index range, no dishes[i].

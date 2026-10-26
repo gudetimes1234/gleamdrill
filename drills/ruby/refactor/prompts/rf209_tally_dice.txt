@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: tally · dice rolls
+Rewrite rolls_seen(rolls) with tally: no group_by, no counting the groups' sizes.

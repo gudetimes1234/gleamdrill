@@ -1,0 +1,2 @@
+attr_reader :celsius writes the `def celsius; @celsius; end` for you, and one line can list several names. Inside the class, calling the reader (celsius) rather than @celsius means a typo raises NameError instead of quietly giving nil.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Classes & Modules: use the attr family for trivial accessors.

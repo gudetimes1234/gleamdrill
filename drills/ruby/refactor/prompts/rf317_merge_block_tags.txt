@@ -1,0 +1,3 @@
+section: Hashes
+title: merge with a block · tags
+Rewrite merge_tags(old_tags, new_tags) with merge and a block that unions the tag lists: no each, no ternary.

@@ -1,0 +1,2 @@
+Naming the delimiter after the content (SQL, HTML, EMAIL) helps readers and lets editors highlight the body in that language. Gotcha: the closing delimiter's own indentation doesn't count, only the body lines' do.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Strings: heredoc delimiters should be descriptive.

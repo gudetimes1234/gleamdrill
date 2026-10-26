@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Return the condition
+Rewrite adult?(age) and even_and_positive?(n): no if, no return, no true or false.

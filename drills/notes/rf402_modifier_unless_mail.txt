@@ -1,0 +1,2 @@
+A block unless around a single line is the same as a modifier unless, only longer. Keep the block form for bodies of two or more lines, and keep the condition simple: a modifier hides a long condition at the far end of the line.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: favor modifier if/unless when you have a single-line body.

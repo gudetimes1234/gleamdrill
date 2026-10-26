@@ -1,0 +1,3 @@
+section: Hashes
+title: dig · order
+Rewrite shipping_city(order) with dig: no begin and rescue NoMethodError.

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: case/in hashes · API responses
+Rewrite summarize(response) with case/in hash patterns: bind data: and message:, no key?, no response[...].

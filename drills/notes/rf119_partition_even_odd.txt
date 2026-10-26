@@ -1,0 +1,2 @@
+partition returns two arrays: first the elements the block is true for, then the rest. Destructure the result straight away: evens, odds = numbers.partition(&:even?).
+Source: Ruby docs, Enumerable#partition.

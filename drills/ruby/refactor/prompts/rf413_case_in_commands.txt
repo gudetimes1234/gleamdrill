@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: case/in arrays · commands
+Rewrite run_command(cmd) with case/in array patterns that bind the arguments: no cmd[0], no size checks.

@@ -1,0 +1,2 @@
+Arrays compare element by element, so returning [dept, name] from sort_by sorts by department and breaks ties by name, with no branching. To make one key descending, negate it if it is a number: [dept, -salary].
+Source: Ruby docs, Enumerable#sort_by and Array#<=>.

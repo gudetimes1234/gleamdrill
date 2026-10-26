@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: max_by, not a best-so-far
+Rewrite oldest(people) with max_by.

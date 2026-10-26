@@ -1,0 +1,3 @@
+section: Refactorings
+title: Consolidate conditional
+Merge the three return 0 guards in disability_amount(employee) into one.

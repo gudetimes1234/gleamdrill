@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: map, not each and push
+Rewrite with_tax(prices) with map: no accumulator, no each.

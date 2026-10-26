@@ -1,0 +1,2 @@
+Rescuing NoMethodError to cope with a missing level also swallows real bugs, like a typo in a method name; dig only forgives the nils. Struct has dig as well, so the same call works through Struct objects.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: don't use exceptions for flow of control; Ruby docs, Hash#dig.

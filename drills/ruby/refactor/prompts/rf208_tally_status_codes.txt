@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: tally · HTTP status codes
+Rewrite status_summary(log_lines) by mapping each line to its status and calling tally: no while loop, no Hash.new(0).

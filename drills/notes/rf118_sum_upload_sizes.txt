@@ -1,0 +1,2 @@
+Besides being shorter, sum is more accurate with floats: it uses compensated (Kahan-Babuska) summation, so [0.1] * 10 sums to exactly 1.0 while a += loop gives 0.9999999999999999.
+Source: Ruby docs, Array#sum.

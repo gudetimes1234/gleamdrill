@@ -1,0 +1,2 @@
+Introduce Parameter Object. min and max always travel together, so they are one thing: a NumberRange. Data.define (Ruby 3.2) makes a small immutable value class with keyword or positional new. Once the object exists, the range check moves into it (include?), and every caller stops repeating it.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Introduce Parameter Object.

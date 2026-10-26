@@ -1,0 +1,3 @@
+section: Refactorings
+title: Loop to pipeline, again
+Rewrite top_scorers(players, n) as select, sort_by, first(n), map: no hand-written loop.

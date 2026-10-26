@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: partition · valid emails
+Rewrite split_emails(emails) with partition: no while loop, no index, no pushing into two arrays.

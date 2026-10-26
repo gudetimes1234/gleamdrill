@@ -1,0 +1,2 @@
+`def price_tag(...)` forwards positional, keyword and block arguments to `format_price(...)` untouched, so when format_price gains a keyword the wrapper needs no change. Ruby 3.1+ also lets you forward a bare `*` or `**` (`def price_tag(*, **) = format_price(*, **)`).
+Source: Ruby docs, Methods: argument forwarding.

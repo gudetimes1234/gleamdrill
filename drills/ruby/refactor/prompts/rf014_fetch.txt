@@ -1,0 +1,3 @@
+section: Hashes
+title: fetch with a default
+Rewrite timeout(config) with fetch, so a stored nil is kept.

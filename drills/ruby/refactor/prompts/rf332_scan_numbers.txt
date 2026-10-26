@@ -1,0 +1,3 @@
+section: Strings
+title: scan · numbers
+Rewrite numbers_in(text) with scan and map: no each_char loop, no current-number buffer.

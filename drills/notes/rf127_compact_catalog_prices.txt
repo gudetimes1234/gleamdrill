@@ -1,0 +1,2 @@
+Hash lookups give nil for a missing key, so map then compact is the classic way to look up many and keep the hits. catalog.values_at(*skus).compact does the same, and filter_map { } is the one-pass version, but it also drops false.
+Source: Ruby docs, Array#compact, Hash#values_at and Enumerable#filter_map.

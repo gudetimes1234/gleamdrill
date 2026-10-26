@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: implicit return · slugs
+Rewrite slugify(title) as the expression alone: no temp variable, no return.

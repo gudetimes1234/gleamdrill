@@ -1,0 +1,2 @@
+include? and end_with? already return true or false, and && of two booleans is a boolean, so the if only repeats the answer. end_with? takes several suffixes at once, as does start_with?.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: don't use if/else just to return true or false.

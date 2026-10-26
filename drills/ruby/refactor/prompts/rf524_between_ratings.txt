@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: between? · ratings
+Rewrite valid_rating?(stars) with between?: no && of two comparisons.

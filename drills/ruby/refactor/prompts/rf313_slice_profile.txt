@@ -1,0 +1,3 @@
+section: Hashes
+title: slice · user profile
+Rewrite public_profile(user) with slice: no each over the wanted keys, no key? check.

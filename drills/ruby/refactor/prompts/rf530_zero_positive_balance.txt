@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: zero? and positive? · balances
+Rewrite balance_status(balance) with zero? and positive?: no == 0 or > 0.

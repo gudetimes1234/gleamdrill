@@ -1,0 +1,2 @@
+&. calls the method unless the receiver is nil, and then the whole chain is nil. It replaces `x && x.y` and `!= nil` guards. Don't chain it too long: a long &. chain is a sign of reaching through objects.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Misc: use &. rather than explicit nil checks.

@@ -1,0 +1,2 @@
+all? is true when the block is truthy for every element, and it stops at the first failure. The edge case to remember: all? on an empty collection is true (nothing failed), so guard with empty? if "no invoices" should not count as "all paid".
+Source: Ruby docs, Enumerable#all?.

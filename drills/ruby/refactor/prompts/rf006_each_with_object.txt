@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_with_object for a hash
+Rewrite word_lengths(words) with each_with_object: no each, no returning the hash by hand.

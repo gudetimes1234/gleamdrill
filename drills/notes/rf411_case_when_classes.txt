@@ -1,0 +1,2 @@
+Class#=== is is_a?, so `when Integer` checks the type without calling anything. Order matters: put subclasses before their parents (`when Integer` before `when Numeric`), because the first match wins. `when nil` works too, since nil === nil.
+Source: Ruby docs, Module#=== and the case expression (doc/syntax/control_expressions.rdoc).

@@ -1,0 +1,2 @@
+uniq(&:id) is uniq { |user| user.id }: records count as duplicates when their ids match, even if other fields differ. Plain uniq would compare whole records with eql? and hash, which for a Struct means every field.
+Source: Ruby docs, Array#uniq.

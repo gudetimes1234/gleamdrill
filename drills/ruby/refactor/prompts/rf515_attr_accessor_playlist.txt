@@ -1,0 +1,3 @@
+section: Objects
+title: attr_accessor · playlist
+Replace Playlist's hand-written title getter/setter with attr_accessor, and the songs getter with attr_reader.

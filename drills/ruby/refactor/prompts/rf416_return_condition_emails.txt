@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Return the condition · emails
+Rewrite valid_email?(email) to return the condition itself: no if, no true or false.

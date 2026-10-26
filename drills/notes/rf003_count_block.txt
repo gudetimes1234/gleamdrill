@@ -1,0 +1,2 @@
+count with a block counts the elements the block is true for. No counter, and no select(...).size building an array only to measure it.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer count with a block over a counter or select.size.

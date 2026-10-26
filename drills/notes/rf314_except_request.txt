@@ -1,0 +1,2 @@
+except is the opposite of slice: a new hash without the named keys, the receiver untouched, missing keys ignored. It is core Ruby since 3.0; before that it came from Rails.
+Source: Ruby docs, Hash#except.

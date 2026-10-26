@@ -1,0 +1,2 @@
+sort_by takes "what to sort on" instead of "how to compare two things", and it computes each key once rather than twice per comparison. Like sort, it returns a new array; sort_by! sorts in place.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections; Ruby docs, Enumerable#sort_by.

@@ -1,0 +1,2 @@
+divmod already returns the pair. Gotcha: Ruby's integer / and % round toward negative infinity, so -150.divmod(100) is [-2, 50], not [-1, -50]. Use remainder or abs first if you want truncation.
+Source: Ruby docs, Integer#divmod and Numeric#remainder.

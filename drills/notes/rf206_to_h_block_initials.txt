@@ -1,0 +1,2 @@
+Hash[pairs] is the pre-2.1 way to turn pairs into a hash. to_h with a block skips the intermediate array of pairs entirely, and reads as "build a hash from this list". If two people share a full name, the later pair wins, as with any hash assignment.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer to_h with a block over map.to_h.

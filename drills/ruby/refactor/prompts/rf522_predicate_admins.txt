@@ -1,0 +1,3 @@
+section: Objects
+title: predicate methods · admins
+Rename User#is_admin to admin? and use it in moderators(users).

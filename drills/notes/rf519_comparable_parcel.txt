@@ -1,0 +1,2 @@
+When one field decides the order, <=> can just delegate: `weight <=> other.weight`. Return nil for things that can't be compared and Comparable raises ArgumentError instead of guessing.
+Source: Ruby docs, Comparable.

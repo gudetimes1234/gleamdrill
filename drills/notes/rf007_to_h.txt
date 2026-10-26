@@ -1,0 +1,2 @@
+to_h with a block (Ruby 2.6) maps each element to a [key, value] pair and builds the hash in one call. It reads as "a hash of n to n squared".
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: to_h with a block over map(...).to_h or an accumulator.

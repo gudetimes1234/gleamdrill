@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: count · failed logins
+Rewrite failed_logins(events, user) with count and a block: no while loop, no counter.

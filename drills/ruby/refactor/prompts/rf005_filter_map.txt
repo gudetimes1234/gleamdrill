@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: filter_map, not select then map
+Rewrite active_emails(users) as one filter_map.

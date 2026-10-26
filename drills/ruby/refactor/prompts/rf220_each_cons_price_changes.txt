@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_cons · daily price changes
+Rewrite daily_changes(prices) with each_cons(2): no index range, no prices[i - 1].

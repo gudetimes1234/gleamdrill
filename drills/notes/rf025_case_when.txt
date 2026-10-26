@@ -1,0 +1,2 @@
+When every branch compares the same value, case/when says so once. A when takes a list, and it matches with ===, so ranges, classes and regexps work too. `then` keeps one-line branches on one line.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: prefer case over if-elsif when comparing the same value.

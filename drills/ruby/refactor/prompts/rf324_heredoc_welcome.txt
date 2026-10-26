@@ -1,0 +1,3 @@
+section: Strings
+title: <<~ heredoc · welcome email
+Rewrite welcome_email(name, plan) as a <<~ squiggly heredoc: no array of lines, no join, no \n.

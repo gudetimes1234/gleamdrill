@@ -1,0 +1,2 @@
+group_by returns { key => [elements with that key] }, with keys in first-seen order and elements in their original order inside each group. With a method name, group_by(&:status) is all you need.
+Source: Ruby docs, Enumerable#group_by.

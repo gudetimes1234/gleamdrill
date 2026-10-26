@@ -1,0 +1,2 @@
+Without a block merge lets the argument's value win every clash; the block is where you choose instead (here, the higher score). Since Ruby 2.6 merge takes several hashes at once, and the block resolves every clash among them.
+Source: Ruby docs, Hash#merge.

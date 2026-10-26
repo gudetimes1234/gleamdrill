@@ -1,0 +1,2 @@
+A def body is already a begin block, so rescue can sit straight under it at the def's indentation. Here Integer(text, exception: false) would skip the exception entirely, worth knowing when the only failure is "not a number".
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: implicit begin.

@@ -1,0 +1,3 @@
+section: Refactorings
+title: Introduce parameter object
+Replace min and max with a NumberRange (Data.define(:min, :max)), so readings_outside and readings_inside take (readings, range).

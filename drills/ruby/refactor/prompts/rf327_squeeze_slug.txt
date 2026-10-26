@@ -1,0 +1,3 @@
+section: Strings
+title: tr and squeeze · slugs
+Rewrite slug(title) with tr for the spaces and squeeze for the dashes: no gsub, no while loop.

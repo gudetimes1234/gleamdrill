@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: method-level rescue · parsing ages
+Rewrite parse_age(text) with a rescue on the method body itself: no begin/end.

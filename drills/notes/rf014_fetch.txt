@@ -1,0 +1,2 @@
+fetch(key, default) returns the default only when the key is missing, so a stored nil or false survives. `h[key] || default` would throw those away. fetch(key) with no default raises KeyError, which is what you want when the key must be there.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: use Hash#fetch with a default; prefer key? over has_key?.

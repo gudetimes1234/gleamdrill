@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: group_by · files by extension
+Rewrite by_extension(filenames) with group_by and File.extname: no while loop, no key? check.

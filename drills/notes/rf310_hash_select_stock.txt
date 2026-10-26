@@ -1,0 +1,2 @@
+Hash#select yields key and value and returns a Hash, not an array of pairs, so the result needs no rebuilding. Name an unused block parameter with a leading underscore (_item) to say it's ignored on purpose.
+Source: Ruby docs, Hash#select; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Syntax: underscore unused block parameters.

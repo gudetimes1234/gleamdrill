@@ -1,0 +1,3 @@
+section: Hashes
+title: hash reject · contacts
+Rewrite with_email(contacts) with reject: no dup, no each, no delete.

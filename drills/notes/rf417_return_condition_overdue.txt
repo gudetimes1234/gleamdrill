@@ -1,0 +1,2 @@
+`cond ? true : false` is the one-line version of the same mistake, and `x == false` is `!x`. Watch out: `!x` is also true for nil, while `x == false` is not, so the two differ when the key can be missing.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: no ternary that returns a boolean literal; Assignment & Comparison: don't compare with == to true/false.

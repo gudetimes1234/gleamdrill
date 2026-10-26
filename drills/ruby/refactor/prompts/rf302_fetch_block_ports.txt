@@ -1,0 +1,3 @@
+section: Hashes
+title: fetch with a block · ports
+Rewrite port_for(ports, service) with fetch and a block that computes the default: no nil? check, no if.

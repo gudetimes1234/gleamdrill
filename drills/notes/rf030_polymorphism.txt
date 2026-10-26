@@ -1,0 +1,2 @@
+Replace Conditional with Polymorphism: Fowler's birds. Each case branch becomes a subclass that overrides plumage, so adding a bird means adding a class, not editing a case. One lookup (a hash of type to class, or a factory) still picks the class, but that is the only place left that knows the types.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Conditional with Polymorphism. thoughtbot's Ruby Science has a longer walk-through.

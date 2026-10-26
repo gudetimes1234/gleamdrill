@@ -23,6 +23,7 @@ import gleam/result
 import gleam/string
 import gleamdrill/content/problem.{type Category, type ProblemRef}
 import gleamdrill/content/problems
+import gleamdrill/content/problems/catalog
 import wire
 
 pub type Track =
@@ -92,7 +93,11 @@ pub fn tag(track: Track) -> String {
     Ok(problem.Elixir) -> "ex"
     Ok(problem.Go) -> "go"
     Ok(problem.Haskell) -> "hs"
-    Ok(problem.Ruby) -> "rb"
+    Ok(problem.Ruby) ->
+      case string.starts_with(track, catalog.name) {
+        True -> "rb"
+        False -> "rf"
+      }
     Ok(problem.Board) -> "bd"
     Ok(problem.Concept) | Error(Nil) ->
       case exists(track) {
@@ -140,7 +145,13 @@ fn label_for(category: Category) -> String {
     // A concept or board category's name already says what it is ("System
     // Design", "System Design Board"); a language label would only repeat it.
     Ok(problem.Concept) | Ok(problem.Board) | Error(Nil) -> category.name
-    Ok(found) -> problem.language_label(found)
+    // Only the NeetCode decks are told apart by language alone; any other
+    // deck in a language ("Ruby Refactoring") is called by its own name.
+    Ok(found) ->
+      case string.starts_with(category.name, catalog.name) {
+        True -> problem.language_label(found)
+        False -> category.name
+      }
   }
 }
 

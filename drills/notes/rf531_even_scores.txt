@@ -1,0 +1,2 @@
+even? and odd? replace `% 2 == 0` and `% 2 == 1`, and with &:even? the block disappears too. Note `n % 2 == 1` happens to work for negatives in Ruby (-3 % 2 is 1), unlike in C or JavaScript, but odd? never makes you think about it.
+Source: Ruby docs, Integer#even? and Integer#odd?.

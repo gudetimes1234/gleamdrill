@@ -1,0 +1,2 @@
+For a value that is one of two short things, `cond ? a : b` is the whole method. Assigning the same variable in both branches of an if is the tell. Put spaces around ? and :, and note that `count.positive? ? ...` needs both question marks.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Flow of Control: prefer the ternary operator over if/then/else/end for trivial conditionals.

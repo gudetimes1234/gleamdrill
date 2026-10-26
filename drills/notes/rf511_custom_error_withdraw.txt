@@ -1,0 +1,2 @@
+A bare `raise "..."` raises RuntimeError, so a caller can only tell your failure apart by matching the message. A named subclass lets callers write `rescue InsufficientFunds`. Inherit from StandardError, not Exception, so a plain `rescue` still catches it.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: custom exception classes inherit from StandardError.

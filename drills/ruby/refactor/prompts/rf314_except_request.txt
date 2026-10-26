@@ -1,0 +1,3 @@
+section: Hashes
+title: except · request log
+Rewrite redact(request) with except: no dup, no delete.

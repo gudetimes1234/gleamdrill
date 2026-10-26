@@ -1,0 +1,3 @@
+section: Strings
+title: gsub with a block · hashtags
+Rewrite shout_tags(text) with gsub and a block that upcases each #tag: no split, no join, no if.

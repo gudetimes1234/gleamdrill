@@ -1,0 +1,3 @@
+section: Refactorings
+title: Decompose conditional
+Pull the summer test and both charges in charge(month, quantity, plan) into methods of their own.

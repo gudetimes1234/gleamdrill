@@ -1,0 +1,3 @@
+section: Hashes
+title: dig · config
+Rewrite db_host(config) with dig: no && guard, no if.

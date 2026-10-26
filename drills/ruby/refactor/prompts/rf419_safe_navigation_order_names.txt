@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Safe navigation · order names
+Rewrite shout_name(order) as one &. chain: no nil? guards, no return.

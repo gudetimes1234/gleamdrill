@@ -1,0 +1,2 @@
+sub replaces the first match only and gsub replaces every match; pick the one that says how many you mean. Anchor with \z, not $, since $ matches at the end of any line.
+Source: Ruby docs, String#sub; the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Regular Expressions: use \A and \z.

@@ -1,0 +1,2 @@
+Interpolation calls to_s for you and builds one string instead of a new one for every +. It also reads like the output it makes. Interpolation needs double quotes.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Strings: prefer interpolation over concatenation; don't call to_s inside #{}.

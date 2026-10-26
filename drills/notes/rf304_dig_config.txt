@@ -1,0 +1,2 @@
+dig walks the keys one level at a time and returns nil at the first missing one, so the guard and the read are the same call. Gotcha: if a level holds something that can't be dug into, like a String, dig raises TypeError instead of returning nil.
+Source: Ruby docs, Hash#dig.

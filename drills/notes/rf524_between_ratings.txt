@@ -1,0 +1,2 @@
+between?(min, max) is inclusive on both ends and comes from Comparable, so it works for numbers, strings, Times and your own Comparable classes. (1..5).cover?(stars) says the same thing with a Range.
+Source: Ruby docs, Comparable#between?.

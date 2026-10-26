@@ -1,0 +1,2 @@
+Remove Flag Argument. `delivery_date(order, true)` doesn't say what true means. Two methods named for the two cases do, and each caller already knows which one it wants. `%w[MA CT].include?` replaces a chain of ==.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Remove Flag Argument.

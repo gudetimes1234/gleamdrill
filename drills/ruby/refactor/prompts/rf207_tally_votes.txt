@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: tally · election votes
+Rewrite vote_counts(ballots) with tally: no each, no counting by hand.

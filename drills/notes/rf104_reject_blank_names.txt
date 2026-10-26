@@ -1,0 +1,2 @@
+reject is select with the condition flipped: it keeps what the block is false for. When the natural question is "which ones should go?", reject reads better than select with a ! or an unless in the block.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer select/reject over each with a conditional push.

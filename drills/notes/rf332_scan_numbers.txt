@@ -1,0 +1,2 @@
+scan returns every match of the pattern as an array of strings, so "find all the numbers" is scan(/\d+/) followed by a map. No buffer, no "flush the last one" line to forget.
+Source: Ruby docs, String#scan.

@@ -1,0 +1,2 @@
+each_cons(2).all? reads as "every neighbouring pair is in order", and all? stops at the first pair that fails instead of scanning to the end like the flag loop. With zero or one element there are no pairs, so all? is true.
+Source: Ruby docs, Enumerable#each_cons and Enumerable#all?.

@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: method-level ensure · locks
+Rewrite with_lock(state) with ensure on the method body: no begin/end.

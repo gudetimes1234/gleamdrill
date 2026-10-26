@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sum · upload sizes
+Rewrite total_size(uploads) with sum: no while loop, no running total.

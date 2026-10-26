@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: find · user by email
+Rewrite user_with_email(users, email) with find: no each, no early return.

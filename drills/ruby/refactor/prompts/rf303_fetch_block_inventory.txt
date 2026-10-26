@@ -1,0 +1,3 @@
+section: Hashes
+title: fetch with a block · inventory
+Rewrite stock_of(inventory, item) so fetch's block raises the ArgumentError: no include? check, no unless.

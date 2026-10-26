@@ -1,0 +1,3 @@
+section: Objects
+title: predicate methods · basket
+Rename Basket#get_total to total and is_empty to empty?, and use them in checkout_message.

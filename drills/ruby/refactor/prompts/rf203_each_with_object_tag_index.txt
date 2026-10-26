@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_with_object · posts by tag
+Rewrite tag_index(posts) with each_with_object, seeding a hash that makes its own empty arrays: no if, no nil? check.

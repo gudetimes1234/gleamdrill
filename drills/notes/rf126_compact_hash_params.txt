@@ -1,0 +1,2 @@
+Hashes have compact too: it drops every pair whose value is nil and keeps false, so an admin: false flag survives. compact! does it in place but returns nil when nothing was removed, so don't chain off it.
+Source: Ruby docs, Hash#compact and Hash#compact!.

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: downto · countdown
+Rewrite countdown(from) with downto: no while, no -= 1.

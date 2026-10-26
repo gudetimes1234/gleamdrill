@@ -1,0 +1,2 @@
+tr maps the first set onto the second position by position, and ranges like A-Z count as their letters, so a whole cipher fits in one call. Characters not in the first set pass through untouched.
+Source: Ruby docs, String#tr.

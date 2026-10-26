@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: compact · missing ages
+Rewrite known_ages(ages) with compact: no select, no nil check.

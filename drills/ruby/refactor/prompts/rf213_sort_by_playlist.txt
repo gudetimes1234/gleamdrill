@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sort_by · playlist by length
+Rewrite by_duration(songs) with sort_by: no sort block, no <=>.

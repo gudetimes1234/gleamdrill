@@ -1,0 +1,2 @@
+When the loop runs until something becomes true, put that condition in the header: `until done` instead of `while true` plus an exit inside. Prefer `until x` over `while !x`, but switch back to while when the condition is itself a negation.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Loops: favor until over while for negative conditions.

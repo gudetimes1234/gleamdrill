@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace magic literal
+Name 9.81 once, as a constant, in potential_energy and fall_speed.

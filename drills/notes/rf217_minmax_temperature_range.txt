@@ -1,0 +1,2 @@
+minmax returns [smallest, largest] in a single pass, and [nil, nil] when empty, so you can destructure it: low, high = temps.minmax. There is also minmax_by when the comparison needs a key.
+Source: Ruby docs, Enumerable#minmax and Enumerable#minmax_by.

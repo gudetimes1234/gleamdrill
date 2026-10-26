@@ -1,0 +1,2 @@
+When each element turns into several results, map gives you an array of arrays and flat_map gives you one flat array. If the block returns a non-array, flat_map just keeps it as one element, so mixing single values and lists is fine.
+Source: Ruby docs, Enumerable#flat_map.

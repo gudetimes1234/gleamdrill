@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Safe navigation · avatars
+Rewrite avatar_url(user) with &.: no && chain repeating user.profile.

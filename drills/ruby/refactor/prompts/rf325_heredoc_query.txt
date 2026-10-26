@@ -1,0 +1,3 @@
+section: Strings
+title: <<~ heredoc · report query
+Rewrite report_query(table, days) as a <<~SQL heredoc: no + between literals, no \n.

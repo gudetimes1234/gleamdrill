@@ -1,0 +1,2 @@
+compact returns a copy without the nils, and nothing else: 0, "" and false all stay. That makes it different from select(&:itself), which would also drop false.
+Source: Ruby docs, Array#compact.

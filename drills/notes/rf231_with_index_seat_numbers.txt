@@ -1,0 +1,2 @@
+each_with_index always counts from 0, but each.with_index(1) takes a starting offset. Without a block it is an enumerator of [element, index] pairs, which to_h turns straight into { element => index }.
+Source: Ruby docs, Enumerator#with_index and Enumerable#each_with_index.

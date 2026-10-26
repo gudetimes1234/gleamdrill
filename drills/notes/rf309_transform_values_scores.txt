@@ -1,0 +1,2 @@
+The block of transform_values sees only the value, which here is all you need, so it also takes &:max. When the new value depends on the key as well, reach for to_h with a block or each_with_object instead.
+Source: Ruby docs, Hash#transform_values.

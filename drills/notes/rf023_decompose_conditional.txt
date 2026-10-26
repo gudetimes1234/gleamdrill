@@ -1,0 +1,2 @@
+Decompose Conditional. Give the condition and each branch a method named for what it means: summer?, summer_charge, regular_charge. Then charge reads as one sentence. A Range with cover? says "between 6 and 8" without two comparisons.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Decompose Conditional.

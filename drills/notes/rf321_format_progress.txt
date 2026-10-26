@@ -1,0 +1,2 @@
+%02d pads an integer with zeros to two digits and leaves longer numbers alone. A literal percent sign inside a format string is written %%, the one escape people forget.
+Source: Ruby docs, Format Specifications.

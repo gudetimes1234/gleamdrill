@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: divmod · clock
+Rewrite clock(minutes) with divmod: no separate / 60 and % 60.

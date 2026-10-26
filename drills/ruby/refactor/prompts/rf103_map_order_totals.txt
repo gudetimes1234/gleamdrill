@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: map · order totals
+Rewrite order_totals(orders) with map: no each_with_index, no writing into slots by index.

@@ -1,0 +1,3 @@
+section: Hashes
+title: hash select · stock
+Rewrite low_stock(inventory, threshold) with select over key and value: no each, no if.

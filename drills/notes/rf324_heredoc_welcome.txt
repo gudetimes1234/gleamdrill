@@ -1,0 +1,2 @@
+A <<~ heredoc strips the indentation of its least indented line, so the text can sit indented inside the method and still come out flush left. It interpolates like a double-quoted string and ends with a newline after the last line.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Strings: use squiggly heredocs for nicely indented multi-line strings.

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: case/in guards · free shipping
+Rewrite shipping_for(order) with case/in hash patterns and if guards: no order[...], no elsif.

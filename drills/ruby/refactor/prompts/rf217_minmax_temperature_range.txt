@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: minmax · temperature range
+Rewrite temperature_range(temps) with minmax: no each, no if.

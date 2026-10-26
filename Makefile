@@ -70,6 +70,7 @@ content:
 	  src/gleamdrill/content/problems/generated/embedded_go.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_haskell.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_ruby.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_ruby_refactor.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_tour.gleam \
 	  src/gleamdrill/content/problems/generated/approaches.gleam
 
@@ -84,7 +85,7 @@ verify: content fsrs-test wire-test app-test server-test tour-check
 	cd drills/elixir && elixir verify_all.exs
 	cd drills/go && gofmt -l solutions harnesses prelude.go && ./verify_all.sh
 	cd drills/haskell && ./verify_all.sh
-	cd drills/ruby && ./verify_all.sh
+	cd drills/ruby && ./verify_all.sh && refactor/verify_all.sh
 
 # The language tour's 63 lessons are not graded, so the only thing that can
 # go wrong with one is that it no longer compiles against the stdlib the

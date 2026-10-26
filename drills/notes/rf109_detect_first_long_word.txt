@@ -1,0 +1,2 @@
+detect is the older name for find; they are the same method. On a hash, find yields [key, value] pairs and returns a pair, so destructure with |key, value| and expect an array back, not a value.
+Source: Ruby docs, Enumerable#detect (alias of find).

@@ -1,0 +1,2 @@
+An array pattern checks the length and the literal parts and binds the rest to names, all at once: `in [:move, dx, dy]` only matches three elements starting with :move. Use `[:log, *rest]` to accept any length.
+Source: Ruby docs, Pattern matching (doc/syntax/pattern_matching.rdoc), Array patterns.

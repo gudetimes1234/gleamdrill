@@ -1,0 +1,2 @@
+include? (alias member? on Enumerable) compares with == and stops at the first match, which the flag loop never did. On a big list checked often, turn it into a Set once; Set#include? is a hash lookup instead of a scan.
+Source: Ruby docs, Array#include? and Set#include?.

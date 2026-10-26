@@ -1,0 +1,3 @@
+section: Hashes
+title: Hash.new with a block · sales
+Rewrite sales_table(sales) with a Hash.new block whose inner hashes count from 0: no key? checks, no unless.

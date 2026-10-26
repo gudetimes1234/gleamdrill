@@ -1,0 +1,2 @@
+A comparison already is true or false, so `if c then true else false` is just c. Ruby returns the last expression, so return is for leaving early only. Predicate methods end in ?.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Methods: omit return where not required; Flow of Control: no if that only returns true/false.

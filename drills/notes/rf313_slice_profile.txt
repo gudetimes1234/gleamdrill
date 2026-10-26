@@ -1,0 +1,2 @@
+slice(*keys) returns a new hash with only those keys, in the order you list them, and silently skips any that are missing. It is an allow list, which is the safe way to pick fields that leave your app.
+Source: Ruby docs, Hash#slice.

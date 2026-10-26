@@ -1,0 +1,2 @@
+String#delete takes tr-style character sets: "a-z" is a range and a leading ^ negates, so delete("^0-9") keeps only the digits. Several arguments intersect, which is rarely what you want.
+Source: Ruby docs, String#delete and Character Selectors.

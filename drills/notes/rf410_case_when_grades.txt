@@ -1,0 +1,2 @@
+when compares with ===, and Range#=== asks "is it inside?", so `when 80...90` replaces two comparisons. Three dots exclude the end (80...90 stops before 90); an endless range like `90..` means "90 and up".
+Source: Ruby docs, Range#=== and the case expression (doc/syntax/control_expressions.rdoc).

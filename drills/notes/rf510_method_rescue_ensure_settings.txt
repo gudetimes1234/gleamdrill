@@ -1,0 +1,2 @@
+The order is fixed: body, rescue, else, ensure. They all hang off the def, so a method that only wraps one risky call needs no extra nesting. If the risky part is only a line or two of a longer method, pull it into its own method first.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Exceptions: implicit begin.

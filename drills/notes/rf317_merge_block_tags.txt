@@ -1,0 +1,2 @@
+Array#| is union without duplicates, a neat partner for merge's block when the values are lists. merge returns a new hash; merge! (alias update) writes into the receiver, which is what you want only when you own it.
+Source: Ruby docs, Hash#merge and Array#|.

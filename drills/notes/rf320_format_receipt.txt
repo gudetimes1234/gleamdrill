@@ -1,0 +1,2 @@
+In a format string %8.2f means "8 wide, 2 decimals, right aligned" and %-12s means "12 wide, left aligned", so padding and rounding are one spec each. format and sprintf are the same method; prefer them over String#% for readability.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Strings: prefer format over String#%; Ruby docs, Format Specifications.

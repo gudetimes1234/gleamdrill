@@ -1,0 +1,3 @@
+section: Objects
+title: attr_reader · thermometer
+Replace the hand-written getters in Thermometer with attr_reader.

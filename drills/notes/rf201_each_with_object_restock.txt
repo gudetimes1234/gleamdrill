@@ -1,0 +1,2 @@
+Seed each_with_object with Hash.new(0) and the "is this key new?" branch disappears: a missing key reads as 0, so += just works. The default is only returned on read, it is not stored until you assign.
+Source: Ruby docs, Enumerable#each_with_object and Hash.new.

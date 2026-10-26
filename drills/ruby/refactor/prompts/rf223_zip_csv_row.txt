@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: zip · CSV header and row
+Rewrite row_to_hash(headers, values) with zip and to_h: no each_with_index, no values[i].

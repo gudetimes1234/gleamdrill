@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: tally, not Hash.new(0)
+Rewrite letter_counts(word) with tally.

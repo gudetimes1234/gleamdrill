@@ -1,0 +1,3 @@
+section: Hashes
+title: hash filter_map · loans
+Rewrite late_notices(loans, today) with filter_map over name and due day: no each, no push.

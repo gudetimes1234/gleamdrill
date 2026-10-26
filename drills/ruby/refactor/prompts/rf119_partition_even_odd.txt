@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: partition · even and odd
+Rewrite split_even_odd(numbers) with partition: no each, no two arrays filled by hand.

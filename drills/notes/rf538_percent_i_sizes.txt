@@ -1,0 +1,2 @@
+%i[small medium large] is an array of symbols, the symbol twin of %w. Since symbols and strings never compare equal, index("small") is nil: convert with to_sym first if the input comes in as text.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Percent Literals: %i for arrays of symbols.

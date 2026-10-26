@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: case/when lists · file types
+Rewrite file_kind(filename) as case/when with comma lists: no include?, no ==, no elsif.

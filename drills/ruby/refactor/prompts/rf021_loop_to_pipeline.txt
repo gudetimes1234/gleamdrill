@@ -1,0 +1,3 @@
+section: Refactorings
+title: Loop to pipeline
+Replace the loop in india_offices(input) with a pipeline (drop, reject, map, select): no each, next or push.

@@ -1,0 +1,2 @@
+flat_map is map plus a one-level flatten, done in one pass. The gotcha with map(...).flatten: flatten with no argument flattens every level, so a tag that is itself an array would be torn apart. flatten(1) matches flat_map exactly.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: prefer flat_map over map + flatten.

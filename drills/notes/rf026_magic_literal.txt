@@ -1,0 +1,2 @@
+Replace Magic Literal. A bare 9.81 means nothing to the next reader, and two copies can drift apart. A SCREAMING_SNAKE_CASE constant names it once. Ruby constants are just capitalised names, and reassigning one gets a warning.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Magic Literal.

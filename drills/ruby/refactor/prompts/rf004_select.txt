@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: select, not a conditional push
+Rewrite long_words(words, min) with select.

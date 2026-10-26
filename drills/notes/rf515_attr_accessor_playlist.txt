@@ -1,0 +1,2 @@
+attr_accessor gives a reader and a writer (title and title=); attr_writer gives only the writer. Expose only what callers need: songs stays read-only here, though the array it returns can still be pushed to.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Classes & Modules: attr family; Ruby docs, Module#attr_accessor.

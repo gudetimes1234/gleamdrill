@@ -1,0 +1,2 @@
+The block given to fetch runs only when the key is missing, and it is handed the key, so a computed or expensive default costs nothing on a hit. Prefer the block over the default argument whenever the default does real work or has side effects.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Collections: Hash#fetch defaults, use a block for expensive defaults.

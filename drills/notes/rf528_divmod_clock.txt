@@ -1,0 +1,2 @@
+divmod(n) returns [quotient, remainder] in one call, and multiple assignment unpacks it: `hours, mins = minutes.divmod(60)`. The divisor appears once, so it can't drift between the two lines.
+Source: Ruby docs, Integer#divmod.

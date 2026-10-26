@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: %w[] literal · stop words
+Rewrite the stop word list in without_stop_words(text) as a %w[] literal.

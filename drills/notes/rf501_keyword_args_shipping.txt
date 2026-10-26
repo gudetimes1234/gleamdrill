@@ -1,0 +1,2 @@
+Keyword arguments put the options in the method's signature, give each its default right there, and raise ArgumentError on a misspelt key. An options hash silently ignores `expres: true`.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Methods: keyword arguments vs option hashes.

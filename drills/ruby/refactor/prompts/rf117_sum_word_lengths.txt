@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sum · letters in words
+Rewrite total_letters(words) with sum: no map, no inject.

@@ -1,0 +1,2 @@
+Finding the distinct keys and then selecting for each one walks the list once per key. group_by does it in one pass. If you then want counts instead of members, that is tally; if you want just two groups by a true/false test, that is partition.
+Source: Ruby docs, Enumerable#group_by and Enumerable#partition.

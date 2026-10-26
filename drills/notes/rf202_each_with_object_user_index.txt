@@ -1,0 +1,2 @@
+each_with_object passes the element first and the memo second, the reverse of inject's |memo, element|. Mixing them up is the classic bug. Since the memo is the same object every time, the block's return value is ignored.
+Source: Ruby docs, Enumerable#each_with_object.

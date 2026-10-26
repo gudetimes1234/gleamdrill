@@ -1,0 +1,3 @@
+section: Strings
+title: tr · rot13
+Rewrite rot13(text) with one tr call mapping ranges to ranges: no chars, no ord and chr arithmetic.

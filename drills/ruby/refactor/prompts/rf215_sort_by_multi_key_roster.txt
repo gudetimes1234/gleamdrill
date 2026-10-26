@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: sort_by multi-key · staff roster
+Rewrite roster(employees) with sort_by returning an array key, [department, name]: no comparison block, no <=>.

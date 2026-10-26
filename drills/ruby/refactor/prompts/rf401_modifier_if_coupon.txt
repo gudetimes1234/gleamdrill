@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Modifier if · coupons
+Rewrite apply_coupon(total, coupon) with a modifier if: the one-line body goes first, no if ... end block.

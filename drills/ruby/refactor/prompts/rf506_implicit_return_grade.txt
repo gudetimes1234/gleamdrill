@@ -1,0 +1,3 @@
+section: Blocks & Methods
+title: implicit return · grades
+Rewrite letter_grade(score) without return: the if (or case) is itself the value.

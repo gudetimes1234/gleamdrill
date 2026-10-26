@@ -1,0 +1,2 @@
+inspect is the developer's view: p, irb, error messages and Array#inspect all use it, so one override makes a whole hand of cards readable. to_s is the user's view (puts, interpolation). Keep the #<Class ...> shape so it's clear it's an object, not a string.
+Source: Ruby docs, Object#inspect.

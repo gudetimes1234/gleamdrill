@@ -1,0 +1,2 @@
+url[0, 8] == "https://" makes you count characters, and a wrong count fails silently; start_with? states the intent and can't be off by one. It also takes several prefixes, or a Regexp, in one call.
+Source: Ruby docs, String#start_with?.

@@ -1,0 +1,3 @@
+section: Objects
+title: Data.define · points
+Replace the { x:, y: } hash in make_point and distance with a Data.define (or Struct) value with readers.

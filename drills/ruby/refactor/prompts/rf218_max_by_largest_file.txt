@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: max_by · largest file
+Rewrite largest_file(sizes) with max_by over the hash, returning just the name (nil when empty): no each, no best-so-far.

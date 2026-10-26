@@ -1,0 +1,3 @@
+section: Arrays & Enumerable
+title: each_with_object · restock totals
+Rewrite restock_totals(orders) with each_with_object and a Hash.new(0) memo: no each, no if.

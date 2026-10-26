@@ -1,0 +1,2 @@
+digits gives the digits as integers without a round trip through a String, but in reverse order (ones first), so reverse it when you want them the way they're written. It also takes a base: 10.digits(2) is [0, 1, 0, 1].
+Source: Ruby docs, Integer#digits.

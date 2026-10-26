@@ -1,0 +1,2 @@
+uniq with a block compares the block's result but keeps the original elements, the first of each. So uniq(&:downcase) drops case-only duplicates while keeping the address as it was first typed. It is also fast: uniq uses a hash, include? scans the list every time.
+Source: Ruby docs, Array#uniq.

@@ -1,0 +1,3 @@
+section: Numbers & Misc
+title: clamp · volume
+Rewrite volume_level(level) with clamp: no if/elsif.

@@ -1,0 +1,2 @@
+each_cons(2) yields overlapping neighbours: [a, b], [b, c], [c, d]. Name the two block params and the off-by-one index maths is gone. Fewer than two elements gives no pairs at all, so the result is just [].
+Source: Ruby docs, Enumerable#each_cons.

@@ -1,0 +1,3 @@
+section: Refactorings
+title: Extract method
+Split owing_report(name, orders) into methods for the banner, the total and the details.

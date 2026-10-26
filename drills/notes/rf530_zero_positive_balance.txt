@@ -1,0 +1,2 @@
+zero?, positive? and negative? read as the question you're asking and work on every Numeric (0.0.zero? is true). Ruby has no nonzero? that returns a boolean: nonzero? returns self or nil.
+Source: the Ruby Style Guide (rubystyle.guide, CC BY 3.0), Numbers: predicate methods over comparisons with 0; Ruby docs, Numeric#zero?.

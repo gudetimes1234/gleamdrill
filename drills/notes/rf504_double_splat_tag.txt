@@ -1,0 +1,2 @@
+**attrs collects any keyword arguments the caller passes into a fresh hash, empty when there are none. In Ruby 3 a hash passed as a positional argument is no longer turned into keywords, so `tag("p", { id: 1 })` raises: the caller must write `tag("p", id: 1)` or `tag("p", **h)`.
+Source: Ruby docs, Methods: keyword arguments (double splat), and the Ruby 3.0 keyword argument separation notes.
