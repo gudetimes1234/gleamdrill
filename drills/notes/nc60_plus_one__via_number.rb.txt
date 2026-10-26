@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Big Int
+@big-o O(n²) time · O(n) space
+@order 1
+Fold the digits into a number with `inject`, add one, and take it apart again with `Integer#digits`, which hands them back least significant first, hence the `reverse`. Safe because Ruby integers are arbitrary precision; in a language without them this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.

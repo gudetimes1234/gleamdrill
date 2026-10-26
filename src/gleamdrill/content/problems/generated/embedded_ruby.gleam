@@ -67,6 +67,48 @@ def need(*names)
   end
 end
 
+# LeetCode's node classes, given to every drill as Go's prelude gives them:
+# a solution uses them and never defines them.
+class ListNode
+  attr_accessor :val, :next
+
+  def initialize(val = 0, next_node = nil)
+    @val = val
+    @next = next_node
+  end
+end
+
+class TreeNode
+  attr_accessor :val, :left, :right
+
+  def initialize(val = 0, left = nil, right = nil)
+    @val = val
+    @left = left
+    @right = right
+  end
+end
+
+# Clone Graph's node: values are 1-based.
+class Node
+  attr_accessor :val, :neighbors
+
+  def initialize(val = 0, neighbors = [])
+    @val = val
+    @neighbors = neighbors
+  end
+end
+
+# Copy List with Random Pointer's node.
+class RandomNode
+  attr_accessor :val, :next, :random
+
+  def initialize(val = 0, next_node = nil, random = nil)
+    @val = val
+    @next = next_node
+    @random = random
+  end
+end
+
 dir = ARGV[0] || \".\"
 begin
   $stdout = Drill::OUTPUT
@@ -440,9 +482,9 @@ pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Nifty Python · Reverse",
+        "Nifty Ruby · Reverse",
         "O(n) time · O(n) space",
-        "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.",
+        "Strip with `gsub(/[^[:alnum:]]/, \"\")`, then compare against `reverse`. Allocates a second string instead of converging two pointers, but it is one line of intent.",
         "def is_palindrome(s)
   cleaned = s.downcase.gsub(/[^[:alnum:]]/, \"\")
   cleaned == cleaned.reverse
@@ -539,6 +581,968 @@ tc \"two_sum([1, 2, 3], 100)\", [], two_sum([1, 2, 3], 100)",
   )
 }
 
+pub fn nc100_edit_distance() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.",
+        "def min_distance(word1, word2)
+  memo = {}
+
+  # The same three edits as an explicit choice from the front. Running out of
+  # one word costs whatever is left of the other, since every remaining
+  # character has to be inserted or deleted.
+  cost = lambda do |i, j|
+    return word2.length - j if i >= word1.length
+    return word1.length - i if j >= word2.length
+
+    memo[[i, j]] ||=
+      if word1[i] == word2[j]
+        cost.(i + 1, j + 1)
+      else
+        1 + [cost.(i + 1, j + 1), cost.(i + 1, j), cost.(i, j + 1)].min
+      end
+  end
+
+  cost.(0, 0)
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.",
+        "def min_distance(word1, word2)
+  # Three edits, three neighbours in the table: replace comes from the
+  # diagonal, delete from above, insert from the left. Equal characters cost
+  # nothing and take the diagonal outright; the whole algorithm is those
+  # four lines. The first row and column are the cost of building a string
+  # from nothing, which is its length.
+  previous = (0..word2.length).to_a
+
+  word1.each_char.with_index(1) do |a, i|
+    row = [i] + [0] * word2.length
+    word2.each_char.with_index(1) do |b, j|
+      row[j] = a == b ? previous[j - 1] : 1 + [previous[j - 1], previous[j], row[j - 1]].min
+    end
+    previous = row
+  end
+
+  previous[word2.length]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_distance(word1, word2)",
+      starter: "def min_distance(word1, word2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_distance
+
+tc 'min_distance(\"horse\", \"ros\")', 3, min_distance(\"horse\", \"ros\")
+tc 'min_distance(\"intention\", \"execution\")', 5, min_distance(\"intention\", \"execution\")
+tc 'min_distance(\"\", \"abc\")', 3, min_distance(\"\", \"abc\")
+tc 'min_distance(\"abc\", \"\")', 3, min_distance(\"abc\", \"\")
+tc 'min_distance(\"abc\", \"abc\")', 0, min_distance(\"abc\", \"abc\")
+tc 'min_distance(\"kitten\", \"sitting\")', 3, min_distance(\"kitten\", \"sitting\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc101_burst_balloons() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n²) space",
+        "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.",
+        "def max_coins(nums)
+  balloons = [1] + nums + [1]
+  n = balloons.length
+  table = Array.new(n) { Array.new(n, 0) }
+
+  # The same \"which balloon goes last\" recurrence filled by hand, shortest
+  # spans first, because a span's answer needs both of the shorter spans
+  # that a chosen last balloon splits it into. Writing the loop order out
+  # makes that dependency visible where the recursion leaves it implicit.
+  (2...n).each do |width|
+    (0...n - width).each do |left|
+      right = left + width
+      table[left][right] = (left + 1...right).map { |last|
+        balloons[left] * balloons[last] * balloons[right] + table[left][last] + table[last][right]
+      }.max
+    end
+  end
+
+  table[0][n - 1]
+end",
+      ),
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n²) space",
+        "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.",
+        "def max_coins(nums)
+  # Padding with a 1 at each end removes the edge cases: every balloon then
+  # has a neighbour on both sides whatever happens.
+  balloons = [1] + nums + [1]
+  memo = {}
+
+  # The trick is to ask which balloon is burst *last* in a span rather than
+  # first. The last one still has both span boundaries as neighbours (they
+  # are untouched by definition) so its value is known, and the two sides
+  # become independent subproblems. Asking \"first\" leaves neighbours that
+  # depend on the other side, and the recursion does not close.
+  best = lambda do |left, right|
+    return 0 if right - left < 2
+
+    memo[[left, right]] ||= (left + 1...right).map { |last|
+      balloons[left] * balloons[last] * balloons[right] + best.(left, last) + best.(last, right)
+    }.max
+  end
+
+  best.(0, balloons.length - 1)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_coins(nums)",
+      starter: "def max_coins(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_coins
+
+tc \"max_coins([3, 1, 5, 8])\", 167, max_coins([3, 1, 5, 8])
+tc \"max_coins([1, 5])\", 10, max_coins([1, 5])
+tc \"max_coins([])\", 0, max_coins([])
+tc \"max_coins([5])\", 5, max_coins([5])
+tc \"max_coins([1, 2, 3, 4])\", 40, max_coins([1, 2, 3, 4])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc102_regular_expression_matching() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(2ⁿ) time · O(n²) space",
+        "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.",
+        "def is_match(s, p)
+  # The same rules with no table at all. Shorter and easier to trust, and
+  # exponential on patterns like \"a*a*a*a*b\" where the same suffix is reached
+  # along many different splits. Worth writing first, then adding the cache
+  # once it is right.
+  return s.empty? if p.empty?
+
+  here = !s.empty? && [s[0], \".\"].include?(p[0])
+
+  if p.length >= 2 && p[1] == \"*\"
+    return is_match(s, p[2..]) || (here && is_match(s[1..], p))
+  end
+
+  here && is_match(s[1..], p[1..])
+end",
+      ),
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.",
+        "def is_match(s, p)
+  memo = {}
+
+  # A star binds to the character *before* it, so the pattern has to be read
+  # two symbols at a time. Given \"x*\", either skip the pair entirely (zero
+  # copies) or, if x matches here, consume one character of the text and
+  # stay on the same pair. Everything else is a single-character match.
+  works = lambda do |i, j|
+    return i >= s.length if j >= p.length
+
+    key = [i, j]
+    unless memo.key?(key)
+      here = i < s.length && [s[i], \".\"].include?(p[j])
+      memo[key] =
+        if j + 1 < p.length && p[j + 1] == \"*\"
+          works.(i, j + 2) || (here && works.(i + 1, j))
+        else
+          here && works.(i + 1, j + 1)
+        end
+    end
+    memo[key]
+  end
+
+  works.(0, 0)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_match(s, p)",
+      starter: "def is_match(s, p)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_match
+
+tc 'is_match(\"aa\", \"a\")', false, is_match(\"aa\", \"a\")
+tc 'is_match(\"aa\", \"a*\")', true, is_match(\"aa\", \"a*\")
+tc 'is_match(\"ab\", \".*\")', true, is_match(\"ab\", \".*\")
+tc 'is_match(\"aab\", \"c*a*b\")', true, is_match(\"aab\", \"c*a*b\")
+tc 'is_match(\"mississippi\", \"mis*is*p*.\")', false, is_match(\"mississippi\", \"mis*is*p*.\")
+tc 'is_match(\"\", \".*\")', true, is_match(\"\", \".*\")
+tc 'is_match(\"\", \"\")', true, is_match(\"\", \"\")
+tc 'is_match(\"abc\", \"abc\")', true, is_match(\"abc\", \"abc\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc103_implement_trie() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(k²) per insert · O(total prefixes) space",
+        "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.",
+        "require \"set\"
+
+class Trie
+  def initialize
+    # Two sets: the whole words, and every prefix of every word. Both
+    # questions then answer in one lookup, at the cost of storing O(total
+    # letters) strings rather than sharing them, which is precisely the
+    # memory a trie exists to save. The empty prefix is present from the
+    # start: it is the root.
+    @words = Set.new
+    @prefixes = Set[\"\"]
+  end
+
+  def insert(word)
+    @words << word
+    (0..word.length).each { |size| @prefixes << word[0, size] }
+  end
+
+  def search(word)
+    @words.include?(word)
+  end
+
+  def starts_with(prefix)
+    @prefixes.include?(prefix)
+  end
+end",
+      ),
+      #(
+        "Trie",
+        "O(k) per operation · O(total letters) space",
+        "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.",
+        "class Trie
+  attr_reader :children
+  attr_accessor :terminal
+
+  def initialize
+    # One node per prefix; `terminal` marks the prefixes that are whole
+    # words. Without that flag \"app\" and \"apple\" are indistinguishable once
+    # both are stored, which is the entire difference between search and
+    # starts_with.
+    @children = {}
+    @terminal = false
+  end
+
+  def insert(word)
+    node = self
+    word.each_char { |letter| node = (node.children[letter] ||= Trie.new) }
+    node.terminal = true
+  end
+
+  def search(word)
+    node = walk(word)
+    !node.nil? && node.terminal
+  end
+
+  def starts_with(prefix)
+    !walk(prefix).nil?
+  end
+
+  def walk(letters)
+    node = self
+    letters.each_char do |letter|
+      node = node.children[letter]
+      return nil if node.nil?
+    end
+    node
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class Trie
+  def initialize
+  def insert(word)
+  def search(word)
+  def starts_with(prefix)
+  def walk(letters)
+end",
+      starter: "class Trie
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def insert(word)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def search(word)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def starts_with(prefix)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def walk(letters)
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :Trie
+
+trie = Trie.new
+trie.insert(\"apple\")
+
+tc 'search(\"apple\") after inserting it', true, trie.search(\"apple\")
+tc 'search(\"app\") -- a prefix, not a word', false, trie.search(\"app\")
+tc 'starts_with(\"app\")', true, trie.starts_with(\"app\")
+
+trie.insert(\"app\")
+
+tc 'search(\"app\") after inserting it too', true, trie.search(\"app\")
+tc 'starts_with(\"apz\")', false, trie.starts_with(\"apz\")
+tc 'search(\"\") on an empty trie', false, Trie.new.search(\"\")
+tc 'starts_with(\"\") on an empty trie', true, Trie.new.starts_with(\"\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc104_word_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·k) per search · O(total letters) space",
+        "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.",
+        "class WordDictionary
+  def initialize
+    # Words bucketed by length. A pattern can only match words of its own
+    # length, so that one check throws away most of the collection before
+    # any character is compared.
+    @by_length = Hash.new { |hash, length| hash[length] = [] }
+  end
+
+  def add_word(word)
+    @by_length[word.length] << word
+  end
+
+  # No shared prefixes, so every candidate of the right length is compared
+  # position by position. Slower than the trie on a large dictionary, and it
+  # needs no tree, which is the trade the trie is making.
+  def search(word)
+    @by_length.fetch(word.length, []).any? do |candidate|
+      word.chars.zip(candidate.chars).all? { |p, c| p == \".\" || p == c }
+    end
+  end
+end",
+      ),
+      #(
+        "Trie",
+        "O(total letters) per search · O(total letters) space",
+        "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.",
+        "class WordDictionary
+  attr_reader :children
+  attr_accessor :terminal
+
+  def initialize
+    @children = {}
+    @terminal = false
+  end
+
+  def add_word(word)
+    node = self
+    word.each_char { |letter| node = (node.children[letter] ||= WordDictionary.new) }
+    node.terminal = true
+  end
+
+  # A dot has to try every child, which turns the lookup from a walk into a
+  # search. The trie is what keeps that search from being over every word,
+  # because a branch that cannot match is abandoned at the first letter.
+  def search(word)
+    return @terminal if word.empty?
+
+    letter = word[0]
+    rest = word[1..]
+    return @children.each_value.any? { |child| child.search(rest) } if letter == \".\"
+
+    @children.key?(letter) && @children[letter].search(rest)
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class WordDictionary
+  def initialize
+  def add_word(word)
+  def search(word)
+end",
+      starter: "class WordDictionary
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def add_word(word)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def search(word)
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :WordDictionary
+
+dictionary = WordDictionary.new
+[\"bad\", \"dad\", \"mad\"].each { |word| dictionary.add_word(word) }
+
+tc 'search(\"pad\")', false, dictionary.search(\"pad\")
+tc 'search(\"bad\")', true, dictionary.search(\"bad\")
+tc 'search(\".ad\")', true, dictionary.search(\".ad\")
+tc 'search(\"b..\")', true, dictionary.search(\"b..\")
+tc 'search(\"...\")', true, dictionary.search(\"...\")
+tc 'search(\"b\") -- too short', false, dictionary.search(\"b\")
+tc 'search(\"....\") -- too long', false, dictionary.search(\"....\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc105_word_search_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(W·m·n·4ᴸ) time · O(L²) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.",
+        "require \"set\"
+
+def find_words(board, words)
+  return [] if board.empty? || board[0].empty?
+
+  # Word Search, once per word. Correct, and it redoes the search for every
+  # shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
+  # every square. That repetition is exactly what the trie removes.
+  exists = lambda do |word|
+    walk = lambda do |r, c, at, used|
+      return false unless r.between?(0, board.length - 1) && c.between?(0, board[0].length - 1)
+      return false if used.include?([r, c]) || board[r][c] != word[at]
+      return true if at == word.length - 1
+
+      used |= [[r, c]]
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].any? do |dr, dc|
+        walk.(r + dr, c + dc, at + 1, used)
+      end
+    end
+
+    !word.empty? && board.each_index.any? do |r|
+      board[0].each_index.any? { |c| walk.(r, c, 0, Set.new) }
+    end
+  end
+
+  words.select { |word| exists.(word) }
+end",
+      ),
+      #(
+        "Trie",
+        "O(m·n·4ᴸ) time · O(total letters) space",
+        "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.",
+        "require \"set\"
+
+def find_words(board, words)
+  return [] if board.empty? || board[0].empty?
+
+  # One trie of all the words, walked *alongside* the board. Searching for
+  # each word separately re-walks every shared prefix once per word; the trie
+  # walks each prefix once and abandons a square the moment no word continues
+  # that way, which is where nearly all the saving is.
+  trie = {}
+  words.each do |word|
+    node = trie
+    word.each_char { |letter| node = (node[letter] ||= {}) }
+    node[\"$\"] = word
+  end
+
+  found = Set.new
+
+  walk = lambda do |r, c, node, used|
+    return unless r.between?(0, board.length - 1) && c.between?(0, board[0].length - 1)
+    return if used.include?([r, c]) || !node.key?(board[r][c])
+
+    child = node[board[r][c]]
+    found << child[\"$\"] if child.key?(\"$\")
+    used |= [[r, c]]
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].each do |dr, dc|
+      walk.(r + dr, c + dc, child, used)
+    end
+  end
+
+  board.each_index do |r|
+    board[0].each_index { |c| walk.(r, c, trie, Set.new) }
+  end
+
+  found.to_a
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_words(board, words)",
+      starter: "require \"set\"
+
+def find_words(board, words)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_words
+
+def board = [\"oaan\", \"etae\", \"ihkr\", \"iflv\"].map(&:chars)
+
+tc 'find_words(board, [\"oath\", \"pea\", \"eat\", \"rain\"])', [\"eat\", \"oath\"], find_words(board, [\"oath\", \"pea\", \"eat\", \"rain\"]).sort
+tc 'find_words([[\"a\", \"b\"], [\"c\", \"d\"]], [\"abcb\"])', [], find_words([[\"a\", \"b\"], [\"c\", \"d\"]], [\"abcb\"]).sort
+tc 'find_words([[\"a\"]], [\"a\"])', [\"a\"], find_words([[\"a\"]], [\"a\"]).sort
+tc \"find_words(board, [])\", [], find_words(board, []).sort
+tc 'find_words([], [\"a\"])', [], find_words([], [\"a\"]).sort",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc106_number_of_islands() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Union-Find",
+        "O(m·n·α(m·n)) time · O(m·n) space",
+        "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.",
+        "require \"set\"
+
+def num_islands(grid)
+  land = Set.new
+  grid.each_with_index do |row, r|
+    row.each_with_index { |value, c| land << [r, c] if value == \"1\" }
+  end
+
+  # Union-find instead of flood fill: every square starts as its own island
+  # and each adjacency merges two. Only right and down are needed (every
+  # pair of neighbours is reached once that way) and the answer is how many
+  # roots are left. This is the version that keeps working when the grid
+  # arrives one square at a time and the count has to be reported after each.
+  parents = land.to_h { |at| [at, at] }
+
+  find = lambda do |at|
+    while parents[at] != at
+      parents[at] = parents[parents[at]]
+      at = parents[at]
+    end
+    at
+  end
+
+  land.each do |r, c|
+    [[r + 1, c], [r, c + 1]].each do |other|
+      next unless land.include?(other)
+
+      a = find.([r, c])
+      b = find.(other)
+      parents[a] = b if a != b
+    end
+  end
+
+  land.map { |at| find.(at) }.uniq.length
+end",
+      ),
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.",
+        "require \"set\"
+
+def num_islands(grid)
+  land = Set.new
+  grid.each_with_index do |row, r|
+    row.each_with_index { |value, c| land << [r, c] if value == \"1\" }
+  end
+
+  # Counting connected components: start a search at every piece of land not
+  # already reached, and each search that has to be started is one more
+  # island. Marking as you go is what stops a component being counted once per
+  # square.
+  seen = Set.new
+  count = 0
+
+  land.each do |at|
+    next if seen.include?(at)
+
+    count += 1
+    stack = [at]
+    until stack.empty?
+      r, c = stack.pop
+      next if !land.include?([r, c]) || seen.include?([r, c])
+
+      seen << [r, c]
+      stack.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1])
+    end
+  end
+
+  count
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def num_islands(grid)",
+      starter: "require \"set\"
+
+def num_islands(grid)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :num_islands
+
+def board(rows) = rows.map(&:chars)
+
+tc \"num_islands(one big island)\", 1, num_islands(board([\"11110\", \"11010\", \"11000\", \"00000\"]))
+tc \"num_islands(three islands)\", 3, num_islands(board([\"11000\", \"11000\", \"00100\", \"00011\"]))
+tc \"num_islands(all water)\", 0, num_islands(board([\"000\", \"000\"]))
+tc \"num_islands([])\", 0, num_islands([])
+tc \"num_islands(diagonal squares are separate)\", 2, num_islands(board([\"10\", \"01\"]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc107_clone_graph() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(V log V + E) time · O(V+E) space",
+        "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.",
+        "def clone_graph(node)
+  return nil if node.nil?
+
+  # Same map, depth-first instead of breadth-first. The copy is created and
+  # registered *before* its neighbours are visited, which is the ordering that
+  # makes a cycle find the half-built copy instead of recursing into it.
+  clones = {}
+  clone = lambda do |original|
+    return clones[original] if clones.key?(original)
+
+    copy = Node.new(original.val, [])
+    clones[original] = copy
+    original.neighbors.each { |neighbour| copy.neighbors << clone.(neighbour) }
+    copy
+  end
+  clone.(node)
+end",
+      ),
+      #(
+        "BFS",
+        "O(V log V + E) time · O(V+E) space",
+        "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.",
+        "def clone_graph(node)
+  return nil if node.nil?
+
+  # The map from original node to its copy is the whole problem. Breadth-first:
+  # a node gets its copy the moment it is discovered, and the map is checked
+  # before copying anything, so a node already in it is reused rather than
+  # copied again. Without that check any cycle goes round forever.
+  clones = { node => Node.new(node.val, []) }
+  queue = [node]
+  until queue.empty?
+    current = queue.shift
+    current.neighbors.each do |neighbour|
+      unless clones.key?(neighbour)
+        clones[neighbour] = Node.new(neighbour.val, [])
+        queue << neighbour
+      end
+      clones[current].neighbors << clones[neighbour]
+    end
+  end
+  clones[node]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def clone_graph(node)",
+      starter: "def clone_graph(node)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :clone_graph
+
+# Node i+1 has the neighbours adj[i] (1-based); nil for an empty list.
+def graph(adj)
+  return nil if adj.empty?
+
+  nodes = adj.each_index.map { |i| Node.new(i + 1, []) }
+  adj.each_with_index { |neighbours, i| neighbours.each { |n| nodes[i].neighbors << nodes[n - 1] } }
+  nodes[0]
+end
+
+# Every node reachable from node, by identity.
+def reachable(node)
+  return [] if node.nil?
+
+  seen = { node => true }
+  queue = [node]
+  until queue.empty?
+    queue.shift.neighbors.each do |n|
+      next if seen.key?(n)
+
+      seen[n] = true
+      queue << n
+    end
+  end
+  seen.keys
+end
+
+# Row i holds the neighbour values of node i+1.
+def adjacency(node)
+  out = []
+  reachable(node).each { |n| out[n.val - 1] = n.neighbors.map(&:val) }
+  out
+end
+
+# A clone must have the original's shape and share none of its nodes.
+def cloned(adj)
+  original = graph(adj)
+  copy = clone_graph(original)
+  originals = reachable(original)
+  return [[-1]] if reachable(copy).any? { |n| originals.any? { |o| o.equal?(n) } }
+
+  adjacency(copy)
+end
+
+tc \"clone_graph(the 4-cycle)\", [[2, 4], [1, 3], [2, 4], [1, 3]], cloned([[2, 4], [1, 3], [2, 4], [1, 3]])
+tc \"clone_graph(two nodes)\", [[2], [1]], cloned([[2], [1]])
+tc \"clone_graph(one node)\", [[]], cloned([[]])
+tc \"clone_graph(nil)\", [], cloned([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc108_max_area_of_island() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.",
+        "require \"set\"
+
+def max_area_of_island(grid)
+  land = Set.new
+  grid.each_with_index do |row, r|
+    row.each_with_index { |value, c| land << [r, c] if value == 1 }
+  end
+
+  # Breadth-first instead. For a component's *size* the traversal order does
+  # not matter at all (either visits every square exactly once) so the
+  # choice is about the machine: a queue keeps the memory proportional to the
+  # frontier rather than to the deepest path, which is what saves a long thin
+  # island from overflowing the stack. Array#shift is cheap in Ruby, so a
+  # plain array serves as the queue.
+  seen = Set.new
+  best = 0
+
+  land.each do |at|
+    next if seen.include?(at)
+
+    area = 0
+    frontier = [at]
+    until frontier.empty?
+      r, c = frontier.shift
+      next if !land.include?([r, c]) || seen.include?([r, c])
+
+      seen << [r, c]
+      area += 1
+      frontier.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1])
+    end
+    best = [best, area].max
+  end
+
+  best
+end",
+      ),
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.",
+        "require \"set\"
+
+def max_area_of_island(grid)
+  land = Set.new
+  grid.each_with_index do |row, r|
+    row.each_with_index { |value, c| land << [r, c] if value == 1 }
+  end
+
+  # The same component search as counting islands, except each search reports
+  # how much it covered rather than just that it happened.
+  seen = Set.new
+  best = 0
+
+  land.each do |at|
+    next if seen.include?(at)
+
+    area = 0
+    stack = [at]
+    until stack.empty?
+      r, c = stack.pop
+      next if !land.include?([r, c]) || seen.include?([r, c])
+
+      seen << [r, c]
+      area += 1
+      stack.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1])
+    end
+    best = [best, area].max
+  end
+
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_area_of_island(grid)",
+      starter: "require \"set\"
+
+def max_area_of_island(grid)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_area_of_island
+
+tc \"max_area_of_island([[1, 1, 0], [1, 0, 0], [0, 0, 1]])\", 3, max_area_of_island([[1, 1, 0], [1, 0, 0], [0, 0, 1]])
+tc \"max_area_of_island([[0, 0], [0, 0]])\", 0, max_area_of_island([[0, 0], [0, 0]])
+tc \"max_area_of_island([])\", 0, max_area_of_island([])
+tc \"max_area_of_island([[1]])\", 1, max_area_of_island([[1]])
+tc \"max_area_of_island([[1, 1, 1], [1, 1, 1]])\", 6, max_area_of_island([[1, 1, 1], [1, 1, 1]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc109_pacific_atlantic() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(m²·n²) time · O(m·n) space",
+        "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.",
+        "require \"set\"
+
+def pacific_atlantic(heights)
+  return [] if heights.empty? || heights[0].empty?
+
+  rows = heights.length
+  columns = heights[0].length
+
+  # The direct reading: from each square, flow downhill and see which edges
+  # are reachable. Correct, and it repeats nearly all of its work: every
+  # square on a shared downhill path re-explores the same route. Reversing the
+  # question is what removes the repetition.
+  downhill = lambda do |start|
+    reached = Set.new
+    frontier = [start]
+    until frontier.empty?
+      r, c = frontier.shift
+      next if reached.include?([r, c])
+
+      reached << [r, c]
+      [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+        next unless nr.between?(0, rows - 1) && nc.between?(0, columns - 1)
+
+        frontier << [nr, nc] if heights[nr][nc] <= heights[r][c]
+      end
+    end
+    reached
+  end
+
+  out = []
+  rows.times do |r|
+    columns.times do |c|
+      reached = downhill.([r, c])
+      next unless reached.any? { |rr, cc| rr.zero? || cc.zero? }
+      next unless reached.any? { |rr, cc| rr == rows - 1 || cc == columns - 1 }
+
+      out << [r, c]
+    end
+  end
+
+  out.sort
+end",
+      ),
+      #(
+        "BFS",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.",
+        "require \"set\"
+
+def pacific_atlantic(heights)
+  return [] if heights.empty? || heights[0].empty?
+
+  rows = heights.length
+  columns = heights[0].length
+
+  # Search *from* each ocean rather than from each cell. Asking \"can this
+  # square reach the sea?\" means a fresh downhill search per square; asking
+  # \"which squares can the sea reach?\" is two uphill searches in total, and
+  # the answer is where they overlap.
+  uphill = lambda do |starts|
+    reached = Set.new
+    frontier = starts.dup
+    until frontier.empty?
+      r, c = frontier.shift
+      next if reached.include?([r, c])
+
+      reached << [r, c]
+      [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+        next unless nr.between?(0, rows - 1) && nc.between?(0, columns - 1)
+
+        frontier << [nr, nc] if heights[nr][nc] >= heights[r][c]
+      end
+    end
+    reached
+  end
+
+  pacific = (0...columns).map { |c| [0, c] } + (0...rows).map { |r| [r, 0] }
+  atlantic = (0...columns).map { |c| [rows - 1, c] } + (0...rows).map { |r| [r, columns - 1] }
+
+  (uphill.(pacific) & uphill.(atlantic)).sort
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def pacific_atlantic(heights)",
+      starter: "require \"set\"
+
+def pacific_atlantic(heights)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :pacific_atlantic
+
+def grid = [[1, 2, 2, 3, 5], [3, 2, 3, 4, 4], [2, 4, 5, 3, 1], [6, 7, 1, 4, 5], [5, 1, 1, 2, 4]]
+
+tc \"pacific_atlantic(the 5x5 example)\", [[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]], pacific_atlantic(grid).sort
+tc \"pacific_atlantic([[1]])\", [[0, 0]], pacific_atlantic([[1]]).sort
+tc \"pacific_atlantic([])\", [], pacific_atlantic([]).sort
+tc \"pacific_atlantic([[1, 1], [1, 1]])\", [[0, 0], [0, 1], [1, 0], [1, 1]], pacific_atlantic([[1, 1], [1, 1]]).sort",
+      graded: True,
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -600,6 +1604,10995 @@ tc \"three_sum([0, 0, 0])\", [[0, 0, 0]], normalised(three_sum([0, 0, 0]))",
   )
 }
 
+pub fn nc110_surrounded_regions() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Per-Region DFS",
+        "O(m·n) time · O(m·n) space",
+        "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.",
+        "require \"set\"
+
+def solve(board)
+  return board if board.empty? || board[0].empty?
+
+  rows = board.length
+  columns = board[0].length
+
+  # The direct reading: find each region, then decide whether it escapes. It
+  # works, and it needs a second idea the border search does not: the whole
+  # region has to be collected before any verdict can be given, so the search
+  # cannot stop early and the escape test is over the component rather than a
+  # single square.
+  seen = Set.new
+  doomed = Set.new
+
+  rows.times do |r|
+    columns.times do |c|
+      next if board[r][c] != \"O\" || seen.include?([r, c])
+
+      region = Set.new
+      stack = [[r, c]]
+      until stack.empty?
+        rr, cc = stack.pop
+        next unless rr.between?(0, rows - 1) && cc.between?(0, columns - 1)
+        next if region.include?([rr, cc]) || board[rr][cc] != \"O\"
+
+        region << [rr, cc]
+        stack.push([rr - 1, cc], [rr + 1, cc], [rr, cc - 1], [rr, cc + 1])
+      end
+      seen.merge(region)
+      escapes = region.any? { |rr, cc| [0, rows - 1].include?(rr) || [0, columns - 1].include?(cc) }
+      doomed.merge(region) unless escapes
+    end
+  end
+
+  board.each_with_index.map do |row, r|
+    row.each_with_index.map { |value, c| doomed.include?([r, c]) ? \"X\" : value }
+  end
+end",
+      ),
+      #(
+        "Boundary DFS",
+        "O(m·n) time · O(m·n) space",
+        "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.",
+        "require \"set\"
+
+def solve(board)
+  return board if board.empty? || board[0].empty?
+
+  rows = board.length
+  columns = board[0].length
+
+  # Invert the question. \"Which regions are surrounded?\" needs a search per
+  # region and a rule for what counts as escaping; \"which regions touch an
+  # edge?\" is one search from the border, and everything it does not reach is
+  # surrounded by definition.
+  safe = Set.new
+  stack = []
+  rows.times do |r|
+    columns.times do |c|
+      on_border = [0, rows - 1].include?(r) || [0, columns - 1].include?(c)
+      stack << [r, c] if on_border && board[r][c] == \"O\"
+    end
+  end
+
+  until stack.empty?
+    r, c = stack.pop
+    next unless r.between?(0, rows - 1) && c.between?(0, columns - 1)
+    next if safe.include?([r, c]) || board[r][c] != \"O\"
+
+    safe << [r, c]
+    stack.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1])
+  end
+
+  board.each_with_index.map do |row, r|
+    row.each_with_index.map { |value, c| value == \"O\" && !safe.include?([r, c]) ? \"X\" : value }
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def solve(board)",
+      starter: "require \"set\"
+
+def solve(board)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :solve
+
+def shown(rows) = solve(rows.map(&:chars)).map(&:join)
+
+tc \"solve(the classic 4x4)\", [\"XXXX\", \"XXXX\", \"XXXX\", \"XOXX\"], shown([\"XXXX\", \"XOOX\", \"XXOX\", \"XOXX\"])
+tc 'solve([[\"X\"]])', [\"X\"], shown([\"X\"])
+tc 'solve([[\"O\"]]) -- on the border, so it survives', [\"O\"], shown([\"O\"])
+tc \"solve([])\", [], shown([])
+tc \"solve(a region reaching the border)\", [\"XOX\", \"XOX\", \"XXX\"], shown([\"XOX\", \"XOX\", \"XXX\"])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc111_rotting_oranges() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(m·n·(m+n)) time · O(m·n) space",
+        "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.",
+        "def oranges_rotting(grid)
+  board = grid.map(&:dup)
+  minutes = 0
+
+  # Rewrite the whole grid once per minute rather than tracking a frontier.
+  # Much more work (every square is examined every minute, not just the ones
+  # next to the rot) but it is the problem statement executed literally, and
+  # it makes plain that the answer counts *rounds*, not distances.
+  loop do
+    following = board.each_with_index.map do |row, r|
+      row.each_with_index.map do |value, c|
+        touching = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].any? do |nr, nc|
+          nr.between?(0, board.length - 1) && nc.between?(0, board[0].length - 1) && board[nr][nc] == 2
+        end
+        value == 1 && touching ? 2 : value
+      end
+    end
+    if following == board
+      # Nothing changed: either everything has rotted or what is left
+      # never will.
+      return board.any? { |row| row.include?(1) } ? -1 : minutes
+    end
+
+    board = following
+    minutes += 1
+  end
+end",
+      ),
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.",
+        "require \"set\"
+
+def oranges_rotting(grid)
+  rotten = []
+  fresh = 0
+
+  grid.each_with_index do |row, r|
+    row.each_with_index do |value, c|
+      if value == 2
+        rotten << [r, c]
+      elsif value == 1
+        fresh += 1
+      end
+    end
+  end
+
+  # Breadth-first from *every* rotten orange at once, which is what makes the
+  # level count a time: all the sources start at minute zero together, so each
+  # wave of the search is one minute. A separate search per source would give
+  # distances from each, and then need combining.
+  seen = Set.new(rotten)
+  minutes = 0
+
+  while !rotten.empty? && fresh.positive?
+    following = []
+    rotten.each do |r, c|
+      [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+        next unless nr.between?(0, grid.length - 1) && nc.between?(0, grid[0].length - 1)
+        next unless grid[nr][nc] == 1 && !seen.include?([nr, nc])
+
+        seen << [nr, nc]
+        fresh -= 1
+        following << [nr, nc]
+      end
+    end
+    break if following.empty?
+
+    rotten = following
+    minutes += 1
+  end
+
+  fresh.zero? ? minutes : -1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def oranges_rotting(grid)",
+      starter: "require \"set\"
+
+def oranges_rotting(grid)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :oranges_rotting
+
+tc \"oranges_rotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]])\", 4, oranges_rotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]])
+tc \"oranges_rotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]])\", -1, oranges_rotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]])
+tc \"oranges_rotting([[0, 2]])\", 0, oranges_rotting([[0, 2]])
+tc \"oranges_rotting([])\", 0, oranges_rotting([])
+tc \"oranges_rotting([[1]])\", -1, oranges_rotting([[1]])
+tc \"oranges_rotting([[0]])\", 0, oranges_rotting([[0]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc112_walls_and_gates() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(m²·n²) time · O(m·n) space",
+        "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.",
+        "require \"set\"
+
+def walls_and_gates(rooms)
+  return rooms if rooms.empty? || rooms[0].empty?
+
+  infinity = 2_147_483_647
+  rows = rooms.length
+  columns = rooms[0].length
+
+  # One search per empty room, looking for the nearest gate. The answer is the
+  # same and the cost is not: every room re-explores the same corridors. Worth
+  # writing once to see why starting from the gates instead (the sources, not
+  # the questions) collapses all of it into a single pass.
+  nearest = lambda do |start|
+    seen = Set[start]
+    frontier = [start]
+    steps = 0
+    until frontier.empty?
+      following = []
+      frontier.each do |r, c|
+        return steps if rooms[r][c].zero?
+
+        [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+          next unless nr.between?(0, rows - 1) && nc.between?(0, columns - 1)
+          next unless rooms[nr][nc] != -1 && !seen.include?([nr, nc])
+
+          seen << [nr, nc]
+          following << [nr, nc]
+        end
+      end
+      frontier = following
+      steps += 1
+    end
+    infinity
+  end
+
+  rooms.each_with_index.map do |row, r|
+    row.each_with_index.map { |value, c| value == infinity ? nearest.call([r, c]) : value }
+  end
+end",
+      ),
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.",
+        "def walls_and_gates(rooms)
+  return rooms if rooms.empty? || rooms[0].empty?
+
+  infinity = 2_147_483_647
+  board = rooms.map(&:dup)
+  rows = board.length
+  columns = board[0].length
+
+  # One breadth-first search starting from *all* the gates at once, rather
+  # than one search per empty room. Because every source begins at distance
+  # zero together, the first time a room is reached is by its nearest gate:
+  # the multi-source search does the whole grid in one pass.
+  frontier = []
+  rows.times do |r|
+    columns.times { |c| frontier << [r, c] if board[r][c].zero? }
+  end
+
+  until frontier.empty?
+    r, c = frontier.shift
+    [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+      next unless nr.between?(0, rows - 1) && nc.between?(0, columns - 1) && board[nr][nc] == infinity
+
+      board[nr][nc] = board[r][c] + 1
+      frontier << [nr, nc]
+    end
+  end
+
+  board
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def walls_and_gates(rooms)",
+      starter: "def walls_and_gates(rooms)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :walls_and_gates
+
+inf = 2_147_483_647
+
+tc \"walls_and_gates(the classic 4x4)\", [[3, -1, 0, 1], [2, 2, 1, -1], [1, -1, 2, -1], [0, -1, 3, 4]],
+   walls_and_gates([[inf, -1, 0, inf], [inf, inf, inf, -1], [inf, -1, inf, -1], [0, -1, inf, inf]])
+tc \"walls_and_gates([[0]])\", [[0]], walls_and_gates([[0]])
+tc \"walls_and_gates([[-1]])\", [[-1]], walls_and_gates([[-1]])
+tc \"walls_and_gates([])\", [], walls_and_gates([])
+tc \"walls_and_gates(no gate at all)\", [[inf, inf]], walls_and_gates([[inf, inf]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc113_course_schedule() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS Colouring",
+        "O(V+E) time · O(V+E) space",
+        "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.",
+        "require \"set\"
+
+def can_finish(num_courses, prerequisites)
+  needs = Array.new(num_courses) { [] }
+  prerequisites.each { |course, prereq| needs[course] << prereq }
+
+  on_path = Set.new
+  done = Set.new
+
+  # Depth-first with three states rather than two. \"Seen\" is not enough: a
+  # node reached twice down *different* branches is fine, while a node reached
+  # again while still on the current path is a cycle. The in-progress set is
+  # what tells those apart.
+  visit = lambda do |course|
+    return false if on_path.include?(course)
+    return true if done.include?(course)
+
+    on_path << course
+    return false unless needs[course].all? { |prereq| visit.call(prereq) }
+
+    on_path.delete(course)
+    done << course
+    true
+  end
+
+  (0...num_courses).all? { |course| visit.call(course) }
+end",
+      ),
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.",
+        "def can_finish(num_courses, prerequisites)
+  # Kahn's algorithm. Courses with nothing outstanding can be taken now;
+  # taking one releases whatever depended on it. If the process stalls with
+  # courses left, those courses depend on each other in a circle: a cycle is
+  # exactly what \"cannot be finished\" means.
+  waiting = Array.new(num_courses, 0)
+  unlocks = Array.new(num_courses) { [] }
+
+  prerequisites.each do |course, prereq|
+    waiting[course] += 1
+    unlocks[prereq] << course
+  end
+
+  ready = (0...num_courses).select { |c| waiting[c].zero? }
+  taken = 0
+
+  until ready.empty?
+    course = ready.shift
+    taken += 1
+    unlocks[course].each do |following|
+      waiting[following] -= 1
+      ready << following if waiting[following].zero?
+    end
+  end
+
+  taken == num_courses
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def can_finish(num_courses, prerequisites)",
+      starter: "def can_finish(num_courses, prerequisites)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :can_finish
+
+tc \"can_finish(2, [[1, 0]])\", true, can_finish(2, [[1, 0]])
+tc \"can_finish(2, [[1, 0], [0, 1]])\", false, can_finish(2, [[1, 0], [0, 1]])
+tc \"can_finish(1, [])\", true, can_finish(1, [])
+tc \"can_finish(0, [])\", true, can_finish(0, [])
+tc \"can_finish(4, [[1, 0], [2, 1], [3, 2]])\", true, can_finish(4, [[1, 0], [2, 1], [3, 2]])
+tc \"can_finish(3, [[0, 1], [1, 2], [2, 0]])\", false, can_finish(3, [[0, 1], [1, 2], [2, 0]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc114_course_schedule_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS Postorder",
+        "O(V+E) time · O(V+E) space",
+        "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.",
+        "require \"set\"
+
+def find_order(num_courses, prerequisites)
+  needs = Array.new(num_courses) { [] }
+  prerequisites.each { |course, prereq| needs[course] << prereq }
+
+  on_path = Set.new
+  done = Set.new
+  order = []
+
+  # Depth-first, recording a course only *after* everything it depends on has
+  # been recorded. That post-order is a valid schedule by construction (no
+  # indegrees to maintain) and the in-progress set doubles as the cycle check,
+  # which is what makes the impossible case fall out of the same walk.
+  visit = lambda do |course|
+    return false if on_path.include?(course)
+    return true if done.include?(course)
+
+    on_path << course
+    return false unless needs[course].all? { |prereq| visit.call(prereq) }
+
+    on_path.delete(course)
+    done << course
+    order << course
+    true
+  end
+
+  return [] unless (0...num_courses).all? { |course| visit.call(course) }
+
+  order
+end",
+      ),
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.",
+        "def find_order(num_courses, prerequisites)
+  # The same Kahn's algorithm as deciding whether it is possible, except the
+  # order courses come off the ready list *is* the answer. Detecting the cycle
+  # and producing the schedule are the same computation.
+  waiting = Array.new(num_courses, 0)
+  unlocks = Array.new(num_courses) { [] }
+
+  prerequisites.each do |course, prereq|
+    waiting[course] += 1
+    unlocks[prereq] << course
+  end
+
+  ready = (0...num_courses).select { |c| waiting[c].zero? }
+  order = []
+
+  until ready.empty?
+    course = ready.shift
+    order << course
+    unlocks[course].each do |following|
+      waiting[following] -= 1
+      ready << following if waiting[following].zero?
+    end
+  end
+
+  # Stalled with courses left, so no order exists at all.
+  order.length == num_courses ? order : []
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_order(num_courses, prerequisites)",
+      starter: "def find_order(num_courses, prerequisites)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_order
+
+# Any valid order is acceptable, so the harness checks the order rather than
+# comparing it: every course appears exactly once, and every prerequisite comes
+# before the course that needs it.
+def valid_order?(num_courses, prerequisites)
+  order = find_order(num_courses, prerequisites)
+  return false if order.length != num_courses || order.uniq.length != num_courses
+
+  at = order.each_with_index.to_h
+  prerequisites.all? { |course, prereq| at[prereq] < at[course] }
+end
+
+tc \"find_order(2, [[1, 0]]) is a valid order\", true, valid_order?(2, [[1, 0]])
+tc \"find_order(4, [[1, 0], [2, 0], [3, 1], [3, 2]]) is a valid order\", true, valid_order?(4, [[1, 0], [2, 0], [3, 1], [3, 2]])
+tc \"find_order(1, []) is a valid order\", true, valid_order?(1, [])
+tc \"find_order(3, []) is a valid order\", true, valid_order?(3, [])
+tc \"find_order(2, [[0, 1], [1, 0]]) -- a cycle, so no order\", [], find_order(2, [[0, 1], [1, 0]])
+tc \"find_order(0, [])\", [], find_order(0, [])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc115_redundant_connection() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.",
+        "require \"set\"
+
+def find_redundant_connection(edges)
+  # Try removing each edge, latest first, and keep the first removal that
+  # leaves a tree. O(n^2) against union-find's near-linear, but it needs no
+  # new structure, and it says the specification outright: the answer is the
+  # last edge whose absence would make the graph a tree.
+  nodes = edges.flatten.to_set
+
+  edges.reverse_each do |candidate|
+    remaining = edges.reject { |edge| edge == candidate }
+    return candidate.dup if tree?(remaining, nodes)
+  end
+
+  []
+end
+
+def tree?(edges, nodes)
+  return true if nodes.empty?
+  return false if edges.length != nodes.length - 1
+
+  adjacency = nodes.to_h { |node| [node, []] }
+  edges.each do |a, b|
+    adjacency[a] << b
+    adjacency[b] << a
+  end
+
+  seen = Set.new
+  stack = [nodes.first]
+  until stack.empty?
+    node = stack.pop
+    next if seen.include?(node)
+
+    seen << node
+    stack.concat(adjacency[node])
+  end
+
+  seen.length == nodes.length
+end",
+      ),
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.",
+        "def find_redundant_connection(edges)
+  # n nodes and n edges means exactly one cycle. Union-find spots it the
+  # moment an edge joins two nodes already connected, and because the edges
+  # are processed in order, the first such edge is the last one that could be
+  # removed, which is what the problem asks for.
+  parents = {}
+
+  find = lambda do |node|
+    node = parents[node] while parents.fetch(node, node) != node
+    node
+  end
+
+  found = nil
+  edges.each do |a, b|
+    root_a = find.call(a)
+    root_b = find.call(b)
+    if root_a == root_b
+      found = [a, b]
+    else
+      parents[root_a] = root_b
+    end
+  end
+
+  found || []
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_redundant_connection(edges)",
+      starter: "def find_redundant_connection(edges)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_redundant_connection
+
+tc \"find_redundant_connection([[1, 2], [1, 3], [2, 3]])\", [2, 3], find_redundant_connection([[1, 2], [1, 3], [2, 3]])
+tc \"find_redundant_connection([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]])\", [1, 4],
+   find_redundant_connection([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]])
+tc \"find_redundant_connection([[1, 2], [2, 1]])\", [2, 1], find_redundant_connection([[1, 2], [2, 1]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc116_connected_components() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(V+E) time · O(V+E) space",
+        "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.",
+        "require \"set\"
+
+def count_components(n, edges)
+  adjacency = Array.new(n) { [] }
+  edges.each do |a, b|
+    adjacency[a] << b
+    adjacency[b] << a
+  end
+
+  # One search per unvisited node, exactly as with islands on a grid: the
+  # same counting-components idea with an adjacency list instead of
+  # coordinates. Worth seeing side by side with union-find: this one needs the
+  # whole graph up front, the other can take edges as they arrive.
+  seen = Set.new
+  count = 0
+
+  n.times do |node|
+    next if seen.include?(node)
+
+    count += 1
+    stack = [node]
+    until stack.empty?
+      current = stack.pop
+      next if seen.include?(current)
+
+      seen << current
+      stack.concat(adjacency[current])
+    end
+  end
+
+  count
+end",
+      ),
+      #(
+        "Union-Find",
+        "O(E·α(V)) time · O(V) space",
+        "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.",
+        "def count_components(n, edges)
+  # Start with n components and merge: every edge whose ends are not already
+  # together removes one. No traversal, no adjacency list; the count falls
+  # straight out of how many merges actually happened.
+  parents = {}
+
+  find = lambda do |node|
+    node = parents[node] while parents.fetch(node, node) != node
+    node
+  end
+
+  merges = 0
+  edges.each do |a, b|
+    root_a = find.call(a)
+    root_b = find.call(b)
+    next if root_a == root_b
+
+    parents[root_a] = root_b
+    merges += 1
+  end
+
+  n - merges
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def count_components(n, edges)",
+      starter: "def count_components(n, edges)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :count_components
+
+tc \"count_components(5, [[0, 1], [1, 2], [3, 4]])\", 2, count_components(5, [[0, 1], [1, 2], [3, 4]])
+tc \"count_components(5, [[0, 1], [1, 2], [2, 3], [3, 4]])\", 1, count_components(5, [[0, 1], [1, 2], [2, 3], [3, 4]])
+tc \"count_components(3, [])\", 3, count_components(3, [])
+tc \"count_components(0, [])\", 0, count_components(0, [])
+tc \"count_components(1, [])\", 1, count_components(1, [])
+tc \"count_components(4, [[0, 1], [1, 0]])\", 3, count_components(4, [[0, 1], [1, 0]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc117_graph_valid_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.",
+        "def valid_tree(n, edges)
+  return edges.empty? if n <= 0
+
+  # Both conditions from one pass. An edge joining two nodes already connected
+  # is a cycle, so if none does, the graph is a forest, and a forest with
+  # n-1 merges is a single tree. No adjacency list and no traversal.
+  parents = {}
+
+  find = lambda do |node|
+    node = parents[node] while parents.fetch(node, node) != node
+    node
+  end
+
+  merges = 0
+  edges.each do |a, b|
+    root_a = find.call(a)
+    root_b = find.call(b)
+    return false if root_a == root_b
+
+    parents[root_a] = root_b
+    merges += 1
+  end
+
+  merges == n - 1
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.",
+        "require \"set\"
+
+def valid_tree(n, edges)
+  # A graph with no nodes at all is vacuously a tree, provided it has no edges
+  # either: worth stating, because the n-1 edge count says otherwise.
+  return edges.empty? if n <= 0
+
+  # A tree is two conditions at once: connected, and no cycles. Checking both
+  # separately is unnecessary: with exactly n-1 edges, connected implies
+  # acyclic and acyclic implies connected, so testing the edge count plus
+  # either one is enough. Here it is the count plus reachability.
+  return false if edges.length != n - 1
+
+  adjacency = Array.new(n) { [] }
+  edges.each do |a, b|
+    adjacency[a] << b
+    adjacency[b] << a
+  end
+
+  seen = Set.new
+  stack = [0]
+  until stack.empty?
+    node = stack.pop
+    next if seen.include?(node)
+
+    seen << node
+    stack.concat(adjacency[node])
+  end
+
+  seen.length == n
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def valid_tree(n, edges)",
+      starter: "require \"set\"
+
+def valid_tree(n, edges)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :valid_tree
+
+tc \"valid_tree(5, [[0, 1], [0, 2], [0, 3], [1, 4]])\", true, valid_tree(5, [[0, 1], [0, 2], [0, 3], [1, 4]])
+tc \"valid_tree(5, [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]])\", false, valid_tree(5, [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]])
+tc \"valid_tree(1, [])\", true, valid_tree(1, [])
+tc \"valid_tree(0, [])\", true, valid_tree(0, [])
+tc \"valid_tree(2, []) -- disconnected\", false, valid_tree(2, [])
+tc \"valid_tree(4, [[0, 1], [2, 3]]) -- two trees\", false, valid_tree(4, [[0, 1], [2, 3]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc118_word_ladder() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²·k) time · O(n·k) space",
+        "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.",
+        "require \"set\"
+
+def ladder_length(begin_word, end_word, word_list)
+  words = word_list.to_set
+  return 0 unless words.include?(end_word)
+
+  # Neighbours found by comparing against every remaining word. Simpler to
+  # state and O(n) comparisons per expansion rather than a constant number of
+  # lookups, which is the cost the wildcard buckets remove.
+  seen = Set[begin_word]
+  frontier = [begin_word]
+  steps = 1
+
+  until frontier.empty?
+    frontier.length.times do
+      word = frontier.shift
+      return steps if word == end_word
+
+      words.each do |candidate|
+        next if seen.include?(candidate)
+        next unless differs_by_one?(word, candidate)
+
+        seen << candidate
+        frontier << candidate
+      end
+    end
+    steps += 1
+  end
+
+  0
+end
+
+def differs_by_one?(a, b)
+  a.length == b.length && a.chars.zip(b.chars).count { |x, y| x != y } == 1
+end",
+      ),
+      #(
+        "BFS",
+        "O(n·k²) time · O(n·k) space",
+        "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.",
+        "require \"set\"
+
+def ladder_length(begin_word, end_word, word_list)
+  words = word_list.to_set
+  return 0 unless words.include?(end_word)
+
+  # The graph is never built: \"hot\" and \"dot\" are neighbours because they
+  # share the pattern \"*ot\", so bucketing every word under each of its
+  # wildcard patterns gives the adjacency for free. Comparing every pair
+  # instead costs O(n^2) comparisons before the search even starts.
+  buckets = Hash.new { |hash, pattern| hash[pattern] = [] }
+  words.each do |word|
+    word.length.times { |i| buckets[\"#{word[0, i]}*#{word[i + 1..]}\"] << word }
+  end
+
+  seen = Set[begin_word]
+  frontier = [begin_word]
+  steps = 1
+
+  until frontier.empty?
+    frontier.length.times do
+      word = frontier.shift
+      return steps if word == end_word
+
+      word.length.times do |i|
+        buckets.fetch(\"#{word[0, i]}*#{word[i + 1..]}\", []).each do |neighbour|
+          next if seen.include?(neighbour)
+
+          seen << neighbour
+          frontier << neighbour
+        end
+      end
+    end
+    steps += 1
+  end
+
+  0
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def ladder_length(begin_word, end_word, word_list)",
+      starter: "require \"set\"
+
+def ladder_length(begin_word, end_word, word_list)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :ladder_length
+
+tc 'ladder_length(\"hit\", \"cog\", full list)', 5, ladder_length(\"hit\", \"cog\", [\"hot\", \"dot\", \"dog\", \"lot\", \"log\", \"cog\"])
+tc 'ladder_length(\"hit\", \"cog\", without cog)', 0, ladder_length(\"hit\", \"cog\", [\"hot\", \"dot\", \"dog\", \"lot\", \"log\"])
+tc 'ladder_length(\"a\", \"c\", [\"a\", \"b\", \"c\"])', 2, ladder_length(\"a\", \"c\", [\"a\", \"b\", \"c\"])
+tc 'ladder_length(\"hit\", \"hit\", [\"hit\"])', 1, ladder_length(\"hit\", \"hit\", [\"hit\"])
+tc 'ladder_length(\"hot\", \"dog\", [\"hot\", \"dog\"]) -- no bridge', 0, ladder_length(\"hot\", \"dog\", [\"hot\", \"dog\"])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc119_reconstruct_itinerary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(E!) time · O(E²) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.",
+        "def find_itinerary(tickets)
+  destinations = {}
+  tickets.each { |origin, destination| (destinations[origin] ||= []) << destination }
+  destinations.each_value(&:sort!)
+
+  # Every ticket used, smallest option first, undoing a choice that leads
+  # nowhere. Because the options are sorted, the first complete itinerary
+  # found is the smallest one, with no comparing of candidates. Exponential in
+  # the worst case, which is what Hierholzer's one-pass walk removes.
+  walk = lambda do |airport, route, remaining|
+    return route if remaining.zero?
+
+    options = destinations.fetch(airport, [])
+    options.length.times do |i|
+      stop = options.delete_at(i)
+      found = walk.call(stop, route + [stop], remaining - 1)
+      options.insert(i, stop)
+      return found if found
+    end
+    nil
+  end
+
+  walk.call(\"JFK\", [\"JFK\"], tickets.length) || []
+end",
+      ),
+      #(
+        "Hierholzer",
+        "O(E log E) time · O(E) space",
+        "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.",
+        "def find_itinerary(tickets)
+  destinations = {}
+  tickets.each { |origin, destination| (destinations[origin] ||= []) << destination }
+  destinations.each_value(&:sort!)
+
+  # Hierholzer's algorithm. Take the smallest unused ticket every time and
+  # never look back: an airport is only recorded once it has no tickets left,
+  # so the dead end the greedy choice walks into is exactly where the route
+  # has to *end*, and being recorded first puts it at the front once the
+  # record is reversed.
+  route = []
+  stack = [\"JFK\"]
+  until stack.empty?
+    options = destinations[stack.last]
+    if options && !options.empty?
+      stack << options.shift
+    else
+      route << stack.pop
+    end
+  end
+
+  route.reverse
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_itinerary(tickets)",
+      starter: "def find_itinerary(tickets)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_itinerary
+
+tc \"find_itinerary(MUC/LHR/SFO/SJC chain)\", [\"JFK\", \"MUC\", \"LHR\", \"SFO\", \"SJC\"],
+   find_itinerary([[\"MUC\", \"LHR\"], [\"JFK\", \"MUC\"], [\"SFO\", \"SJC\"], [\"LHR\", \"SFO\"]])
+tc \"find_itinerary(two ways out of JFK -- smallest first)\", [\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"],
+   find_itinerary([[\"JFK\", \"SFO\"], [\"JFK\", \"ATL\"], [\"SFO\", \"ATL\"], [\"ATL\", \"JFK\"], [\"ATL\", \"SFO\"]])
+tc \"find_itinerary(KUL is a dead end, so it must come last)\", [\"JFK\", \"NRT\", \"JFK\", \"KUL\"],
+   find_itinerary([[\"JFK\", \"KUL\"], [\"JFK\", \"NRT\"], [\"NRT\", \"JFK\"]])
+tc \"find_itinerary([])\", [\"JFK\"], find_itinerary([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc11_container_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.",
+        "def max_area(height)
+  best = 0
+  (0...height.length).each do |left|
+    (left + 1...height.length).each do |right|
+      best = [best, (right - left) * [height[left], height[right]].min].max
+    end
+  end
+  best
+end",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.",
+        "def max_area(height)
+  left = 0
+  right = height.length - 1
+  best = 0
+
+  while left < right
+    area = (right - left) * [height[left], height[right]].min
+    best = [best, area].max
+
+    # The shorter wall caps the area: moving the taller one can only shrink it.
+    if height[left] < height[right]
+      left += 1
+    else
+      right -= 1
+    end
+  end
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_area(height)",
+      starter: "def max_area(height)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_area
+
+tc \"max_area([1, 8, 6, 2, 5, 4, 8, 3, 7])\", 49, max_area([1, 8, 6, 2, 5, 4, 8, 3, 7])
+tc \"max_area([1, 1])\", 1, max_area([1, 1])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc120_min_cost_connect_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Kruskal",
+        "O(n² log n) time · O(n²) space",
+        "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.",
+        "def min_cost_connect_points(points)
+  # Kruskal's algorithm: every edge, cheapest first, kept only when it joins
+  # two pieces that are not already connected. Union-find is what makes that
+  # test cheap. The trade against Prim's is the sort (O(n^2 log n) edges
+  # here against Prim's O(n^2)) but Kruskal never needs the points
+  # themselves, only the edge list, so it is the one that generalises to a
+  # sparse graph.
+  edges = []
+  points.each_index do |i|
+    (i + 1...points.length).each { |j| edges << [distance(points[i], points[j]), i, j] }
+  end
+  edges.sort!
+
+  parents = {}
+
+  find = lambda do |node|
+    node = parents[node] while parents.fetch(node, node) != node
+    node
+  end
+
+  total = 0
+  edges.each do |cost, i, j|
+    root_i = find.call(i)
+    root_j = find.call(j)
+    next if root_i == root_j
+
+    parents[root_i] = root_j
+    total += cost
+  end
+
+  total
+end
+
+def distance(a, b)
+  (a[0] - b[0]).abs + (a[1] - b[1]).abs
+end",
+      ),
+      #(
+        "Prim",
+        "O(n²) time · O(n) space",
+        "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.",
+        "def min_cost_connect_points(points)
+  return 0 if points.empty?
+
+  # Prim's algorithm. Each outside point remembers only its distance to the
+  # tree so far, so adding a point is one pass to find the nearest and one
+  # pass to update: O(n^2) total, which is what a complete graph costs
+  # anyway, and it needs no heap. Cheapest-edge-first is safe because the
+  # cheapest edge leaving any set of points is always in some minimum
+  # spanning tree.
+  start = points[0]
+  outside = points[1..].map { |point| [point, distance(start, point)] }
+  total = 0
+
+  until outside.empty?
+    best = (0...outside.length).min_by { |i| outside[i][1] }
+    point, cost = outside.delete_at(best)
+    total += cost
+    outside.each { |entry| entry[1] = [entry[1], distance(point, entry[0])].min }
+  end
+
+  total
+end
+
+def distance(a, b)
+  (a[0] - b[0]).abs + (a[1] - b[1]).abs
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_cost_connect_points(points)
+
+def distance(a, b)",
+      starter: "def min_cost_connect_points(points)
+  raise NotImplementedError, \"todo\"
+end
+
+def distance(a, b)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_cost_connect_points
+
+tc \"min_cost_connect_points(the five-point example)\", 20, min_cost_connect_points([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]])
+tc \"min_cost_connect_points([[3, 12], [-2, 5], [-4, 1]])\", 18, min_cost_connect_points([[3, 12], [-2, 5], [-4, 1]])
+tc \"min_cost_connect_points([])\", 0, min_cost_connect_points([])
+tc \"min_cost_connect_points([[1, 1]]) -- nothing to connect\", 0, min_cost_connect_points([[1, 1]])
+tc \"min_cost_connect_points([[0, 0], [0, 5]])\", 5, min_cost_connect_points([[0, 0], [0, 5]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc121_network_delay_time() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bellman-Ford",
+        "O(V·E) time · O(V) space",
+        "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.",
+        "def network_delay_time(times, n, k)
+  # Bellman-Ford. No choosing what to settle next: relax every edge, n-1
+  # times over, and the times settle by themselves. A shortest path is at
+  # most n-1 edges long, and each round fixes at least one more of them.
+  # Slower than Dijkstra at O(V*E), and the reason to know it is that it
+  # survives negative edge weights, which Dijkstra's settle-and-never-revisit
+  # does not.
+  settled = { k => 0 }
+  [n - 1, 0].max.times do
+    times.each do |origin, destination, weight|
+      next unless settled.key?(origin)
+
+      arrival = settled[origin] + weight
+      settled[destination] = arrival if !settled.key?(destination) || arrival < settled[destination]
+    end
+  end
+
+  settled.length == n ? settled.values.max : -1
+end",
+      ),
+      #(
+        "Dijkstra",
+        "O(E log V) time · O(V+E) space",
+        "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.",
+        "def network_delay_time(times, n, k)
+  edges = {}
+  times.each { |origin, destination, weight| (edges[origin] ||= []) << [destination, weight] }
+
+  # Dijkstra's algorithm. The heap holds tentative arrival times; taking the
+  # smallest one settles that node for good, because every other route to it
+  # would have to start with an edge at least as long. Stale entries are left
+  # in the heap and skipped on the way out, cheaper than finding and
+  # rewriting them.
+  settled = {}
+  frontier = [[0, k]]
+  until frontier.empty?
+    at, node = heap_pop(frontier)
+    next if settled.key?(node)
+
+    settled[node] = at
+    edges.fetch(node, []).each do |destination, weight|
+      heap_push(frontier, [at + weight, destination]) unless settled.key?(destination)
+    end
+  end
+
+  # Every node has to have heard the signal, and the answer is the last one to.
+  settled.length == n ? settled.values.max : -1
+end
+
+# Ruby's standard library has no priority queue, so the heap is written out:
+# a binary min-heap kept in a plain array, ordered by <=> (arrays compare
+# element by element, so [cost, ...] entries come out cheapest first).
+def heap_push(heap, item)
+  heap << item
+  i = heap.length - 1
+  while i.positive?
+    parent = (i - 1) / 2
+    break if (heap[parent] <=> heap[i]) <= 0
+
+    heap[parent], heap[i] = heap[i], heap[parent]
+    i = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap.first
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  i = 0
+  loop do
+    smallest = i
+    [2 * i + 1, 2 * i + 2].each do |child|
+      smallest = child if child < heap.length && (heap[child] <=> heap[smallest]).negative?
+    end
+    break if smallest == i
+
+    heap[smallest], heap[i] = heap[i], heap[smallest]
+    i = smallest
+  end
+  top
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def network_delay_time(times, n, k)
+
+def heap_push(heap, item)
+
+def heap_pop(heap)",
+      starter: "def network_delay_time(times, n, k)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_push(heap, item)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_pop(heap)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :network_delay_time
+
+tc \"network_delay_time([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2)\", 2, network_delay_time([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2)
+tc \"network_delay_time([[1, 2, 1]], 2, 1)\", 1, network_delay_time([[1, 2, 1]], 2, 1)
+tc \"network_delay_time([[1, 2, 1]], 2, 2) -- node 1 is unreachable\", -1, network_delay_time([[1, 2, 1]], 2, 2)
+tc \"network_delay_time([], 1, 1)\", 0, network_delay_time([], 1, 1)
+tc \"network_delay_time(the long way round is shorter, 3, 1)\", 3, network_delay_time([[1, 2, 1], [2, 3, 2], [1, 3, 4]], 3, 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc122_swim_in_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(n² log n) time · O(n²) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.",
+        "require \"set\"
+
+def swim_in_water(grid)
+  return 0 if grid.empty?
+
+  n = grid.length
+  target = [n - 1, n - 1]
+
+  reaches = lambda do |limit|
+    # The target has to be passable itself, so its depth is checked before
+    # it counts as reached.
+    return false if grid[0][0] > limit
+
+    seen = Set.new
+    stack = [[0, 0]]
+    until stack.empty?
+      r, c = stack.pop
+      next if seen.include?([r, c]) || grid[r][c] > limit
+      return true if [r, c] == target
+
+      seen << [r, c]
+      [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+        stack << [nr, nc] if nr.between?(0, n - 1) && nc.between?(0, grid[nr].length - 1)
+      end
+    end
+    false
+  end
+
+  # Reachability at time t is monotone: once the corner can be reached it
+  # stays reachable as the water rises further. That is exactly the shape
+  # binary search needs, so the question turns from \"what is the cheapest
+  # path\" into \"is it possible yet\", answered by a plain flood fill.
+  low = grid[0][0]
+  high = n * n - 1
+  while low < high
+    middle = (low + high) / 2
+    if reaches.call(middle)
+      high = middle
+    else
+      low = middle + 1
+    end
+  end
+  low
+end",
+      ),
+      #(
+        "Dijkstra",
+        "O(n² log n) time · O(n²) space",
+        "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.",
+        "require \"set\"
+
+def swim_in_water(grid)
+  return 0 if grid.empty?
+
+  n = grid.length
+  target = [n - 1, n - 1]
+
+  # Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to
+  # the largest step in it: the water only has to rise once. Everything else
+  # about the algorithm is unchanged, which is the point: settle the cheapest
+  # reachable cell, and the first time the far corner is settled that cost is
+  # the answer.
+  seen = Set.new
+  frontier = [[grid[0][0], 0, 0]]
+  until frontier.empty?
+    cost, r, c = heap_pop(frontier)
+    return cost if [r, c] == target
+    next if seen.include?([r, c])
+
+    seen << [r, c]
+    [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].each do |nr, nc|
+      next unless nr.between?(0, n - 1) && nc.between?(0, grid[nr].length - 1) && !seen.include?([nr, nc])
+
+      heap_push(frontier, [[cost, grid[nr][nc]].max, nr, nc])
+    end
+  end
+
+  -1
+end
+
+# Ruby's standard library has no priority queue, so the heap is written out:
+# a binary min-heap kept in a plain array, ordered by <=> (arrays compare
+# element by element, so [cost, ...] entries come out cheapest first).
+def heap_push(heap, item)
+  heap << item
+  i = heap.length - 1
+  while i.positive?
+    parent = (i - 1) / 2
+    break if (heap[parent] <=> heap[i]) <= 0
+
+    heap[parent], heap[i] = heap[i], heap[parent]
+    i = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap.first
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  i = 0
+  loop do
+    smallest = i
+    [2 * i + 1, 2 * i + 2].each do |child|
+      smallest = child if child < heap.length && (heap[child] <=> heap[smallest]).negative?
+    end
+    break if smallest == i
+
+    heap[smallest], heap[i] = heap[i], heap[smallest]
+    i = smallest
+  end
+  top
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def swim_in_water(grid)
+
+def heap_push(heap, item)
+
+def heap_pop(heap)",
+      starter: "require \"set\"
+
+def swim_in_water(grid)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_push(heap, item)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_pop(heap)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :swim_in_water
+
+tc \"swim_in_water([[0, 2], [1, 3]])\", 3, swim_in_water([[0, 2], [1, 3]])
+tc \"swim_in_water(the 5x5 spiral)\", 16,
+   swim_in_water([[0, 1, 2, 3, 4], [24, 23, 22, 21, 5], [12, 13, 14, 15, 16], [11, 17, 18, 19, 20], [10, 9, 8, 7, 6]])
+tc \"swim_in_water([[0]])\", 0, swim_in_water([[0]])
+tc \"swim_in_water([[3, 2], [1, 0]]) -- the start is the deepest cell\", 3, swim_in_water([[3, 2], [1, 0]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc123_alien_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS Topological Sort",
+        "O(C) time · O(V+E) space",
+        "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.",
+        "require \"set\"
+
+def alien_order(words)
+  letters = words.flat_map(&:chars).to_set
+
+  after = letters.to_h { |letter| [letter, []] }
+  words.each_cons(2) do |first, second|
+    at = (0...[first.length, second.length].min).find { |i| first[i] != second[i] }
+    if at
+      after[first[at]] << second[at]
+    elsif first.length > second.length
+      return \"\"
+    end
+  end
+
+  # Depth-first, recording a letter only once everything that must follow it
+  # has been recorded, and recording it by prepending, which is what puts it
+  # back in front of them. The in-progress set is the cycle check: a letter
+  # met again on the current path contradicts itself.
+  on_path = Set.new
+  done = Set.new
+  order = []
+
+  visit = lambda do |letter|
+    return false if on_path.include?(letter)
+    return true if done.include?(letter)
+
+    on_path << letter
+    return false unless after[letter].all? { |following| visit.call(following) }
+
+    on_path.delete(letter)
+    done << letter
+    order.unshift(letter)
+    true
+  end
+
+  letters.all? { |letter| visit.call(letter) } ? order.join : \"\"
+end",
+      ),
+      #(
+        "Topological Sort",
+        "O(C) time · O(V+E) space",
+        "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.",
+        "require \"set\"
+
+def alien_order(words)
+  letters = words.flat_map(&:chars).to_set
+
+  # Two adjacent words agree up to their first difference, and that difference
+  # is the only thing they say about the alphabet: everything after it is
+  # unordered. The one case with no letters to compare is a word followed by a
+  # prefix of itself, which no alphabet can explain.
+  waiting = letters.to_h { |letter| [letter, 0] }
+  unlocks = letters.to_h { |letter| [letter, []] }
+  words.each_cons(2) do |first, second|
+    at = (0...[first.length, second.length].min).find { |i| first[i] != second[i] }
+    if at
+      unlocks[first[at]] << second[at]
+      waiting[second[at]] += 1
+    elsif first.length > second.length
+      return \"\"
+    end
+  end
+
+  ready = letters.select { |letter| waiting[letter].zero? }
+  order = []
+  until ready.empty?
+    letter = ready.pop
+    order << letter
+    unlocks[letter].each do |following|
+      waiting[following] -= 1
+      ready << following if waiting[following].zero?
+    end
+  end
+
+  # Short means the leftovers all depend on each other: the ordering the words
+  # describe is contradictory, so no alphabet satisfies it.
+  order.length == letters.length ? order.join : \"\"
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def alien_order(words)",
+      starter: "require \"set\"
+
+def alien_order(words)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :alien_order
+
+tc 'alien_order([\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"])', \"wertf\", alien_order([\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"])
+tc 'alien_order([\"z\", \"x\"])', \"zx\", alien_order([\"z\", \"x\"])
+tc 'alien_order([\"z\", \"x\", \"z\"]) -- contradictory', \"\", alien_order([\"z\", \"x\", \"z\"])
+tc 'alien_order([\"abc\", \"ab\"]) -- a word before its own prefix', \"\", alien_order([\"abc\", \"ab\"])
+tc 'alien_order([\"z\", \"z\"])', \"z\", alien_order([\"z\", \"z\"])
+tc 'alien_order([\"x\", \"y\", \"z\"])', \"xyz\", alien_order([\"x\", \"y\", \"z\"])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc124_cheapest_flights() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(k·E) time · O(V+E) space",
+        "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.",
+        "def find_cheapest_price(n, flights, src, dst, k)
+  outgoing = {}
+  flights.each { |origin, destination, price| (outgoing[origin] ||= []) << [destination, price] }
+
+  # Breadth-first by number of flights taken, which makes the stop limit the
+  # depth limit: the same bound Bellman-Ford gets from its round count. The
+  # cheapest-so-far table is what stops it exploding: a city is only expanded
+  # again if this route reached it for less than any earlier one did.
+  best = { src => 0 }
+  frontier = [[src, 0]]
+  (k + 1).times do
+    following = []
+    frontier.each do |city, spent|
+      outgoing.fetch(city, []).each do |destination, price|
+        total = spent + price
+        next unless !best.key?(destination) || total < best[destination]
+
+        best[destination] = total
+        following << [destination, total]
+      end
+    end
+    frontier = following
+    break if frontier.empty?
+  end
+
+  best.fetch(dst, -1)
+end",
+      ),
+      #(
+        "Bellman-Ford",
+        "O(k·E) time · O(V) space",
+        "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.",
+        "def find_cheapest_price(n, flights, src, dst, k)
+  # Bellman-Ford, stopped after k+1 rounds: one round is one flight, so the
+  # round count *is* the stop limit. Each round reads the previous round's
+  # costs from a snapshot rather than from the table being written; without
+  # that, two flights could be taken within a single round and the limit would
+  # leak.
+  costs = { src => 0 }
+  (k + 1).times do
+    previous = costs.dup
+    flights.each do |origin, destination, price|
+      next unless previous.key?(origin)
+
+      total = previous[origin] + price
+      costs[destination] = total if !costs.key?(destination) || total < costs[destination]
+    end
+  end
+
+  costs.fetch(dst, -1)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_cheapest_price(n, flights, src, dst, k)",
+      starter: "def find_cheapest_price(n, flights, src, dst, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_cheapest_price
+
+tc \"find_cheapest_price(4, the loop example, 0, 3, 1)\", 700,
+   find_cheapest_price(4, [[0, 1, 100], [1, 2, 100], [2, 0, 100], [1, 3, 600], [2, 3, 200]], 0, 3, 1)
+tc \"find_cheapest_price(3, two hops allowed, 0, 2, 1)\", 200, find_cheapest_price(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 1)
+tc \"find_cheapest_price(3, no stop allowed, 0, 2, 0)\", 500, find_cheapest_price(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 0)
+tc \"find_cheapest_price(2, no flights at all, 0, 1, 5)\", -1, find_cheapest_price(2, [], 0, 1, 5)
+tc \"find_cheapest_price(1, already there, 0, 0, 0)\", 0, find_cheapest_price(1, [], 0, 0, 0)
+tc \"find_cheapest_price(5, cheapest route needs the third hop, 0, 2, 2)\", 7,
+   find_cheapest_price(5, [[0, 1, 5], [1, 2, 5], [0, 3, 2], [3, 1, 2], [1, 4, 1], [4, 2, 1]], 0, 2, 2)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc125_reverse_linked_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n) time · O(n) space",
+        "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).",
+        "def reverse_list(head)
+  # Reverse the rest, then hook the current node onto its end. The new head
+  # comes back unchanged through every frame, which is why it is returned
+  # rather than tracked, and head.next.next = head is the whole rewiring,
+  # done on the way back out. O(n) stack, against the loop's O(1).
+  return head if head.nil? || head.next.nil?
+
+  reversed_rest = reverse_list(head.next)
+  head.next.next = head
+  head.next = nil
+  reversed_rest
+end",
+      ),
+      #(
+        "Iterative",
+        "O(n) time · O(1) space",
+        "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.",
+        "def reverse_list(head)
+  # Three references and no new nodes: remember where you came from, look ahead
+  # before rewriting the link, then step on. Losing the look-ahead is the
+  # classic bug: once head.next has been overwritten, the rest of the list
+  # is unreachable.
+  previous = nil
+  while head
+    following = head.next
+    head.next = previous
+    previous = head
+    head = following
+  end
+  previous
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def reverse_list(head)",
+      starter: "def reverse_list(head)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :reverse_list
+
+def chain(values) = values.reverse.reduce(nil) { |head, value| ListNode.new(value, head) }
+
+def values_of(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+tc \"reverse_list([1, 2, 3, 4, 5])\", [5, 4, 3, 2, 1], values_of(reverse_list(chain([1, 2, 3, 4, 5])))
+tc \"reverse_list([1, 2])\", [2, 1], values_of(reverse_list(chain([1, 2])))
+tc \"reverse_list([]) -- an empty list\", [], values_of(reverse_list(chain([])))
+tc \"reverse_list([7])\", [7], values_of(reverse_list(chain([7])))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc126_merge_two_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n+m) time · O(n+m) space",
+        "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.",
+        "def merge_two_lists(list1, list2)
+  # Take the smaller head and let the recursion produce the rest. No dummy and
+  # no tail pointer (the return value is the join) at the cost of a frame
+  # per node.
+  return list2 if list1.nil?
+  return list1 if list2.nil?
+
+  if list1.val <= list2.val
+    list1.next = merge_two_lists(list1.next, list2)
+    return list1
+  end
+  list2.next = merge_two_lists(list1, list2.next)
+  list2
+end",
+      ),
+      #(
+        "Iterative",
+        "O(n+m) time · O(1) space",
+        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "def merge_two_lists(list1, list2)
+  # The dummy head is what removes the special case: without it, the first
+  # node has to be chosen separately from all the others because there is
+  # nothing to attach it to. No new nodes beyond it; the existing ones are
+  # spliced.
+  dummy = ListNode.new
+  tail = dummy
+
+  while list1 && list2
+    if list1.val <= list2.val
+      tail.next, list1 = list1, list1.next
+    else
+      tail.next, list2 = list2, list2.next
+    end
+    tail = tail.next
+  end
+
+  # Whichever list is left is already sorted and already linked.
+  tail.next = list1 || list2
+  dummy.next
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def merge_two_lists(list1, list2)",
+      starter: "def merge_two_lists(list1, list2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :merge_two_lists
+
+def chain(values) = values.reverse.reduce(nil) { |head, value| ListNode.new(value, head) }
+
+def values_of(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+tc \"merge_two_lists([1, 2, 4], [1, 3, 4])\", [1, 1, 2, 3, 4, 4], values_of(merge_two_lists(chain([1, 2, 4]), chain([1, 3, 4])))
+tc \"merge_two_lists([], [])\", [], values_of(merge_two_lists(chain([]), chain([])))
+tc \"merge_two_lists([], [0])\", [0], values_of(merge_two_lists(chain([]), chain([0])))
+tc \"merge_two_lists([5], [1, 2, 3])\", [1, 2, 3, 5], values_of(merge_two_lists(chain([5]), chain([1, 2, 3])))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc127_reorder_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(n) space",
+        "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.",
+        "def reorder_list(head)
+  # Collect the nodes into an array first, then relink them by index from both
+  # ends. O(n) extra space against the in-place version's O(1), but random
+  # access is exactly what a linked list lacks, so this makes visible what the
+  # midpoint-and-reverse dance is buying.
+  nodes = []
+  node = head
+  while node
+    nodes << node
+    node = node.next
+  end
+
+  low = 0
+  high = nodes.length - 1
+  while low < high
+    nodes[low].next = nodes[high]
+    low += 1
+    break if low == high
+
+    nodes[high].next = nodes[low]
+    high -= 1
+  end
+
+  nodes[low].next = nil unless nodes.empty?
+  head
+end",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+        "def reorder_list(head)
+  # Three separate steps, each of which is its own drill: find the middle with
+  # a slow and a fast pointer, reverse the back half, then weave the two
+  # together. That decomposition is the whole trick; none of the three needs
+  # to know about the others.
+  return head if head.nil? || head.next.nil?
+
+  slow = head
+  fast = head.next
+  while fast&.next
+    slow = slow.next
+    fast = fast.next.next
+  end
+
+  second = slow.next
+  slow.next = nil
+
+  previous = nil
+  while second
+    following = second.next
+    second.next = previous
+    previous = second
+    second = following
+  end
+
+  first = head
+  second = previous
+  while second
+    first_next = first.next
+    second_next = second.next
+    first.next = second
+    second.next = first_next
+    first = first_next
+    second = second_next
+  end
+
+  head
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def reorder_list(head)",
+      starter: "def reorder_list(head)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :reorder_list
+
+def chain(values) = values.reverse.reduce(nil) { |head, value| ListNode.new(value, head) }
+
+def values_of(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+# reorder_list rewrites the list in place, so the head it was given is the
+# answer whether or not it also returns one.
+def reordered(values)
+  head = chain(values)
+  returned = reorder_list(head)
+  values_of(head || returned)
+end
+
+tc \"reorder_list([1, 2, 3, 4])\", [1, 4, 2, 3], reordered([1, 2, 3, 4])
+tc \"reorder_list([1, 2, 3, 4, 5]) -- the middle stays last\", [1, 5, 2, 4, 3], reordered([1, 2, 3, 4, 5])
+tc \"reorder_list([1, 2])\", [1, 2], reordered([1, 2])
+tc \"reorder_list([1])\", [1], reordered([1])
+tc \"reorder_list([])\", [], reordered([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc128_remove_nth_from_end() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pass",
+        "O(n) time · O(1) space",
+        "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.",
+        "def remove_nth_from_end(head, n)
+  # Count first, then walk to the position. Two passes rather than one, and it
+  # says outright what the two-pointer version encodes in a gap: nth from the
+  # end is length minus n from the front. Where a list cannot be walked twice
+  # (a stream, say) that is exactly the assumption that fails.
+  length = 0
+  node = head
+  while node
+    length += 1
+    node = node.next
+  end
+
+  index = length - n
+  return head if index.negative?
+
+  dummy = ListNode.new(0, head)
+  before = dummy
+  index.times { before = before.next }
+  before.next = before.next.next
+  dummy.next
+end",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.",
+        "def remove_nth_from_end(head, n)
+  # Two pointers n apart. When the leading one runs off the end, the trailing
+  # one is on the node *before* the doomed one, which is the node that has
+  # to be rewritten, and the reason the gap is opened from a dummy rather than
+  # from the head.
+  dummy = ListNode.new(0, head)
+  behind = ahead = dummy
+
+  n.times do
+    return head if ahead.next.nil?
+
+    ahead = ahead.next
+  end
+
+  while ahead.next
+    behind = behind.next
+    ahead = ahead.next
+  end
+
+  behind.next = behind.next.next
+  dummy.next
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def remove_nth_from_end(head, n)",
+      starter: "def remove_nth_from_end(head, n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :remove_nth_from_end
+
+def chain(values) = values.reverse.reduce(nil) { |head, value| ListNode.new(value, head) }
+
+def values_of(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+tc \"remove_nth_from_end([1, 2, 3, 4, 5], 2)\", [1, 2, 3, 5], values_of(remove_nth_from_end(chain([1, 2, 3, 4, 5]), 2))
+tc \"remove_nth_from_end([1], 1)\", [], values_of(remove_nth_from_end(chain([1]), 1))
+tc \"remove_nth_from_end([1, 2], 1)\", [1], values_of(remove_nth_from_end(chain([1, 2]), 1))
+tc \"remove_nth_from_end([1, 2], 2) -- the head goes\", [2], values_of(remove_nth_from_end(chain([1, 2]), 2))
+tc \"remove_nth_from_end([1, 2, 3], 5) -- nothing to remove\", [1, 2, 3], values_of(remove_nth_from_end(chain([1, 2, 3]), 5))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc129_copy_random_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Interleaved Copies",
+        "O(n) time · O(1) extra space",
+        "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.",
+        "def copy_random_list(head)
+  # The list itself replaces the map: each copy is spliced in directly after
+  # its original, so \"the copy of node X\" is always X.next, with no lookup and
+  # no O(n) table. Three passes instead of two, and the last one has to
+  # unweave the two lists again, restoring the original exactly as it was.
+  node = head
+  while node
+    node.next = RandomNode.new(node.val, node.next)
+    node = node.next.next
+  end
+
+  node = head
+  while node
+    node.next.random = node.random.next if node.random
+    node = node.next.next
+  end
+
+  copy = head&.next
+  node = head
+  while node
+    original_next = node.next.next
+    node.next.next = original_next.next if original_next
+    node.next = original_next
+    node = original_next
+  end
+
+  copy
+end",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+        "def copy_random_list(head)
+  # One pass to create every copy, a second to wire them up. Resolving a link
+  # on first sight cannot work: it may point at a node not yet copied, which
+  # is the whole difficulty of the problem, and a map from original node to
+  # copy is what removes it. Nodes hash by identity, and copies[nil] is nil.
+  copies = {}
+
+  node = head
+  while node
+    copies[node] = RandomNode.new(node.val)
+    node = node.next
+  end
+
+  node = head
+  while node
+    copies[node].next = copies[node.next]
+    copies[node].random = copies[node.random]
+    node = node.next
+  end
+
+  copies[head]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def copy_random_list(head)",
+      starter: "def copy_random_list(head)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :copy_random_list
+
+# Builds a list from [value, random_index] pairs, where random_index is nil for
+# no link.
+def build(pairs)
+  nodes = pairs.map { |value, _random| RandomNode.new(value) }
+  nodes.each_with_index do |node, i|
+    node.next = nodes[i + 1]
+    node.random = pairs[i][1] && nodes[pairs[i][1]]
+  end
+  nodes.first
+end
+
+# Serialises back to [value, random_index] pairs, and checks along the way that
+# every node is a *new* one: a copy that reuses the originals would otherwise
+# pass every value comparison.
+def serialise(head, originals)
+  nodes = []
+  node = head
+  while node && nodes.length < 1000
+    nodes << node
+    node = node.next
+  end
+  places = nodes.each_with_index.to_h.compare_by_identity
+  return \"reused an original node\" if nodes.any? { |n| originals.key?(n) }
+
+  nodes.map { |n| [n.val, n.random && places[n.random]] }
+end
+
+def copied(pairs)
+  head = build(pairs)
+  originals = {}.compare_by_identity
+  node = head
+  while node
+    originals[node] = true
+    node = node.next
+  end
+  serialise(copy_random_list(head), originals)
+end
+
+tc \"copy_random_list([[7, nil], [13, 0]])\", [[7, nil], [13, 0]], copied([[7, nil], [13, 0]])
+tc \"copy_random_list([[1, 0]]) -- a node pointing at itself\", [[1, 0]], copied([[1, 0]])
+tc \"copy_random_list(a forward link to a node not yet copied)\", [[1, 2], [2, nil], [3, 0]], copied([[1, 2], [2, nil], [3, 0]])
+tc \"copy_random_list([])\", [], copied([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc12_best_time_stock() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every buy day against every later sell day. O(n^2), and the problem statement written out.",
+        "def max_profit(prices)
+  profit = 0
+  (0...prices.length).each do |buy|
+    (buy + 1...prices.length).each do |sell|
+      profit = [profit, prices[sell] - prices[buy]].max
+    end
+  end
+  profit
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.",
+        "def max_profit(prices)
+  lowest = Float::INFINITY
+  profit = 0
+
+  prices.each do |price|
+    lowest = [lowest, price].min
+    profit = [profit, price - lowest].max
+  end
+  profit
+end",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Left pointer marks the buy day, right pointer scans the sell days. A sell price below the buy price becomes the new buy — nothing before it can beat buying cheaper — otherwise the spread is a candidate profit. Same one pass as the running minimum, phrased as a window.",
+        "def max_profit(prices)
+  profit = 0
+  buy = 0
+
+  (1...prices.length).each do |sell|
+    if prices[sell] < prices[buy]
+      buy = sell
+    else
+      profit = [profit, prices[sell] - prices[buy]].max
+    end
+  end
+  profit
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_profit(prices)",
+      starter: "def max_profit(prices)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_profit
+
+tc \"max_profit([7, 1, 5, 3, 6, 4])\", 5, max_profit([7, 1, 5, 3, 6, 4])
+tc \"max_profit([7, 6, 4, 3, 1])\", 0, max_profit([7, 6, 4, 3, 1])
+tc \"max_profit([])\", 0, max_profit([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc130_add_two_numbers() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · Big Ints",
+        "O(n+m) time · O(n+m) space",
+        "Turn both lists into whole numbers, add, take the sum apart again with `divmod(10)`. It reads well, and it is safe only because Ruby's Integer quietly grows into a bignum past 64 bits, which is precisely why the problem is posed as a list of digits in languages where it would overflow instead.",
+        "def add_two_numbers(l1, l2)
+  # Turn both lists into whole numbers, add, and take the sum apart again. It
+  # reads well and is fine in Ruby, whose Integers grow into bignums on their
+  # own, but it is the version that breaks the moment the language has a
+  # fixed-width integer, which is precisely why the problem is posed as a list
+  # of digits.
+  total = value(l1) + value(l2)
+
+  dummy = ListNode.new
+  tail = dummy
+  loop do
+    total, digit = total.divmod(10)
+    tail.next = ListNode.new(digit)
+    tail = tail.next
+    return dummy.next if total.zero?
+  end
+end
+
+def value(node)
+  total = 0
+  place = 1
+  while node
+    total += node.val * place
+    place *= 10
+    node = node.next
+  end
+  total
+end",
+      ),
+      #(
+        "Simulation",
+        "O(n+m) time · O(n+m) space",
+        "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
+        "def add_two_numbers(l1, l2)
+  # Both numbers arrive least significant digit first, which is exactly the
+  # order addition wants: no reversing and no length matching. The loop
+  # condition includes the carry, because 5 + 5 produces a digit that neither
+  # input has a node for.
+  dummy = ListNode.new
+  tail = dummy
+  carry = 0
+
+  while l1 || l2 || carry.positive?
+    total = carry
+    if l1
+      total += l1.val
+      l1 = l1.next
+    end
+    if l2
+      total += l2.val
+      l2 = l2.next
+    end
+    carry, digit = total.divmod(10)
+    tail.next = ListNode.new(digit)
+    tail = tail.next
+  end
+
+  dummy.next
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def add_two_numbers(l1, l2)",
+      starter: "def add_two_numbers(l1, l2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :add_two_numbers
+
+def chain(values) = values.reverse.reduce(nil) { |head, value| ListNode.new(value, head) }
+
+def values_of(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+tc \"add_two_numbers([2, 4, 3], [5, 6, 4]) -- 342 + 465\", [7, 0, 8], values_of(add_two_numbers(chain([2, 4, 3]), chain([5, 6, 4])))
+tc \"add_two_numbers([0], [0])\", [0], values_of(add_two_numbers(chain([0]), chain([0])))
+tc \"add_two_numbers([9, 9, 9], [1]) -- the carry runs all the way\", [0, 0, 0, 1], values_of(add_two_numbers(chain([9, 9, 9]), chain([1])))
+tc \"add_two_numbers([5], [5]) -- the carry outlives both\", [0, 1], values_of(add_two_numbers(chain([5]), chain([5])))
+tc \"add_two_numbers([1, 2], [3, 4, 5]) -- different lengths\", [4, 6, 5], values_of(add_two_numbers(chain([1, 2]), chain([3, 4, 5])))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc131_linked_list_cycle() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.",
+        "require \"set\"
+
+def has_cycle(head)
+  # Remember every node visited and stop when one repeats. Obvious, correct,
+  # and O(n) memory, which is the whole cost the two-pointer version removes.
+  # It is the *nodes* that go in the set, not their values: repeated values
+  # are ordinary, repeated nodes are the cycle. `compare_by_identity` is what
+  # says so, since a set would otherwise compare its members by `eql?`.
+  seen = Set.new.compare_by_identity
+  while head
+    return true if seen.include?(head)
+
+    seen.add(head)
+    head = head.next
+  end
+  false
+end",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.",
+        "def has_cycle(head)
+  # Floyd's tortoise and hare. One pointer takes single steps, the other
+  # double; if there is a loop the fast one is going round it and gains one
+  # place per step on the slow one, so it must eventually land on it. If there
+  # is no loop the fast one runs off the end first. Constant memory, and no
+  # node is ever marked.
+  slow = fast = head
+  while fast && fast.next
+    slow = slow.next
+    fast = fast.next.next
+    return true if slow.equal?(fast)
+  end
+  false
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def has_cycle(head)",
+      starter: "def has_cycle(head)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :has_cycle
+
+# pos is the index the tail links back to, or nil for a list that ends.
+def chain(values, pos)
+  nodes = values.map { |value| ListNode.new(value) }
+  nodes.each_cons(2) { |node, following| node.next = following }
+  nodes[-1].next = nodes[pos] if !nodes.empty? && pos
+  nodes[0]
+end
+
+tc \"has_cycle([3, 2, 0, -4], tail -> index 1)\", true, has_cycle(chain([3, 2, 0, -4], 1))
+tc \"has_cycle([1, 2], no cycle)\", false, has_cycle(chain([1, 2], nil))
+tc \"has_cycle([1], no cycle)\", false, has_cycle(chain([1], nil))
+tc \"has_cycle([1], tail -> index 0)\", true, has_cycle(chain([1], 0))
+tc \"has_cycle([])\", false, has_cycle(chain([], nil))
+tc \"has_cycle([1, 2], tail -> index 0)\", true, has_cycle(chain([1, 2], 0))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc132_find_the_duplicate() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(n log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.",
+        "def find_duplicate(nums)
+  # Binary search over the *values*, not the positions. For a candidate v,
+  # count how many numbers are at most v: with no duplicate that count is
+  # exactly v, so a count that runs ahead says the repeat is at or below v.
+  # O(n log n) against Floyd's O(n), but it needs no insight about cycles,
+  # only that the pigeonhole is what makes the count informative.
+  low = 1
+  high = nums.length - 1
+  while low < high
+    middle = (low + high) / 2
+    if nums.count { |value| value <= middle } > middle
+      high = middle
+    else
+      low = middle + 1
+    end
+  end
+  low
+end",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.",
+        "def find_duplicate(nums)
+  # Read the array as a linked list: position i points at position nums[i].
+  # Every value is a valid position and one value repeats, so two positions
+  # point at the same place: the list has a cycle, and the duplicate is its
+  # entrance. Then it is Floyd's twice: once to meet inside the loop, once to
+  # walk from the start and from the meeting point together until they agree
+  # on where it begins.
+  slow = nums[0]
+  fast = nums[nums[0]]
+  while slow != fast
+    slow = nums[slow]
+    fast = nums[nums[fast]]
+  end
+
+  slow = 0
+  while slow != fast
+    slow = nums[slow]
+    fast = nums[fast]
+  end
+  slow
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_duplicate(nums)",
+      starter: "def find_duplicate(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_duplicate
+
+tc \"find_duplicate([1, 3, 4, 2, 2])\", 2, find_duplicate([1, 3, 4, 2, 2])
+tc \"find_duplicate([3, 1, 3, 4, 2])\", 3, find_duplicate([3, 1, 3, 4, 2])
+tc \"find_duplicate([1, 1])\", 1, find_duplicate([1, 1])
+tc \"find_duplicate([2, 2, 2, 2, 2]) -- repeated more than twice\", 2, find_duplicate([2, 2, 2, 2, 2])
+tc \"find_duplicate([1, 4, 4, 2, 4])\", 4, find_duplicate([1, 4, 4, 2, 4])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc133_lru_cache() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · Hash Order",
+        "O(1) per operation · O(capacity) space",
+        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A Ruby Hash remembers insertion order, so `delete` then reassign makes a key the newest, and `shift` drops the oldest. The recency list comes free with the map.",
+        "class LRUCache
+  def initialize(capacity)
+    # A plain Hash, leaning on the fact that Ruby hashes remember insertion
+    # order: deleting a key and putting it back makes it the newest, so the
+    # oldest is simply the first key, and `shift` removes it. That is the
+    # recency list, free.
+    @capacity = capacity
+    @entries = {}
+  end
+
+  def get(key)
+    return -1 unless @entries.key?(key)
+
+    # Reading counts as use, so the key moves to the newest position.
+    value = @entries.delete(key)
+    @entries[key] = value
+    value
+  end
+
+  def put(key, value)
+    @entries.delete(key)
+    @entries[key] = value
+    @entries.shift if @entries.size > @capacity
+  end
+end",
+      ),
+      #(
+        "Linked Nodes",
+        "O(1) per operation · O(capacity) space",
+        "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
+        "class LRUCache
+  def initialize(capacity)
+    # A doubly linked list of keys, newest at the head, plus a map from key
+    # to its node. The map makes finding a node O(1) and the back-pointers
+    # make unlinking it O(1); neither alone is enough, which is why this is
+    # the structure the problem is really about. The head and tail are
+    # sentinels, so no link ever has to check for nil.
+    @capacity = capacity
+    @nodes = {}
+    @head = { key: nil, value: nil, prev: nil }
+    @tail = { key: nil, value: nil, next: nil }
+    @head[:next] = @tail
+    @tail[:prev] = @head
+  end
+
+  def get(key)
+    node = @nodes[key]
+    return -1 unless node
+
+    unlink(node)
+    push(node)
+    node[:value]
+  end
+
+  def put(key, value)
+    unlink(@nodes.delete(key)) if @nodes.key?(key)
+    node = { key: key, value: value, prev: nil, next: nil }
+    @nodes[key] = node
+    push(node)
+    return unless @nodes.size > @capacity
+
+    oldest = @tail[:prev]
+    unlink(oldest)
+    @nodes.delete(oldest[:key])
+  end
+
+  def push(node)
+    node[:prev] = @head
+    node[:next] = @head[:next]
+    @head[:next][:prev] = node
+    @head[:next] = node
+  end
+
+  def unlink(node)
+    node[:prev][:next] = node[:next]
+    node[:next][:prev] = node[:prev]
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class LRUCache
+  def initialize(capacity)
+  def get(key)
+  def put(key, value)
+end",
+      starter: "class LRUCache
+  def initialize(capacity)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def get(key)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def put(key, value)
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :LRUCache
+
+c = LRUCache.new(2)
+c.put(1, 1)
+c.put(2, 2)
+tc \"get(1) after put(1, 1), put(2, 2)\", 1, c.get(1)
+c.put(3, 3)
+tc \"get(2) after put(3, 3) -- 2 was least recently used\", -1, c.get(2)
+tc \"get(3) after put(3, 3)\", 3, c.get(3)
+c.put(4, 4)
+tc \"get(1) after put(4, 4) -- reading 3 saved it, so 1 went\", -1, c.get(1)
+tc \"get(3) after put(4, 4)\", 3, c.get(3)
+tc \"get(4) after put(4, 4)\", 4, c.get(4)
+tc \"get(99) on a key never stored\", -1, c.get(99)
+
+u = LRUCache.new(1)
+u.put(5, 5)
+u.put(5, 9)
+tc \"get(5) after put(5, 5) then put(5, 9) -- an update, not an insert\", 9, u.get(5)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc134_merge_k_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Heap",
+        "O(n log k) time · O(k) space",
+        "Take the smallest head across all the lists, over and over — the heap is what makes \"smallest of k\" cost O(log k) instead of a scan of k. The tie-break in the heap entry matters: two equal values would otherwise send the comparison on to the nodes themselves, which have no ordering.",
+        "def merge_k_lists(lists)
+  # Take the smallest head across all the lists, over and over: the heap is
+  # what makes \"smallest of k\" cost O(log k) instead of a scan of k. Ruby has
+  # no priority queue in its core library, so the heap is written out below.
+  # Each entry is [value, list index, node], and the index is the tie-break:
+  # two equal values are settled by it, so the nodes themselves, which have
+  # no ordering, are never compared.
+  frontier = []
+  lists.each_with_index { |head, i| heap_push(frontier, [head.val, i, head]) if head }
+
+  dummy = ListNode.new
+  tail = dummy
+  until frontier.empty?
+    _value, i, node = heap_pop(frontier)
+    tail.next = node
+    tail = node
+    heap_push(frontier, [node.next.val, i, node.next]) if node.next
+  end
+
+  tail.next = nil
+  dummy.next
+end
+
+def before?(a, b)
+  a[0] < b[0] || (a[0] == b[0] && a[1] < b[1])
+end
+
+def heap_push(heap, entry)
+  heap << entry
+  child = heap.length - 1
+  while child > 0
+    parent = (child - 1) / 2
+    break unless before?(heap[child], heap[parent])
+
+    heap[child], heap[parent] = heap[parent], heap[child]
+    child = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap[0]
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  parent = 0
+  loop do
+    smallest = parent
+    [2 * parent + 1, 2 * parent + 2].each do |child|
+      smallest = child if child < heap.length && before?(heap[child], heap[smallest])
+    end
+    break if smallest == parent
+
+    heap[parent], heap[smallest] = heap[smallest], heap[parent]
+    parent = smallest
+  end
+  top
+end",
+      ),
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "def merge_k_lists(lists)
+  # Merge in pairs, halving the number of lists each round. Folding them in
+  # one at a time re-walks the growing result every time, O(k*n), while
+  # pairing gives O(n log k) for the same merges, because each element is
+  # copied once per round and there are log k rounds.
+  lists = lists.compact
+  return nil if lists.empty?
+
+  while lists.length > 1
+    lists = lists.each_slice(2).map { |first, second| second ? merge(first, second) : first }
+  end
+  lists[0]
+end
+
+def merge(first, second)
+  dummy = ListNode.new
+  tail = dummy
+  while first && second
+    if first.val <= second.val
+      tail.next = first
+      first = first.next
+    else
+      tail.next = second
+      second = second.next
+    end
+    tail = tail.next
+  end
+  tail.next = first || second
+  dummy.next
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def merge_k_lists(lists)
+
+def merge(first, second)",
+      starter: "def merge_k_lists(lists)
+  raise NotImplementedError, \"todo\"
+end
+
+def merge(first, second)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :merge_k_lists
+
+def chain(values)
+  head = nil
+  values.reverse_each { |value| head = ListNode.new(value, head) }
+  head
+end
+
+def chain_values(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+def merged(lists) = chain_values(merge_k_lists(lists.map { |values| chain(values) }))
+
+tc \"merge_k_lists([[1, 4, 5], [1, 3, 4], [2, 6]])\", [1, 1, 2, 3, 4, 4, 5, 6], merged([[1, 4, 5], [1, 3, 4], [2, 6]])
+tc \"merge_k_lists([]) -- no lists at all\", [], merged([])
+tc \"merge_k_lists([[]]) -- one empty list\", [], merged([[]])
+tc \"merge_k_lists([[1], [], [0]])\", [0, 1], merged([[1], [], [0]])
+tc \"merge_k_lists([[2, 2], [2]]) -- ties everywhere\", [2, 2, 2], merged([[2, 2], [2]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc135_reverse_k_group() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pass",
+        "O(n) time · O(1) space",
+        "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.",
+        "def reverse_k_group(head, k)
+  # Count once, then reverse exactly length / k groups. One length
+  # calculation instead of a look-ahead per group, and it makes the boundary
+  # explicit: everything past the last whole group is untouched, however long
+  # it is.
+  length = 0
+  node = head
+  while node
+    length += 1
+    node = node.next
+  end
+
+  dummy = ListNode.new(0, head)
+  before = dummy
+  node = head
+
+  (length / k).times do
+    first = node
+    previous = nil
+    k.times do
+      following = node.next
+      node.next = previous
+      previous = node
+      node = following
+    end
+    before.next = previous
+    first.next = node
+    before = first
+  end
+
+  dummy.next
+end",
+      ),
+      #(
+        "Linked List",
+        "O(n) time · O(1) space",
+        "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.",
+        "def reverse_k_group(head, k)
+  # Look ahead k nodes *before* reversing anything. That check is the whole
+  # difficulty: once the rewiring starts there is no way to tell how far it
+  # got, so a short final group would be reversed by mistake.
+  dummy = ListNode.new(0, head)
+  before = dummy
+
+  loop do
+    after = before
+    k.times do
+      after = after.next
+      return dummy.next if after.nil?
+    end
+
+    node = before.next
+    previous = after.next
+    first = node
+    k.times do
+      following = node.next
+      node.next = previous
+      previous = node
+      node = following
+    end
+
+    before.next = previous
+    before = first
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def reverse_k_group(head, k)",
+      starter: "def reverse_k_group(head, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :reverse_k_group
+
+def chain(values)
+  head = nil
+  values.reverse_each { |value| head = ListNode.new(value, head) }
+  head
+end
+
+def chain_values(node)
+  out = []
+  while node && out.length < 1000
+    out << node.val
+    node = node.next
+  end
+  out
+end
+
+def grouped(values, k) = chain_values(reverse_k_group(chain(values), k))
+
+tc \"reverse_k_group([1, 2, 3, 4, 5], 2)\", [2, 1, 4, 3, 5], grouped([1, 2, 3, 4, 5], 2)
+tc \"reverse_k_group([1, 2, 3, 4, 5], 3) -- the last two are left alone\", [3, 2, 1, 4, 5], grouped([1, 2, 3, 4, 5], 3)
+tc \"reverse_k_group([1, 2, 3, 4], 4)\", [4, 3, 2, 1], grouped([1, 2, 3, 4], 4)
+tc \"reverse_k_group([1, 2, 3], 1) -- nothing changes\", [1, 2, 3], grouped([1, 2, 3], 1)
+tc \"reverse_k_group([1, 2], 5) -- the group never fills\", [1, 2], grouped([1, 2], 5)
+tc \"reverse_k_group([], 2)\", [], grouped([], 2)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc136_invert_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Flatten & Rebuild",
+        "O(n) time · O(n) space",
+        "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.",
+        "def invert_tree(root)
+  # Write the tree out pre-order with a marker for every empty child, then
+  # read it back taking the first subtree as the *right* child. The inversion
+  # happens entirely in the reading: nothing is ever swapped. Longer than the
+  # direct recursion, and worth having because the same flatten/rebuild pair
+  # is all Serialize and Deserialize is.
+  tokens = []
+  flatten_tree(root, tokens)
+  rebuild(tokens.each)
+end
+
+def flatten_tree(node, tokens)
+  if node.nil?
+    tokens << nil
+    return
+  end
+  tokens << node.val
+  flatten_tree(node.left, tokens)
+  flatten_tree(node.right, tokens)
+end
+
+def rebuild(tokens)
+  value = tokens.next
+  return nil if value.nil?
+
+  first = rebuild(tokens)
+  second = rebuild(tokens)
+  TreeNode.new(value, second, first)
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.",
+        "def invert_tree(root)
+  # Swap the children, then invert each of them. The swap and the recursion
+  # are the same line, which is why this is the shortest tree problem there
+  # is, and why the order does not matter: swapping before or after recursing
+  # gives the same tree.
+  return nil if root.nil?
+
+  root.left, root.right = invert_tree(root.right), invert_tree(root.left)
+  root
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def invert_tree(root)",
+      starter: "def invert_tree(root)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :invert_tree
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"invert_tree([4, 2, 7, 1, 3, 6, 9])\", [4, 7, 2, 9, 6, 3, 1], tree_values(invert_tree(tree_from([4, 2, 7, 1, 3, 6, 9])))
+tc \"invert_tree([]) -- an empty tree\", [], tree_values(invert_tree(tree_from([])))
+tc \"invert_tree([1]) -- a single node\", [1], tree_values(invert_tree(tree_from([1])))
+tc \"invert_tree twice is the original\", [1, 2], tree_values(invert_tree(invert_tree(tree_from([1, 2]))))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc137_maximum_depth() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.",
+        "def max_depth(root)
+  # Count the levels instead of measuring the branches: take the whole
+  # frontier, replace it with all its children, and add one. No recursion and
+  # no stack, which is what makes this the version that survives a tree deep
+  # enough to overflow one.
+  depth = 0
+  frontier = [root].compact
+  until frontier.empty?
+    depth += 1
+    frontier = frontier.flat_map { |node| [node.left, node.right] }.compact
+  end
+  depth
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.",
+        "def max_depth(root)
+  # One more than the deeper of the two children, with an empty tree at zero.
+  # The whole problem is that base case: everything else is the definition of
+  # depth read aloud.
+  return 0 if root.nil?
+
+  1 + [max_depth(root.left), max_depth(root.right)].max
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_depth(root)",
+      starter: "def max_depth(root)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_depth
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"max_depth([3, 9, 20, nil, nil, 15, 7])\", 3, max_depth(tree_from([3, 9, 20, nil, nil, 15, 7]))
+tc \"max_depth([])\", 0, max_depth(tree_from([]))
+tc \"max_depth([1])\", 1, max_depth(tree_from([1]))
+tc \"max_depth(a spindly tree)\", 3, max_depth(tree_from([1, 2, nil, 3]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc138_diameter_of_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.",
+        "def diameter_of_binary_tree(root)
+  # Ask every node how tall its two sides are and keep the largest sum.
+  # Correct and obvious, but height is recomputed from scratch at every node,
+  # so a balanced tree costs O(n log n) and a spindly one O(n^2), which is
+  # exactly what returning the height alongside the answer avoids.
+  return 0 if root.nil?
+
+  [
+    height(root.left) + height(root.right),
+    diameter_of_binary_tree(root.left),
+    diameter_of_binary_tree(root.right)
+  ].max
+end
+
+def height(node)
+  node.nil? ? 0 : 1 + [height(node.left), height(node.right)].max
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].",
+        "def diameter_of_binary_tree(root)
+  # One walk, doing two jobs: each call returns its own height, and on the way
+  # past it records the path *through* that node, left height plus right
+  # height. The answer is the largest such path, so it is never returned, only
+  # tracked. That split between what a call returns and what it records is the
+  # pattern worth keeping.
+  measure(root)[1]
+end
+
+def measure(node)
+  return [0, 0] if node.nil?
+
+  left_height, left_widest = measure(node.left)
+  right_height, right_widest = measure(node.right)
+  [
+    1 + [left_height, right_height].max,
+    [left_height + right_height, left_widest, right_widest].max
+  ]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def diameter_of_binary_tree(root)
+
+def measure(node)",
+      starter: "def diameter_of_binary_tree(root)
+  raise NotImplementedError, \"todo\"
+end
+
+def measure(node)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :diameter_of_binary_tree
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"diameter_of_binary_tree([1, 2, 3, 4, 5])\", 3, diameter_of_binary_tree(tree_from([1, 2, 3, 4, 5]))
+tc \"diameter_of_binary_tree([])\", 0, diameter_of_binary_tree(tree_from([]))
+tc \"diameter_of_binary_tree([1])\", 0, diameter_of_binary_tree(tree_from([1]))
+tc \"diameter_of_binary_tree([1, 2])\", 1, diameter_of_binary_tree(tree_from([1, 2]))
+tc \"diameter_of_binary_tree(widest path misses the root)\", 4, diameter_of_binary_tree(tree_from([1, 2, nil, 4, 5, 6, nil, nil, 7]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc139_balanced_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.",
+        "def is_balanced(root)
+  # The definition read literally: every node's two sides differ by at most
+  # one, and both sides are themselves balanced. It recomputes height at every
+  # node, so the work is O(n^2) on a spindly tree: the price of separating
+  # the two questions the single-pass version answers together.
+  return true if root.nil?
+
+  (height(root.left) - height(root.right)).abs <= 1 &&
+    is_balanced(root.left) &&
+    is_balanced(root.right)
+end
+
+def height(node)
+  node.nil? ? 0 : 1 + [height(node.left), height(node.right)].max
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.",
+        "def is_balanced(root)
+  # Height and balance in one walk. A subtree reports its height, or reports
+  # that something below it is already unbalanced, and once that happens
+  # nothing above needs measuring at all. Using -1 as the \"not balanced\"
+  # height is what lets a single return value carry both answers.
+  measure(root) >= 0
+end
+
+def measure(node)
+  return 0 if node.nil?
+
+  left = measure(node.left)
+  right = measure(node.right)
+  return -1 if left < 0 || right < 0 || (left - right).abs > 1
+
+  1 + [left, right].max
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_balanced(root)
+
+def measure(node)",
+      starter: "def is_balanced(root)
+  raise NotImplementedError, \"todo\"
+end
+
+def measure(node)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_balanced
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"is_balanced([3, 9, 20, nil, nil, 15, 7])\", true, is_balanced(tree_from([3, 9, 20, nil, nil, 15, 7]))
+tc \"is_balanced([])\", true, is_balanced(tree_from([]))
+tc \"is_balanced([1])\", true, is_balanced(tree_from([1]))
+tc \"is_balanced([1, 2, 2, 3, 3, nil, nil, 4, 4])\", false, is_balanced(tree_from([1, 2, 2, 3, 3, nil, nil, 4, 4]))
+tc \"is_balanced(balanced at the root, not below)\", false, is_balanced(tree_from([1, 2, 2, 3, nil, nil, nil, 4]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc13_longest_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · String#index",
+        "O(n²) time · O(1) space",
+        "No set and no map: `s.index(char, start)` asks the string itself for the first copy of this character inside the current window. Anything earlier than `right` is a repeat, so restart just past it.",
+        "def length_of_longest_substring(s)
+  longest = 0
+  start = 0
+
+  s.each_char.with_index do |char, right|
+    # index finds the first copy at or after start; s[right] is char itself,
+    # so anything earlier than right is a repeat inside the window.
+    found = s.index(char, start)
+    start = found + 1 if found < right
+    longest = [longest, right - start + 1].max
+  end
+  longest
+end",
+      ),
+      #(
+        "Sliding Window",
+        "O(n) time · O(n) space",
+        "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
+        "require \"set\"
+
+def length_of_longest_substring(s)
+  window = Set.new
+  left = 0
+  longest = 0
+
+  s.each_char.with_index do |char, right|
+    while window.include?(char)
+      window.delete(s[left])
+      left += 1
+    end
+    window << char
+    longest = [longest, right - left + 1].max
+  end
+  longest
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def length_of_longest_substring(s)",
+      starter: "require \"set\"
+
+def length_of_longest_substring(s)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :length_of_longest_substring
+
+tc 'length_of_longest_substring(\"abcabcbb\")', 3, length_of_longest_substring(\"abcabcbb\")
+tc 'length_of_longest_substring(\"bbbbb\")', 1, length_of_longest_substring(\"bbbbb\")
+tc 'length_of_longest_substring(\"pwwkew\")', 3, length_of_longest_substring(\"pwwkew\")
+tc 'length_of_longest_substring(\"\")', 0, length_of_longest_substring(\"\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc140_same_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Serialisation",
+        "O(n) time · O(n) space",
+        "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.",
+        "def is_same_tree(p, q)
+  # Turn each tree into a string and compare those. It works only because the
+  # serialisation records the empty children too: without a marker for them,
+  # different trees flatten to the same sequence, the same trap Serialize and
+  # Deserialize turns on.
+  serialise(p) == serialise(q)
+end
+
+def serialise(node)
+  return \"#\" if node.nil?
+
+  \"(#{node.val}#{serialise(node.left)}#{serialise(node.right)})\"
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.",
+        "def is_same_tree(p, q)
+  # Walk both trees in step. Two empties match, an empty and a node never do,
+  # and two nodes match when their values do and both pairs of children do.
+  # The same shape is what Subtree of Another Tree and Symmetric Tree are
+  # built from, which is why it is worth writing out rather than comparing
+  # serialisations.
+  return true if p.nil? && q.nil?
+  return false if p.nil? || q.nil?
+
+  p.val == q.val && is_same_tree(p.left, q.left) && is_same_tree(p.right, q.right)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_same_tree(p, q)",
+      starter: "def is_same_tree(p, q)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_same_tree
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"is_same_tree([1, 2, 3], [1, 2, 3])\", true, is_same_tree(tree_from([1, 2, 3]), tree_from([1, 2, 3]))
+tc \"is_same_tree([], [])\", true, is_same_tree(tree_from([]), tree_from([]))
+tc \"is_same_tree([], [1])\", false, is_same_tree(tree_from([]), tree_from([1]))
+tc \"is_same_tree([1, 2], [1, nil, 2]) -- same values, mirrored\", false, is_same_tree(tree_from([1, 2]), tree_from([1, nil, 2]))
+tc \"is_same_tree([1, 2, 1], [1, 1, 2]) -- children swapped\", false, is_same_tree(tree_from([1, 2, 1]), tree_from([1, 1, 2]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc141_subtree_of_another_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n·m) time · O(n+m) space",
+        "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.",
+        "def is_subtree(root, sub_root)
+  # Try to match at every node. The two questions are kept apart on purpose:
+  # \"are these two trees identical\" is the whole of the work, and \"is it a
+  # subtree\" is that question asked once per node. O(n*m) in the worst case,
+  # and a partial match that fails deep is what makes it so.
+  return true if sub_root.nil?
+  return false if root.nil?
+
+  same(root, sub_root) || is_subtree(root.left, sub_root) || is_subtree(root.right, sub_root)
+end
+
+def same(a, b)
+  return true if a.nil? && b.nil?
+  return false if a.nil? || b.nil?
+
+  a.val == b.val && same(a.left, b.left) && same(a.right, b.right)
+end",
+      ),
+      #(
+        "Serialisation",
+        "O(n+m) time · O(n+m) space",
+        "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.",
+        "def is_subtree(root, sub_root)
+  # Serialise both trees and ask whether one string contains the other. That
+  # turns an O(n*m) tree comparison into substring search, which is linear
+  # with the right algorithm. It is only sound because the serialisation marks
+  # the empty children: without them \"2\" inside \"12\" would match, and so would
+  # a subtree that starts the same way but is missing a child.
+  serialise(root).include?(serialise(sub_root))
+end
+
+def serialise(node)
+  return \"#\" if node.nil?
+
+  \"(#{node.val}#{serialise(node.left)}#{serialise(node.right)})\"
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_subtree(root, sub_root)
+
+def same(a, b)",
+      starter: "def is_subtree(root, sub_root)
+  raise NotImplementedError, \"todo\"
+end
+
+def same(a, b)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_subtree
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"is_subtree([3, 4, 5, 1, 2], [4, 1, 2])\", true, is_subtree(tree_from([3, 4, 5, 1, 2]), tree_from([4, 1, 2]))
+tc \"is_subtree(a near match with an extra node)\", false, is_subtree(tree_from([3, 4, 5, 1, 2, nil, nil, nil, nil, 0]), tree_from([4, 1, 2]))
+tc \"is_subtree([1], [1]) -- a tree is its own subtree\", true, is_subtree(tree_from([1]), tree_from([1]))
+tc \"is_subtree([], [1])\", false, is_subtree(tree_from([]), tree_from([1]))
+tc \"is_subtree([1], []) -- the empty tree is in everything\", true, is_subtree(tree_from([1]), tree_from([]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Path Comparison",
+        "O(n) time · O(n) space",
+        "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.",
+        "def lowest_common_ancestor(root, p, q)
+  # Find the path from the root to each target, then take the last node they
+  # share. It ignores the ordering entirely, which is why it is the version
+  # that also works on a plain binary tree, at the cost of two searches and
+  # two stored paths rather than one walk and nothing.
+  to_p = path(root, p)
+  to_q = path(root, q)
+  best = -1
+  to_p.zip(to_q).each do |a, b|
+    break if a != b
+
+    best = a
+  end
+  best
+end
+
+def path(node, target)
+  return [] if node.nil?
+  return [node.val] if node.val == target
+
+  [node.left, node.right].each do |side|
+    found = path(side, target)
+    return [node.val] + found unless found.empty?
+  end
+  []
+end",
+      ),
+      #(
+        "BST Walk",
+        "O(h) time · O(1) space",
+        "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.",
+        "def lowest_common_ancestor(root, p, q)
+  # The ordering does all the work. If both targets are below the current
+  # value go left, if both are above go right, and otherwise this node is the
+  # split point, which is the answer. No searching for either node first,
+  # and no comparing of paths.
+  node = root
+  while node
+    if p < node.val && q < node.val
+      node = node.left
+    elsif p > node.val && q > node.val
+      node = node.right
+    else
+      return node.val
+    end
+  end
+  -1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def lowest_common_ancestor(root, p, q)",
+      starter: "def lowest_common_ancestor(root, p, q)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :lowest_common_ancestor
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+bst = tree_from([6, 2, 8, 0, 4, 7, 9, nil, nil, 3, 5])
+tc \"lowest_common_ancestor(bst, 2, 8)\", 6, lowest_common_ancestor(bst, 2, 8)
+tc \"lowest_common_ancestor(bst, 2, 4) -- an ancestor counts\", 2, lowest_common_ancestor(bst, 2, 4)
+tc \"lowest_common_ancestor(bst, 3, 5)\", 4, lowest_common_ancestor(bst, 3, 5)
+tc \"lowest_common_ancestor(bst, 7, 9)\", 8, lowest_common_ancestor(bst, 7, 9)
+tc \"lowest_common_ancestor([1], 1, 1)\", 1, lowest_common_ancestor(tree_from([1]), 1, 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc143_level_order_traversal() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.",
+        "def level_order(root)
+  # Walk depth-first and file each value under its depth. The traversal order
+  # is wrong for the answer, but appending to the right bucket puts it right,
+  # and within a level, left is still visited before right, which is all the
+  # ordering the answer needs. One array of buckets instead of a frontier.
+  levels = []
+  collect(root, 0, levels)
+  levels
+end
+
+def collect(node, depth, levels)
+  return if node.nil?
+
+  (levels[depth] ||= []) << node.val
+  collect(node.left, depth + 1, levels)
+  collect(node.right, depth + 1, levels)
+end",
+      ),
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.",
+        "def level_order(root)
+  # Take the whole frontier at once rather than one node at a time: everything
+  # on it is the current level, and its children are the next. That is what
+  # makes the grouping fall out without tracking any depth; a plain queue
+  # would give the right order but no idea where each level ends.
+  levels = []
+  frontier = [root].compact
+  until frontier.empty?
+    levels << frontier.map(&:val)
+    frontier = frontier.flat_map { |node| [node.left, node.right] }.compact
+  end
+  levels
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def level_order(root)",
+      starter: "def level_order(root)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :level_order
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"level_order([3, 9, 20, nil, nil, 15, 7])\", [[3], [9, 20], [15, 7]], level_order(tree_from([3, 9, 20, nil, nil, 15, 7]))
+tc \"level_order([])\", [], level_order(tree_from([]))
+tc \"level_order([1])\", [[1]], level_order(tree_from([1]))
+tc \"level_order(missing left children)\", [[1], [3], [4]], level_order(tree_from([1, nil, 3, nil, 4]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc144_right_side_view() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.",
+        "def right_side_view(root)
+  # Depth-first, visiting the right child first, and recording a value only
+  # when its depth is met for the first time. No frontier at all: being first
+  # to reach a depth is the same thing as being rightmost on it, given that
+  # order of visiting.
+  seen = []
+  look(root, 0, seen)
+  seen
+end
+
+def look(node, depth, seen)
+  return if node.nil?
+
+  seen << node.val if depth == seen.length
+  look(node.right, depth + 1, seen)
+  look(node.left, depth + 1, seen)
+end",
+      ),
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.",
+        "def right_side_view(root)
+  # The last value on each level, which is what \"seen from the right\" means
+  # once the question is asked level by level. Walking down the right children
+  # alone is the tempting wrong answer: where the right side is short, a node
+  # further left is the one that shows.
+  seen = []
+  frontier = [root].compact
+  until frontier.empty?
+    seen << frontier.last.val
+    frontier = frontier.flat_map { |node| [node.left, node.right] }.compact
+  end
+  seen
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def right_side_view(root)",
+      starter: "def right_side_view(root)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :right_side_view
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"right_side_view([1, 2, 3, nil, 5, nil, 4])\", [1, 3, 4], right_side_view(tree_from([1, 2, 3, nil, 5, nil, 4]))
+tc \"right_side_view([])\", [], right_side_view(tree_from([]))
+tc \"right_side_view([1])\", [1], right_side_view(tree_from([1]))
+tc \"right_side_view(the right side runs out)\", [1, 3, 4], right_side_view(tree_from([1, 2, 3, 4]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc145_count_good_nodes() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Full-Path DFS",
+        "O(n·h) time · O(h²) space",
+        "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.",
+        "def good_nodes(root)
+  # Carry the whole path instead of just its maximum, and take the maximum at
+  # each node. The same answer for O(depth) memory per node rather than one
+  # integer: the version worth writing once, because it makes plain that the
+  # running maximum is a fold of the path, not a separate idea.
+  count_good(root, [])
+end
+
+def count_good(node, above)
+  return 0 if node.nil?
+
+  here = above.all? { |other| other <= node.val } ? 1 : 0
+  below = above + [node.val]
+  here + count_good(node.left, below) + count_good(node.right, below)
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.",
+        "def good_nodes(root)
+  # Carry the largest value seen on the way down. A node is good when nothing
+  # above it is bigger, so the check needs no knowledge of the tree below,
+  # which is what makes one pass enough. The root is always good, and passing
+  # its own value down as the initial maximum is what says so.
+  return 0 if root.nil?
+
+  count_good(root, root.val)
+end
+
+def count_good(node, largest)
+  return 0 if node.nil?
+
+  here = node.val >= largest ? 1 : 0
+  largest = [largest, node.val].max
+  here + count_good(node.left, largest) + count_good(node.right, largest)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def good_nodes(root)
+
+def count_good(node, largest)",
+      starter: "def good_nodes(root)
+  raise NotImplementedError, \"todo\"
+end
+
+def count_good(node, largest)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :good_nodes
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"good_nodes([3, 1, 4, 3, nil, 1, 5])\", 4, good_nodes(tree_from([3, 1, 4, 3, nil, 1, 5]))
+tc \"good_nodes([])\", 0, good_nodes(tree_from([]))
+tc \"good_nodes([1])\", 1, good_nodes(tree_from([1]))
+tc \"good_nodes([2, 2]) -- equal counts as good\", 2, good_nodes(tree_from([2, 2]))
+tc \"good_nodes([3, 3, nil, 4, 2])\", 3, good_nodes(tree_from([3, 3, nil, 4, 2]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc146_validate_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "In-Order Traversal",
+        "O(n) time · O(n) space",
+        "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).",
+        "def is_valid_bst(root)
+  # A binary search tree is exactly a tree whose in-order walk is strictly
+  # increasing: that is the definition, restated so that no bounds have to
+  # be threaded anywhere. The cost is the array: O(n) memory against the range
+  # check's O(depth).
+  values = []
+  in_order(root, values)
+  values.each_cons(2).all? { |a, b| a < b }
+end
+
+def in_order(node, values)
+  return if node.nil?
+
+  in_order(node.left, values)
+  values << node.val
+  in_order(node.right, values)
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.",
+        "def is_valid_bst(root)
+  # Check against a range, not against the parent. A node can be larger than
+  # its own parent and still break the order, because the constraint comes
+  # from an ancestor further up, and that is the whole difficulty. Going
+  # left tightens the upper bound, going right the lower one.
+  within(root, nil, nil)
+end
+
+def within(node, low, high)
+  return true if node.nil?
+  return false if low && node.val <= low
+  return false if high && node.val >= high
+
+  within(node.left, low, node.val) && within(node.right, node.val, high)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_valid_bst(root)
+
+def within(node, low, high)",
+      starter: "def is_valid_bst(root)
+  raise NotImplementedError, \"todo\"
+end
+
+def within(node, low, high)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_valid_bst
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"is_valid_bst([2, 1, 3])\", true, is_valid_bst(tree_from([2, 1, 3]))
+tc \"is_valid_bst([])\", true, is_valid_bst(tree_from([]))
+tc \"is_valid_bst([1])\", true, is_valid_bst(tree_from([1]))
+tc \"is_valid_bst([5, 1, 4, nil, nil, 3, 6])\", false, is_valid_bst(tree_from([5, 1, 4, nil, nil, 3, 6]))
+tc \"is_valid_bst(every node beats its parent, but 3 is on the wrong side)\", false, is_valid_bst(tree_from([5, 4, 6, nil, nil, 3, 7]))
+tc \"is_valid_bst([2, 2]) -- equal values are not allowed\", false, is_valid_bst(tree_from([2, 2]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc147_kth_smallest_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Subtree Counting",
+        "O(n·h) time · O(h) space",
+        "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).",
+        "def kth_smallest(root, k)
+  # Count the left subtree and decide which way to go: fewer than k on the
+  # left means the answer is this node or to its right. It descends one path
+  # instead of walking in order, and it is the version that adapts when the
+  # tree stores its own subtree sizes, which turns the whole thing into
+  # O(depth).
+  node = root
+  while node
+    on_the_left = size(node.left)
+    if k <= on_the_left
+      node = node.left
+    elsif k == on_the_left + 1
+      return node.val
+    else
+      k -= on_the_left + 1
+      node = node.right
+    end
+  end
+  -1
+end
+
+def size(node)
+  node.nil? ? 0 : 1 + size(node.left) + size(node.right)
+end",
+      ),
+      #(
+        "Iterative In-Order",
+        "O(h+k) time · O(h) space",
+        "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.",
+        "def kth_smallest(root, k)
+  # An in-order walk of a search tree visits the values in order, so the
+  # answer is the kth thing it reaches. Stopping there is the point: the tree
+  # below the kth value is never touched, which is what separates this from
+  # sorting everything. The explicit stack is what makes stopping possible;
+  # a recursive walk would have to run to the end.
+  stack = []
+  node = root
+  while !stack.empty? || node
+    while node
+      stack << node
+      node = node.left
+    end
+    node = stack.pop
+    k -= 1
+    return node.val if k.zero?
+
+    node = node.right
+  end
+  -1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def kth_smallest(root, k)",
+      starter: "def kth_smallest(root, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :kth_smallest
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+bst = tree_from([3, 1, 4, nil, 2])
+tc \"kth_smallest(bst, 1)\", 1, kth_smallest(bst, 1)
+tc \"kth_smallest(bst, 2)\", 2, kth_smallest(bst, 2)
+tc \"kth_smallest(bst, 3)\", 3, kth_smallest(bst, 3)
+tc \"kth_smallest(bst, 4)\", 4, kth_smallest(bst, 4)
+tc \"kth_smallest([7], 1)\", 7, kth_smallest(tree_from([7]), 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n²) time · O(n²) space",
+        "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.",
+        "def build_tree(preorder, inorder)
+  # Pre-order names the root; in-order says how much of the rest belongs to
+  # each side. Neither traversal alone determines a tree, and this is why
+  # together they do: the split point found in the in-order list is exactly
+  # the size of the left subtree, which is what carves up the pre-order list
+  # too.
+  return nil if preorder.empty?
+
+  root = preorder[0]
+  split = inorder.index(root)
+  TreeNode.new(
+    root,
+    build_tree(preorder[1, split], inorder[0, split]),
+    build_tree(preorder[(split + 1)..], inorder[(split + 1)..])
+  )
+end",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.",
+        "def build_tree(preorder, inorder)
+  # The same construction without slicing anything: a map from value to its
+  # in-order position, plus a low and a high bound saying which slice each
+  # call owns. Building the map once turns the repeated search for the root,
+  # the hidden O(n) inside the slicing version, into a lookup.
+  places = inorder.each_with_index.to_h
+  take(preorder.each, places, 0, inorder.length - 1)
+end
+
+def take(roots, places, low, high)
+  return nil if low > high
+
+  root = roots.next
+  split = places[root]
+  left = take(roots, places, low, split - 1)
+  right = take(roots, places, split + 1, high)
+  TreeNode.new(root, left, right)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def build_tree(preorder, inorder)",
+      starter: "def build_tree(preorder, inorder)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :build_tree
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"build_tree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])\", [3, 9, 20, nil, nil, 15, 7], tree_values(build_tree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7]))
+tc \"build_tree([], [])\", [], tree_values(build_tree([], []))
+tc \"build_tree([-1], [-1])\", [-1], tree_values(build_tree([-1], [-1]))
+tc \"build_tree([1, 2, 3], [3, 2, 1]) -- leaning left\", [1, 2, nil, 3], tree_values(build_tree([1, 2, 3], [3, 2, 1]))
+tc \"build_tree([1, 2, 3], [1, 2, 3]) -- leaning right\", [1, nil, 2, nil, 3], tree_values(build_tree([1, 2, 3], [1, 2, 3]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc149_max_path_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.",
+        "def max_path_sum(root)
+  # Every path through every node, measured outright: for each node, take the
+  # best downward run on each side and add them. It recomputes those runs from
+  # scratch at every node, so it is O(n^2) on a spindly tree: the cost of
+  # asking the two questions separately instead of returning both from one
+  # walk.
+  candidates(root).max || 0
+end
+
+def candidates(node)
+  return [] if node.nil?
+
+  through = node.val + [downwards(node.left), 0].max + [downwards(node.right), 0].max
+  [through] + candidates(node.left) + candidates(node.right)
+end
+
+def downwards(node)
+  return 0 if node.nil?
+
+  node.val + [downwards(node.left), downwards(node.right), 0].max
+end",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].",
+        "def max_path_sum(root)
+  # Two different quantities, which is the whole trick. What a node *returns*
+  # is the best path that can continue upwards, so at most one of its
+  # children. What it *records* is the best path through it, which may use
+  # both. A negative branch is dropped rather than added, because a path is
+  # allowed to stop.
+  return 0 if root.nil?
+
+  walk(root)[1]
+end
+
+def walk(node)
+  return [0, -(10**9)] if node.nil?
+
+  left_up, left_best = walk(node.left)
+  right_up, right_best = walk(node.right)
+  left_gain = [left_up, 0].max
+  right_gain = [right_up, 0].max
+  [
+    node.val + [left_gain, right_gain].max,
+    [node.val + left_gain + right_gain, left_best, right_best].max
+  ]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_path_sum(root)
+
+def walk(node)",
+      starter: "def max_path_sum(root)
+  raise NotImplementedError, \"todo\"
+end
+
+def walk(node)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_path_sum
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+tc \"max_path_sum([1, 2, 3])\", 6, max_path_sum(tree_from([1, 2, 3]))
+tc \"max_path_sum([-10, 9, 20, nil, nil, 15, 7])\", 42, max_path_sum(tree_from([-10, 9, 20, nil, nil, 15, 7]))
+tc \"max_path_sum([-3]) -- a single negative node\", -3, max_path_sum(tree_from([-3]))
+tc \"max_path_sum([-2, -1]) -- all negative\", -1, max_path_sum(tree_from([-2, -1]))
+tc \"max_path_sum([0])\", 0, max_path_sum(tree_from([0]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc14_character_replacement() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Per-Letter Window",
+        "O(26·n) time · O(1) space",
+        "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.",
+        "def character_replacement(s, k)
+  longest = 0
+
+  (\"A\"..\"Z\").each do |target|
+    left = 0
+    others = 0
+    s.each_char.with_index do |char, right|
+      others += 1 if char != target
+      while others > k
+        others -= 1 if s[left] != target
+        left += 1
+      end
+      longest = [longest, right - left + 1].max
+    end
+  end
+  longest
+end",
+      ),
+      #(
+        "Sliding Window",
+        "O(n) time · O(1) space",
+        "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.",
+        "def character_replacement(s, k)
+  count = Hash.new(0)
+  left = 0
+  max_count = 0
+  longest = 0
+
+  s.each_char.with_index do |char, right|
+    count[char] += 1
+    max_count = [max_count, count[char]].max
+
+    while (right - left + 1) - max_count > k
+      count[s[left]] -= 1
+      left += 1
+    end
+
+    longest = [longest, right - left + 1].max
+  end
+  longest
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def character_replacement(s, k)",
+      starter: "def character_replacement(s, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :character_replacement
+
+tc 'character_replacement(\"ABAB\", 2)', 4, character_replacement(\"ABAB\", 2)
+tc 'character_replacement(\"AABABBA\", 1)', 4, character_replacement(\"AABABBA\", 1)
+tc 'character_replacement(\"AAAA\", 0)', 4, character_replacement(\"AAAA\", 0)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc150_serialize_deserialize() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Post-Order DFS",
+        "O(n) time · O(n) space",
+        "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.",
+        "def serialize(root)
+  # Post-order instead of pre-order, still with a marker for every empty
+  # child. The root is then the *last* token rather than the first, so the
+  # reader works backwards, and reading backwards means taking the right
+  # subtree before the left. Worth writing once: the format is what decides
+  # the parse direction, and nothing else about the two versions differs.
+  parts = []
+  write_tokens(root, parts)
+  parts.join(\",\")
+end
+
+def write_tokens(node, parts)
+  if node.nil?
+    parts << \"#\"
+    return
+  end
+  write_tokens(node.left, parts)
+  write_tokens(node.right, parts)
+  parts << node.val.to_s
+end
+
+def deserialize(data)
+  read_tokens(data.split(\",\").reverse_each)
+end
+
+def read_tokens(tokens)
+  token = tokens.next
+  return nil if token == \"#\"
+
+  node = TreeNode.new(token.to_i)
+  node.right = read_tokens(tokens)
+  node.left = read_tokens(tokens)
+  node
+end",
+      ),
+      #(
+        "Pre-Order DFS",
+        "O(n) time · O(n) space",
+        "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.",
+        "def serialize(root)
+  # Pre-order with a marker for every empty child. Recording the empties is
+  # what makes the format unambiguous (a pre-order list of values alone
+  # matches many different trees), and it is also what lets the reader work
+  # without any length information: it stops as soon as it has consumed a
+  # whole subtree.
+  parts = []
+  write_tokens(root, parts)
+  parts.join(\",\")
+end
+
+def write_tokens(node, parts)
+  if node.nil?
+    parts << \"#\"
+    return
+  end
+  parts << node.val.to_s
+  write_tokens(node.left, parts)
+  write_tokens(node.right, parts)
+end
+
+def deserialize(data)
+  read_tokens(data.split(\",\").each)
+end
+
+def read_tokens(tokens)
+  token = tokens.next
+  return nil if token == \"#\"
+
+  node = TreeNode.new(token.to_i)
+  node.left = read_tokens(tokens)
+  node.right = read_tokens(tokens)
+  node
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def serialize(root)
+
+def write_tokens(node, parts)
+
+def deserialize(data)
+
+def read_tokens(tokens)",
+      starter: "def serialize(root)
+  raise NotImplementedError, \"todo\"
+end
+
+def write_tokens(node, parts)
+  raise NotImplementedError, \"todo\"
+end
+
+def deserialize(data)
+  raise NotImplementedError, \"todo\"
+end
+
+def read_tokens(tokens)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :serialize, :deserialize
+
+# LeetCode's level-order form: an array of values with nil for a missing
+# child, trailing nils trimmed.
+def tree_from(values)
+  return nil if values.empty? || values[0].nil?
+
+  root = TreeNode.new(values[0])
+  queue = [root]
+  head = 0
+  i = 1
+  while head < queue.length && i < values.length
+    node = queue[head]
+    head += 1
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.left = TreeNode.new(value)
+        queue << node.left
+      end
+    end
+    if i < values.length
+      value = values[i]
+      i += 1
+      unless value.nil?
+        node.right = TreeNode.new(value)
+        queue << node.right
+      end
+    end
+  end
+  root
+end
+
+def tree_values(node)
+  out = []
+  queue = [node]
+  head = 0
+  while head < queue.length && out.length < 500
+    current = queue[head]
+    head += 1
+    if current.nil?
+      out << nil
+    else
+      out << current.val
+      queue << current.left
+      queue << current.right
+    end
+  end
+  out.pop while !out.empty? && out[-1].nil?
+  out
+end
+
+def round_trip(values) = tree_values(deserialize(serialize(tree_from(values))))
+
+tc \"deserialize(serialize([1, 2, 3, nil, nil, 4, 5]))\", [1, 2, 3, nil, nil, 4, 5], round_trip([1, 2, 3, nil, nil, 4, 5])
+tc \"deserialize(serialize([]))\", [], round_trip([])
+tc \"deserialize(serialize([0]))\", [0], round_trip([0])
+tc \"deserialize(serialize(a lopsided tree))\", [1, 2, nil, 3, nil, nil, 4], round_trip([1, 2, nil, 3, nil, nil, 4])
+tc \"deserialize(serialize([-1, -2, -3])) -- negatives survive\", [-1, -2, -3], round_trip([-1, -2, -3])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc15_permutation_in_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·m log m) time · O(m) space",
+        "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".",
+        "def check_inclusion(s1, s2)
+  return false if s1.length > s2.length
+
+  needle = s1.chars.sort
+  size = s1.length
+
+  (0..s2.length - size).each do |start|
+    return true if s2[start, size].chars.sort == needle
+  end
+  false
+end",
+      ),
+      #(
+        "Sliding Window",
+        "O(26·n) time · O(1) space",
+        "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.",
+        "def check_inclusion(s1, s2)
+  return false if s1.length > s2.length
+
+  wanted = s1.chars.tally
+  window = s2[0, s1.length].chars.tally
+  return true if window == wanted
+
+  (s1.length...s2.length).each do |i|
+    window[s2[i]] = window.fetch(s2[i], 0) + 1
+    left_char = s2[i - s1.length]
+    window[left_char] -= 1
+    # Drop zero counts, or the two hashes never compare equal.
+    window.delete(left_char) if window[left_char].zero?
+    return true if window == wanted
+  end
+  false
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def check_inclusion(s1, s2)",
+      starter: "def check_inclusion(s1, s2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :check_inclusion
+
+tc 'check_inclusion(\"ab\", \"eidbaooo\")', true, check_inclusion(\"ab\", \"eidbaooo\")
+tc 'check_inclusion(\"ab\", \"eidboaoo\")', false, check_inclusion(\"ab\", \"eidboaoo\")
+tc 'check_inclusion(\"adc\", \"dcda\")', true, check_inclusion(\"adc\", \"dcda\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc16_valid_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · gsub",
+        "O(n²) time · O(n) space",
+        "No stack: `gsub(/\\(\\)|\\[\\]|\\{\\}/, \"\")` strips every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.",
+        "def is_valid(s)
+  previous = nil
+  while previous != s
+    previous = s
+    s = s.gsub(/\\(\\)|\\[\\]|\\{\\}/, \"\")
+  end
+  s.empty?
+end",
+      ),
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.",
+        "def is_valid(s)
+  pairs = { \")\" => \"(\", \"]\" => \"[\", \"}\" => \"{\" }
+  stack = []
+
+  s.each_char do |char|
+    if pairs.key?(char)
+      return false if stack.empty? || stack.pop != pairs[char]
+    else
+      stack << char
+    end
+  end
+  stack.empty?
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_valid(s)",
+      starter: "def is_valid(s)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_valid
+
+tc 'is_valid(\"()[]{}\")', true, is_valid(\"()[]{}\")
+tc 'is_valid(\"(]\")', false, is_valid(\"(]\")
+tc 'is_valid(\"([)]\")', false, is_valid(\"([)]\")
+tc 'is_valid(\"{[]}\")', true, is_valid(\"{[]}\")
+tc 'is_valid(\"(\")', false, is_valid(\"(\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc17_min_stack() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Pair Stack",
+        "O(1) per operation · O(n) space",
+        "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.",
+        "class MinStack
+  # Each entry carries the minimum of everything at or below it, so get_min is
+  # a peek. One array instead of two, at the cost of storing a second int per
+  # value.
+
+  def initialize
+    @entries = []
+  end
+
+  def push(val)
+    current_min = @entries.empty? ? val : [val, @entries.last[1]].min
+    @entries << [val, current_min]
+  end
+
+  def pop
+    @entries.pop
+  end
+
+  def top
+    @entries.last[0]
+  end
+
+  def get_min
+    @entries.last[1]
+  end
+end",
+      ),
+      #(
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "class MinStack
+  def initialize
+    @stack = []
+    @mins = []
+  end
+
+  def push(val)
+    @stack << val
+    @mins << (@mins.empty? ? val : [val, @mins.last].min)
+  end
+
+  def pop
+    @stack.pop
+    @mins.pop
+  end
+
+  def top
+    @stack.last
+  end
+
+  def get_min
+    @mins.last
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class MinStack
+  def initialize
+  def push(val)
+  def pop
+  def top
+  def get_min
+end",
+      starter: "class MinStack
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def push(val)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def pop
+    raise NotImplementedError, \"todo\"
+  end
+
+  def top
+    raise NotImplementedError, \"todo\"
+  end
+
+  def get_min
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :MinStack
+
+stack = MinStack.new
+stack.push(-2)
+stack.push(0)
+stack.push(-3)
+tc \"get_min() after push -2, 0, -3\", -3, stack.get_min
+stack.pop
+tc \"top() after pop()\", 0, stack.top
+tc \"get_min() after pop()\", -2, stack.get_min",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc18_daily_temperatures() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.",
+        "def daily_temperatures(temperatures)
+  temperatures.each_with_index.map do |temp, i|
+    j = (i + 1...temperatures.length).find { |later| temperatures[later] > temp }
+    j ? j - i : 0
+  end
+end",
+      ),
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).",
+        "def daily_temperatures(temperatures)
+  result = Array.new(temperatures.length, 0)
+  stack = [] # [index, temp] pairs, temps monotonically decreasing
+
+  temperatures.each_with_index do |temp, i|
+    while !stack.empty? && temp > stack.last[1]
+      prev_index, _ = stack.pop
+      result[prev_index] = i - prev_index
+    end
+    stack << [i, temp]
+  end
+  result
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def daily_temperatures(temperatures)",
+      starter: "def daily_temperatures(temperatures)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :daily_temperatures
+
+tc \"daily_temperatures([73, 74, 75, 71, 69, 72, 76, 73])\", [1, 1, 4, 2, 1, 1, 0, 0], daily_temperatures([73, 74, 75, 71, 69, 72, 76, 73])
+tc \"daily_temperatures([30, 40, 50, 60])\", [1, 1, 1, 0], daily_temperatures([30, 40, 50, 60])
+tc \"daily_temperatures([30, 30, 30])\", [0, 0, 0], daily_temperatures([30, 30, 30])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc19_binary_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursive Binary Search",
+        "O(log n) time · O(log n) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.",
+        "def search(nums, target)
+  halve(nums, target, 0, nums.length - 1)
+end
+
+def halve(nums, target, lo, hi)
+  return -1 if lo > hi
+
+  mid = lo + (hi - lo) / 2
+  return mid if nums[mid] == target
+  return halve(nums, target, mid + 1, hi) if nums[mid] < target
+
+  halve(nums, target, lo, mid - 1)
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.",
+        "def search(nums, target)
+  left = 0
+  right = nums.length - 1
+
+  while left <= right
+    mid = left + (right - left) / 2
+    if nums[mid] == target
+      return mid
+    elsif nums[mid] < target
+      left = mid + 1
+    else
+      right = mid - 1
+    end
+  end
+  -1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def search(nums, target)",
+      starter: "def search(nums, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :search
+
+tc \"search([-1, 0, 3, 5, 9, 12], 9)\", 4, search([-1, 0, 3, 5, 9, 12], 9)
+tc \"search([-1, 0, 3, 5, 9, 12], 2)\", -1, search([-1, 0, 3, 5, 9, 12], 2)
+tc \"search([5], 5)\", 0, search([5], 5)
+tc \"search([], 1)\", -1, search([], 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc20_find_min_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Linear Scan",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.",
+        "def find_min(nums)
+  (1...nums.length).each do |i|
+    return nums[i] if nums[i] < nums[i - 1]
+  end
+  nums[0]
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.",
+        "def find_min(nums)
+  left = 0
+  right = nums.length - 1
+
+  while left < right
+    mid = left + (right - left) / 2
+    # A middle bigger than the right end means the drop is to its right.
+    if nums[mid] > nums[right]
+      left = mid + 1
+    else
+      right = mid
+    end
+  end
+  nums[left]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_min(nums)",
+      starter: "def find_min(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_min
+
+tc \"find_min([3, 4, 5, 1, 2])\", 1, find_min([3, 4, 5, 1, 2])
+tc \"find_min([4, 5, 6, 7, 0, 1, 2])\", 0, find_min([4, 5, 6, 7, 0, 1, 2])
+tc \"find_min([11, 13, 15, 17])\", 11, find_min([11, 13, 15, 17])
+tc \"find_min([2, 1])\", 1, find_min([2, 1])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc21_search_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Pivot + Binary Search",
+        "O(n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.",
+        "def search(nums, target)
+  pivot = rotation_point(nums)
+  found = binary_search(nums, target, 0, pivot - 1)
+  return found if found != -1
+
+  binary_search(nums, target, pivot, nums.length - 1)
+end
+
+def rotation_point(nums)
+  (1...nums.length).each do |i|
+    return i if nums[i] < nums[i - 1]
+  end
+  0
+end
+
+def binary_search(nums, target, lo, hi)
+  while lo <= hi
+    mid = lo + (hi - lo) / 2
+    return mid if nums[mid] == target
+
+    if nums[mid] < target
+      lo = mid + 1
+    else
+      hi = mid - 1
+    end
+  end
+  -1
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.",
+        "def search(nums, target)
+  left = 0
+  right = nums.length - 1
+
+  while left <= right
+    mid = left + (right - left) / 2
+    return mid if nums[mid] == target
+
+    if nums[left] <= nums[mid] # left half sorted
+      if nums[left] <= target && target < nums[mid]
+        right = mid - 1
+      else
+        left = mid + 1
+      end
+    elsif nums[mid] < target && target <= nums[right] # right half sorted
+      left = mid + 1
+    else
+      right = mid - 1
+    end
+  end
+  -1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def search(nums, target)",
+      starter: "def search(nums, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :search
+
+tc \"search([4, 5, 6, 7, 0, 1, 2], 0)\", 4, search([4, 5, 6, 7, 0, 1, 2], 0)
+tc \"search([4, 5, 6, 7, 0, 1, 2], 3)\", -1, search([4, 5, 6, 7, 0, 1, 2], 3)
+tc \"search([1], 1)\", 0, search([1], 1)
+tc \"search([4, 5, 6, 7, 0, 1, 2], 6)\", 2, search([4, 5, 6, 7, 0, 1, 2], 6)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc22_encode_decode() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Separator + Escaping",
+        "O(n) time · O(n) space",
+        "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.",
+        "def encode(strs)
+  # Escape the separator, and escape the escape, in one pass.
+  strs.map { |s| \"|\" + s.gsub(/[\\\\|]/) { |char| \"\\\\\" + char } }.join
+end
+
+def decode(s)
+  # The leading separator is what tells [] and [\"\"] apart: one encodes to the
+  # empty string, the other to a lone separator.
+  return [] if s.empty?
+
+  out = []
+  current = +\"\"
+  i = 1
+  while i < s.length
+    if s[i] == \"\\\\\"
+      current << s[i + 1]
+      i += 2
+    elsif s[i] == \"|\"
+      out << current
+      current = +\"\"
+      i += 1
+    else
+      current << s[i]
+      i += 1
+    end
+  end
+  out << current
+end",
+      ),
+      #(
+        "Length Prefix",
+        "O(n) time · O(n) space",
+        "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.",
+        "def encode(strs)
+  strs.map { |s| \"#{s.length}##{s}\" }.join
+end
+
+def decode(s)
+  out = []
+  i = 0
+  while i < s.length
+    hash_at = s.index(\"#\", i)
+    length = s[i...hash_at].to_i
+    start = hash_at + 1
+    out << s[start, length]
+    i = start + length
+  end
+  out
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def encode(strs)
+
+def decode(s)",
+      starter: "def encode(strs)
+  raise NotImplementedError, \"todo\"
+end
+
+def decode(s)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :encode, :decode
+
+def round_trip(strs) = decode(encode(strs))
+
+tc 'decode(encode([\"neet\", \"code\", \"love\", \"you\"]))', [\"neet\", \"code\", \"love\", \"you\"], round_trip([\"neet\", \"code\", \"love\", \"you\"])
+tc \"decode(encode([]))\", [], round_trip([])
+tc 'decode(encode([\"\", \"\"]))', [\"\", \"\"], round_trip([\"\", \"\"])
+tc 'decode(encode([\"3#x\", \"a|b\"]))', [\"3#x\", \"a|b\"], round_trip([\"3#x\", \"a|b\"])
+tc 'decode(encode([\"\\\\\\\\\", \"|\", \"#\"]))', [\"\\\\\", \"|\", \"#\"], round_trip([\"\\\\\", \"|\", \"#\"])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc23_valid_sudoku() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Check Each Unit",
+        "O(9²) time · O(9²) space",
+        "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.",
+        "def is_valid_sudoku(board)
+  units(board).all? { |unit| no_duplicates(unit) }
+end
+
+def units(board)
+  rows = board.map(&:dup)
+  columns = board.transpose
+  boxes = [0, 3, 6].product([0, 3, 6]).map do |br, bc|
+    (br...br + 3).flat_map { |r| board[r][bc, 3] }
+  end
+  rows + columns + boxes
+end
+
+def no_duplicates(unit)
+  filled = unit.reject { |value| value == \".\" }
+  filled.length == filled.uniq.length
+end",
+      ),
+      #(
+        "One Pass + Seen Set",
+        "O(9²) time · O(9²) space",
+        "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.",
+        "require \"set\"
+
+def is_valid_sudoku(board)
+  seen = Set.new
+  board.each_with_index do |row, r|
+    row.each_with_index do |value, c|
+      next if value == \".\"
+
+      keys = [
+        [value, \"row\", r],
+        [value, \"col\", c],
+        [value, \"box\", r / 3, c / 3]
+      ]
+      return false if keys.any? { |key| seen.include?(key) }
+
+      seen.merge(keys)
+    end
+  end
+  true
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_valid_sudoku(board)",
+      starter: "require \"set\"
+
+def is_valid_sudoku(board)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_valid_sudoku
+
+# Nine row strings rather than a 9x9 literal: the board stays readable, and a
+# single changed cell is what each invalid case is.
+ROWS = [
+  \"53..7....\",
+  \"6..195...\",
+  \".98....6.\",
+  \"8...6...3\",
+  \"4..8.3..1\",
+  \"7...2...6\",
+  \".6....28.\",
+  \"...419..5\",
+  \"....8..79\"
+].freeze
+
+def board = ROWS.map(&:chars)
+
+def with_cell(r, c, value) = board.tap { |b| b[r][c] = value }
+
+tc \"is_valid_sudoku(valid board)\", true, is_valid_sudoku(board)
+tc \"is_valid_sudoku(5 twice in row 0)\", false, is_valid_sudoku(with_cell(0, 2, \"5\"))
+tc \"is_valid_sudoku(5 twice in column 0, different boxes)\", false, is_valid_sudoku(with_cell(3, 0, \"5\"))
+tc \"is_valid_sudoku(3 twice in the top-left box only)\", false, is_valid_sudoku(with_cell(2, 0, \"3\"))
+tc \"is_valid_sudoku(empty board)\", true, is_valid_sudoku(Array.new(9) { Array.new(9, \".\") })",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc24_trapping_rain_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "Water above a bar rises to the shorter of the tallest wall on each side. Compute both walls from scratch for every bar — a full scan left and right each time is what costs the square.",
+        "def trap(height)
+  total = 0
+  height.each_index do |i|
+    left_max = height[0..i].max
+    right_max = height[i..].max
+    total += [left_max, right_max].min - height[i]
+  end
+  total
+end",
+      ),
+      #(
+        "Prefix Maxima",
+        "O(n) time · O(n) space",
+        "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.",
+        "def trap(height)
+  left = []
+  best = 0
+  height.each do |h|
+    best = [best, h].max
+    left << best
+  end
+
+  right = Array.new(height.length, 0)
+  best = 0
+  (height.length - 1).downto(0) do |i|
+    best = [best, height[i]].max
+    right[i] = best
+  end
+
+  height.each_index.sum { |i| [left[i], right[i]].min - height[i] }
+end",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.",
+        "def trap(height)
+  left = 0
+  right = height.length - 1
+  left_max = right_max = total = 0
+
+  while left < right
+    # The lower end is the bound: the other side already has a wall at least
+    # this tall, so the water here depends only on this side's maximum.
+    if height[left] < height[right]
+      left_max = [left_max, height[left]].max
+      total += left_max - height[left]
+      left += 1
+    else
+      right_max = [right_max, height[right]].max
+      total += right_max - height[right]
+      right -= 1
+    end
+  end
+  total
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def trap(height)",
+      starter: "def trap(height)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :trap
+
+tc \"trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])\", 6, trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])
+tc \"trap([4, 2, 0, 3, 2, 5])\", 9, trap([4, 2, 0, 3, 2, 5])
+tc \"trap([])\", 0, trap([])
+tc \"trap([3])\", 0, trap([3])
+tc \"trap([2, 0, 2])\", 2, trap([2, 0, 2])
+tc \"trap([5, 4, 3, 2, 1])\", 0, trap([5, 4, 3, 2, 1])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc25_min_window_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Filtered Sliding Window",
+        "O(n+m) time · O(n) space",
+        "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.",
+        "def min_window(s, t)
+  return \"\" if s.empty? || t.empty?
+
+  wanted = t.chars.tally
+
+  # Only the positions that could possibly matter. For a long haystack and a
+  # short needle this is a far shorter walk than the whole string.
+  positions = s.each_char.with_index.filter_map { |c, i| [i, c] if wanted.key?(c) }
+
+  window = Hash.new(0)
+  satisfied = 0
+  left = 0
+  best_start = 0
+  best_length = 0
+
+  positions.each do |index, c|
+    window[c] += 1
+    satisfied += 1 if window[c] == wanted[c]
+
+    while satisfied == wanted.size
+      start = positions[left][0]
+      length = index - start + 1
+      if best_length.zero? || length < best_length
+        best_start = start
+        best_length = length
+      end
+      leaving = positions[left][1]
+      window[leaving] -= 1
+      satisfied -= 1 if window[leaving] < wanted[leaving]
+      left += 1
+    end
+  end
+  s[best_start, best_length]
+end",
+      ),
+      #(
+        "Sliding Window",
+        "O(n+m) time · O(1) space",
+        "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.",
+        "def min_window(s, t)
+  return \"\" if s.empty? || t.empty?
+
+  # Counts still owed by the window; extra copies drive an entry below zero.
+  owed = t.chars.tally
+  owed.default = 0
+
+  missing = t.length
+  left = 0
+  best_start = 0
+  best_length = 0
+
+  s.each_char.with_index do |c, right|
+    missing -= 1 if owed[c].positive?
+    owed[c] -= 1
+
+    while missing.zero?
+      if best_length.zero? || right - left + 1 < best_length
+        best_start = left
+        best_length = right - left + 1
+      end
+      owed[s[left]] += 1
+      missing += 1 if owed[s[left]].positive?
+      left += 1
+    end
+  end
+  s[best_start, best_length]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_window(s, t)",
+      starter: "def min_window(s, t)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_window
+
+tc 'min_window(\"ADOBECODEBANC\", \"ABC\")', \"BANC\", min_window(\"ADOBECODEBANC\", \"ABC\")
+tc 'min_window(\"a\", \"a\")', \"a\", min_window(\"a\", \"a\")
+tc 'min_window(\"a\", \"aa\")', \"\", min_window(\"a\", \"aa\")
+tc 'min_window(\"\", \"a\")', \"\", min_window(\"\", \"a\")
+tc 'min_window(\"ab\", \"\")', \"\", min_window(\"ab\", \"\")
+tc 'min_window(\"aaflslflsldkalskaaa\", \"aaa\")', \"aaa\", min_window(\"aaflslflsldkalskaaa\", \"aaa\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc26_sliding_window_maximum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·k) time · O(k) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.",
+        "def max_sliding_window(nums, k)
+  return [] if k <= 0 || nums.length < k
+
+  nums.each_cons(k).map(&:max)
+end",
+      ),
+      #(
+        "Monotonic Deque",
+        "O(n) time · O(k) space",
+        "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.",
+        "def max_sliding_window(nums, k)
+  return [] if k <= 0
+
+  # Indices whose values could still be the maximum, values decreasing.
+  # Ruby's Array is a fine deque: shift and pop are both amortised O(1).
+  window = []
+  out = []
+
+  nums.each_with_index do |num, i|
+    window.pop while !window.empty? && nums[window.last] <= num
+    window << i
+    window.shift if window.first <= i - k
+    out << nums[window.first] if i >= k - 1
+  end
+  out
+end",
+      ),
+      #(
+        "Prefix & Suffix Maxima",
+        "O(n) time · O(n) space",
+        "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.",
+        "def max_sliding_window(nums, k)
+  return [] if k <= 0 || nums.length < k
+
+  n = nums.length
+  left = Array.new(n, 0)
+  right = Array.new(n, 0)
+
+  # Cut nums into blocks of k: left holds each block's running maximum from
+  # its start, right each block's running maximum from its end.
+  (0...n).each do |i|
+    left[i] = (i % k).zero? ? nums[i] : [left[i - 1], nums[i]].max
+  end
+  (n - 1).downto(0) do |i|
+    right[i] = i == n - 1 || ((i + 1) % k).zero? ? nums[i] : [right[i + 1], nums[i]].max
+  end
+
+  # Every window of width k straddles at most one block boundary, so it is
+  # covered by a suffix of one block and a prefix of the next.
+  (0..n - k).map { |i| [right[i], left[i + k - 1]].max }
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_sliding_window(nums, k)",
+      starter: "def max_sliding_window(nums, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_sliding_window
+
+tc \"max_sliding_window([1, 3, -1, -3, 5, 3, 6, 7], 3)\", [3, 3, 5, 5, 6, 7], max_sliding_window([1, 3, -1, -3, 5, 3, 6, 7], 3)
+tc \"max_sliding_window([1], 1)\", [1], max_sliding_window([1], 1)
+tc \"max_sliding_window([], 3)\", [], max_sliding_window([], 3)
+tc \"max_sliding_window([9, 8, 7, 6], 2)\", [9, 8, 7], max_sliding_window([9, 8, 7, 6], 2)
+tc \"max_sliding_window([1, -1], 1)\", [1, -1], max_sliding_window([1, -1], 1)
+tc \"max_sliding_window([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", [7, 7, 7, 7, 7], max_sliding_window([-7, -8, 7, 5, 7, 1, 6, 0], 4)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc27_eval_rpn() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n) time · O(n) space",
+        "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.",
+        "def eval_rpn(tokens)
+  value, _ = take(tokens, tokens.length - 1)
+  value
+end
+
+# Read right to left: the last token is the outermost operator, and each
+# operator takes its right operand first because that is what sits nearer the
+# end. Returns the value and the index still to be read.
+def take(tokens, i)
+  token = tokens[i]
+  return [Integer(token), i - 1] unless %w[+ - * /].include?(token)
+
+  right, i = take(tokens, i - 1)
+  left, i = take(tokens, i)
+  [apply(token, left, right), i]
+end
+
+def apply(operator, a, b)
+  case operator
+  when \"+\" then a + b
+  when \"-\" then a - b
+  when \"*\" then a * b
+  else
+    quotient = a.abs / b.abs
+    (a.negative? != b.negative?) ? -quotient : quotient
+  end
+end",
+      ),
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.",
+        "def eval_rpn(tokens)
+  stack = []
+  tokens.each do |token|
+    if %w[+ - * /].include?(token) && stack.length >= 2
+      b = stack.pop
+      a = stack.pop
+      stack << apply(token, a, b)
+    else
+      stack << Integer(token)
+    end
+  end
+  stack.empty? ? 0 : stack.last
+end
+
+def apply(operator, a, b)
+  case operator
+  when \"+\" then a + b
+  when \"-\" then a - b
+  when \"*\" then a * b
+  else
+    # Ruby's / floors, so -3 / 2 is -2; the problem wants truncation towards zero.
+    quotient = a.abs / b.abs
+    (a.negative? != b.negative?) ? -quotient : quotient
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def eval_rpn(tokens)
+
+def apply(operator, a, b)",
+      starter: "def eval_rpn(tokens)
+  raise NotImplementedError, \"todo\"
+end
+
+def apply(operator, a, b)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :eval_rpn
+
+tc 'eval_rpn([\"2\", \"1\", \"+\", \"3\", \"*\"])', 9, eval_rpn([\"2\", \"1\", \"+\", \"3\", \"*\"])
+tc 'eval_rpn([\"4\", \"13\", \"5\", \"/\", \"+\"])', 6, eval_rpn([\"4\", \"13\", \"5\", \"/\", \"+\"])
+tc 'eval_rpn([\"-3\", \"2\", \"/\"])', -1, eval_rpn([\"-3\", \"2\", \"/\"])
+tc 'eval_rpn([\"5\"])', 5, eval_rpn([\"5\"])
+tc \"eval_rpn(the long one)\", 22, eval_rpn([\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc28_generate_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Divide & Conquer",
+        "O(4ⁿ/√n) time · O(4ⁿ/√n) space",
+        "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.",
+        "def generate_parenthesis(n)
+  compose(n)
+end
+
+# Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A
+# is whatever the first bracket encloses, B is whatever follows it. Enumerating
+# the splits enumerates the strings, with no validity rule to check at all.
+def compose(n)
+  return [\"\"] if n <= 0
+
+  (0...n).flat_map do |inner|
+    compose(inner).product(compose(n - 1 - inner)).map { |a, b| \"(#{a})#{b}\" }
+  end
+end",
+      ),
+      #(
+        "Backtracking",
+        "O(4ⁿ/√n) time · O(n) space",
+        "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.",
+        "def generate_parenthesis(n)
+  out = []
+  current = []
+
+  # Two counters, one rule each: an opener is legal while any are left, and a
+  # closer is legal only while more are outstanding than openers. Everything
+  # reached with both at zero is valid by construction.
+  build = lambda do |open_left, close_left|
+    if open_left.zero? && close_left.zero?
+      out << current.join
+      next
+    end
+    if open_left.positive?
+      current << \"(\"
+      build.call(open_left - 1, close_left)
+      current.pop
+    end
+    if close_left > open_left
+      current << \")\"
+      build.call(open_left, close_left - 1)
+      current.pop
+    end
+  end
+
+  build.call(n, n)
+  out
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def generate_parenthesis(n)",
+      starter: "def generate_parenthesis(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :generate_parenthesis
+
+# Any order is acceptable, so every case compares sorted.
+def sorted(n) = generate_parenthesis(n).sort
+
+tc \"generate_parenthesis(1)\", [\"()\"], sorted(1)
+tc \"generate_parenthesis(2)\", [\"(())\", \"()()\"], sorted(2)
+tc \"generate_parenthesis(3)\", [\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"], sorted(3)
+tc \"generate_parenthesis(4) count\", 14, sorted(4).length",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc29_car_fleet() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.",
+        "def car_fleet(target, position, speed)
+  cars = position.zip(speed)
+  cars.count { |car| leads(car, cars, target) }
+end
+
+# A car leads a fleet exactly when it arrives strictly later than every car
+# ahead of it; anything else means it catches one of them and merges. No
+# sorting, no running state -- O(n^2), and the definition rather than a
+# consequence of it.
+def leads(car, cars, target)
+  pos, spd = car
+  cars.all? do |other_pos, other_speed|
+    other_pos <= pos || (target - pos) * other_speed > (target - other_pos) * spd
+  end
+end",
+      ),
+      #(
+        "Sort + Greedy",
+        "O(n log n) time · O(n) space",
+        "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.",
+        "def car_fleet(target, position, speed)
+  cars = position.zip(speed).sort.reverse
+
+  fleets = 0
+  lead_distance = 0
+  lead_speed = 1
+
+  cars.each do |pos, spd|
+    distance = target - pos
+    # distance/spd > lead_distance/lead_speed, cross-multiplied so the
+    # arrival times never have to become fractions.
+    if distance * lead_speed > lead_distance * spd
+      fleets += 1
+      lead_distance = distance
+      lead_speed = spd
+    end
+  end
+  fleets
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def car_fleet(target, position, speed)",
+      starter: "def car_fleet(target, position, speed)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :car_fleet
+
+tc \"car_fleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3])\", 3, car_fleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3])
+tc \"car_fleet(10, [3], [3])\", 1, car_fleet(10, [3], [3])
+tc \"car_fleet(100, [0, 2, 4], [4, 2, 1])\", 1, car_fleet(100, [0, 2, 4], [4, 2, 1])
+tc \"car_fleet(10, [6, 8], [3, 2])\", 2, car_fleet(10, [6, 8], [3, 2])
+tc \"car_fleet(10, [], [])\", 0, car_fleet(10, [], [])
+tc \"car_fleet(10, [0, 4, 2], [2, 1, 3])\", 1, car_fleet(10, [0, 4, 2], [2, 1, 3])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc30_largest_rectangle() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.",
+        "def largest_rectangle_area(heights)
+  best = 0
+
+  heights.each_with_index do |h, i|
+    # How far this bar's own height can spread in each direction. O(n^2),
+    # and the definition of the answer: every rectangle is some bar taken
+    # as far as it will go.
+    left = i
+    left -= 1 while left.positive? && heights[left - 1] >= h
+    right = i
+    right += 1 while right + 1 < heights.length && heights[right + 1] >= h
+    best = [best, h * (right - left + 1)].max
+  end
+  best
+end",
+      ),
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.",
+        "def largest_rectangle_area(heights)
+  stack = [] # [start index, height] pairs
+  best = 0
+
+  heights.each_with_index do |h, i|
+    start = i
+    # Anything taller than the new bar can never extend past it, so its
+    # rectangle is finished here. Whatever it reached back to becomes this
+    # bar's own starting point.
+    while !stack.empty? && stack.last[1] > h
+      from_index, tall = stack.pop
+      best = [best, tall * (i - from_index)].max
+      start = from_index
+    end
+    stack << [start, h]
+  end
+
+  # Whatever survives was never cut off, so it runs to the far end.
+  stack.each do |from_index, tall|
+    best = [best, tall * (heights.length - from_index)].max
+  end
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def largest_rectangle_area(heights)",
+      starter: "def largest_rectangle_area(heights)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :largest_rectangle_area
+
+tc \"largest_rectangle_area([2, 1, 5, 6, 2, 3])\", 10, largest_rectangle_area([2, 1, 5, 6, 2, 3])
+tc \"largest_rectangle_area([2, 4])\", 4, largest_rectangle_area([2, 4])
+tc \"largest_rectangle_area([])\", 0, largest_rectangle_area([])
+tc \"largest_rectangle_area([1, 1, 1])\", 3, largest_rectangle_area([1, 1, 1])
+tc \"largest_rectangle_area([5])\", 5, largest_rectangle_area([5])
+tc \"largest_rectangle_area([4, 2, 0, 3, 2, 5])\", 6, largest_rectangle_area([4, 2, 0, 3, 2, 5])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc31_search_2d_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Staircase Search",
+        "O(m+n) time · O(1) space",
+        "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.",
+        "def search_matrix(matrix, target)
+  return false if matrix.empty? || matrix[0].empty?
+
+  # From the top-right corner every step is forced: too big and the whole
+  # column is too big, so drop it; too small and the whole row is too small,
+  # so drop that. O(m + n), and it never uses the fact that rows do not
+  # overlap: it works on any matrix sorted along both axes.
+  row = 0
+  column = matrix[0].length - 1
+  while row < matrix.length && column >= 0
+    value = matrix[row][column]
+    return true if value == target
+
+    if value > target
+      column -= 1
+    else
+      row += 1
+    end
+  end
+  false
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(log(m·n)) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.",
+        "def search_matrix(matrix, target)
+  # The rows are sorted and do not overlap, so the row a value could live in
+  # is itself found by halving: compare the target against a row's ends.
+  low = 0
+  high = matrix.length - 1
+  while low <= high
+    mid = (low + high) / 2
+    if matrix[mid][-1] < target
+      low = mid + 1
+    elsif matrix[mid][0] > target
+      high = mid - 1
+    else
+      return contains(matrix[mid], target)
+    end
+  end
+  false
+end
+
+def contains(row, target)
+  low = 0
+  high = row.length - 1
+  while low <= high
+    mid = (low + high) / 2
+    return true if row[mid] == target
+
+    if row[mid] < target
+      low = mid + 1
+    else
+      high = mid - 1
+    end
+  end
+  false
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def search_matrix(matrix, target)
+
+def contains(row, target)",
+      starter: "def search_matrix(matrix, target)
+  raise NotImplementedError, \"todo\"
+end
+
+def contains(row, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :search_matrix
+
+matrix = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]
+
+tc \"search_matrix(matrix, 3)\", true, search_matrix(matrix, 3)
+tc \"search_matrix(matrix, 13)\", false, search_matrix(matrix, 13)
+tc \"search_matrix(matrix, 60)\", true, search_matrix(matrix, 60)
+tc \"search_matrix([[1]], 1)\", true, search_matrix([[1]], 1)
+tc \"search_matrix([], 1)\", false, search_matrix([], 1)
+tc \"search_matrix([[1], [3], [5]], 5)\", true, search_matrix([[1], [3], [5]], 5)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc32_koko_bananas() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·m) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.",
+        "def min_eating_speed(piles, h)
+  highest = piles.max
+  speed = 1
+  speed += 1 while speed < highest && hours(piles, speed) > h
+  speed
+end
+
+def hours(piles, speed)
+  piles.sum { |pile| (pile + speed - 1) / speed }
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(n log m) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.",
+        "def min_eating_speed(piles, h)
+  # The search space is the answer, not the input. Feasibility is monotone:
+  # if a speed finishes in time then so does every faster one, which is
+  # exactly the property halving needs.
+  low = 1
+  high = piles.max
+  while low < high
+    mid = (low + high) / 2
+    if hours(piles, mid) <= h
+      high = mid
+    else
+      low = mid + 1
+    end
+  end
+  low
+end
+
+# A pile never shares an hour with another, so each costs ceil(pile / speed).
+def hours(piles, speed)
+  piles.sum { |pile| (pile + speed - 1) / speed }
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_eating_speed(piles, h)
+
+def hours(piles, speed)",
+      starter: "def min_eating_speed(piles, h)
+  raise NotImplementedError, \"todo\"
+end
+
+def hours(piles, speed)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_eating_speed
+
+tc \"min_eating_speed([3, 6, 7, 11], 8)\", 4, min_eating_speed([3, 6, 7, 11], 8)
+tc \"min_eating_speed([30, 11, 23, 4, 20], 5)\", 30, min_eating_speed([30, 11, 23, 4, 20], 5)
+tc \"min_eating_speed([30, 11, 23, 4, 20], 6)\", 23, min_eating_speed([30, 11, 23, 4, 20], 6)
+tc \"min_eating_speed([1], 1)\", 1, min_eating_speed([1], 1)
+tc \"min_eating_speed([4, 4, 4, 4], 4)\", 4, min_eating_speed([4, 4, 4, 4], 4)
+tc \"min_eating_speed([1, 1, 1, 10], 4)\", 10, min_eating_speed([1, 1, 1, 10], 4)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc33_time_map() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Linear Scan",
+        "O(n) per operation · O(n) space",
+        "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.",
+        "class TimeMap
+  def initialize
+    @store = Hash.new { |hash, key| hash[key] = [] }
+  end
+
+  def set(key, value, timestamp)
+    @store[key].unshift([timestamp, value])
+  end
+
+  def get(key, timestamp)
+    # Newest first, so the first entry old enough is the answer. O(n) per
+    # lookup against the halving version's O(log n), but there is no split
+    # arithmetic to get wrong.
+    found = @store.fetch(key, []).find { |stamp, _value| stamp <= timestamp }
+    found ? found[1] : \"\"
+  end
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) per get · O(n) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.",
+        "class TimeMap
+  def initialize
+    @store = Hash.new { |hash, key| hash[key] = [] }
+  end
+
+  def set(key, value, timestamp)
+    # Timestamps only ever increase, so appending keeps each key's history
+    # sorted for free.
+    @store[key] << [timestamp, value]
+  end
+
+  def get(key, timestamp)
+    # The history is sorted, so the newest entry at or before a timestamp is
+    # a halving question, not a walk.
+    history = @store.fetch(key, [])
+    low = 0
+    high = history.length - 1
+    best = \"\"
+    while low <= high
+      mid = (low + high) / 2
+      if history[mid][0] <= timestamp
+        best = history[mid][1]
+        low = mid + 1
+      else
+        high = mid - 1
+      end
+    end
+    best
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class TimeMap
+  def initialize
+  def set(key, value, timestamp)
+  def get(key, timestamp)
+end",
+      starter: "class TimeMap
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def set(key, value, timestamp)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def get(key, timestamp)
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :TimeMap
+
+store = TimeMap.new
+store.set(\"foo\", \"bar\", 1)
+
+tc 'get(\"foo\", 1) after set at 1', \"bar\", store.get(\"foo\", 1)
+tc 'get(\"foo\", 3) with only the value at 1', \"bar\", store.get(\"foo\", 3)
+
+store.set(\"foo\", \"bar2\", 4)
+
+tc 'get(\"foo\", 4) after set at 4', \"bar2\", store.get(\"foo\", 4)
+tc 'get(\"foo\", 5) after set at 4', \"bar2\", store.get(\"foo\", 5)
+tc 'get(\"foo\", 3) still sees the older value', \"bar\", store.get(\"foo\", 3)
+tc 'get(\"foo\", 0) before anything was set', \"\", store.get(\"foo\", 0)
+tc 'get(\"missing\", 1)', \"\", store.get(\"missing\", 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc34_median_two_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O((m+n) log (m+n)) time · O(m+n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.",
+        "def find_median_sorted_arrays(nums1, nums2)
+  merged = (nums1 + nums2).sort
+  return 0.0 if merged.empty?
+
+  # One expression for both parities: for an odd length the two indices are
+  # the same element, so the average of it with itself is itself.
+  (merged[merged.length / 2] + merged[(merged.length - 1) / 2]) / 2.0
+end",
+      ),
+      #(
+        "Two Pointers",
+        "O(m+n) time · O(1) space",
+        "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.",
+        "def find_median_sorted_arrays(nums1, nums2)
+  total = nums1.length + nums2.length
+  return 0.0 if total.zero?
+
+  # Merge, but stop at the middle and keep only the last two values seen: the
+  # merged array is never built, so this is O(m + n) time and no extra space.
+  i = 0
+  j = 0
+  previous = 0
+  current = 0
+  (total / 2 + 1).times do
+    previous = current
+    if i < nums1.length && (j >= nums2.length || nums1[i] <= nums2[j])
+      current = nums1[i]
+      i += 1
+    else
+      current = nums2[j]
+      j += 1
+    end
+  end
+
+  return current.to_f if total.odd?
+
+  (previous + current) / 2.0
+end",
+      ),
+      #(
+        "Binary Search",
+        "O(log min(m,n)) time · O(1) space",
+        "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.",
+        "def find_median_sorted_arrays(nums1, nums2)
+  # Always halve the shorter side, so the search is O(log min(m, n)).
+  nums1, nums2 = nums2, nums1 if nums1.length > nums2.length
+
+  m = nums1.length
+  n = nums2.length
+  total = m + n
+  return 0.0 if total.zero?
+
+  half = (total + 1) / 2
+
+  low = 0
+  high = m
+  while low <= high
+    cut1 = (low + high) / 2
+    cut2 = half - cut1
+
+    left1 = cut1 > 0 ? nums1[cut1 - 1] : -Float::INFINITY
+    right1 = cut1 < m ? nums1[cut1] : Float::INFINITY
+    left2 = cut2 > 0 ? nums2[cut2 - 1] : -Float::INFINITY
+    right2 = cut2 < n ? nums2[cut2] : Float::INFINITY
+
+    # A correct cut is one where everything left of it is <= everything
+    # right of it, across both arrays.
+    if left1 <= right2 && left2 <= right1
+      return [left1, left2].max.to_f if total.odd?
+
+      return ([left1, left2].max + [right1, right2].min) / 2.0
+    end
+
+    if left1 > right2
+      high = cut1 - 1
+    else
+      low = cut1 + 1
+    end
+  end
+
+  0.0
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_median_sorted_arrays(nums1, nums2)",
+      starter: "def find_median_sorted_arrays(nums1, nums2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_median_sorted_arrays
+
+tc \"find_median_sorted_arrays([1, 3], [2])\", 2.0, find_median_sorted_arrays([1, 3], [2])
+tc \"find_median_sorted_arrays([1, 2], [3, 4])\", 2.5, find_median_sorted_arrays([1, 2], [3, 4])
+tc \"find_median_sorted_arrays([], [1])\", 1.0, find_median_sorted_arrays([], [1])
+tc \"find_median_sorted_arrays([2], [])\", 2.0, find_median_sorted_arrays([2], [])
+tc \"find_median_sorted_arrays([], [])\", 0.0, find_median_sorted_arrays([], [])
+tc \"find_median_sorted_arrays([1, 2], [])\", 1.5, find_median_sorted_arrays([1, 2], [])
+tc \"find_median_sorted_arrays([1, 3, 5, 7], [2, 4, 6])\", 4.0, find_median_sorted_arrays([1, 3, 5, 7], [2, 4, 6])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc35_insert_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sort + Merge",
+        "O(n log n) time · O(n) space",
+        "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.",
+        "def insert(intervals, new_interval)
+  # Drop the new interval on the end and run the general merge. Throws away
+  # the fact that the input was sorted, O(n log n) rather than O(n), but
+  # it reuses a solution you already have rather than a three-way split.
+  out = []
+  (intervals + [new_interval]).sort.each do |start, finish|
+    if !out.empty? && start <= out[-1][1]
+      out[-1][1] = [out[-1][1], finish].max
+    else
+      out << [start, finish]
+    end
+  end
+  out
+end",
+      ),
+      #(
+        "Intervals",
+        "O(n) time · O(n) space",
+        "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.",
+        "def insert(intervals, new_interval)
+  start, finish = new_interval
+  out = []
+  i = 0
+
+  # The input is already sorted, so the list falls into three runs: everything
+  # that finishes before the new one starts, everything that touches it, and
+  # everything that starts after it ends.
+  while i < intervals.length && intervals[i][1] < start
+    out << intervals[i]
+    i += 1
+  end
+
+  while i < intervals.length && intervals[i][0] <= finish
+    start = [start, intervals[i][0]].min
+    finish = [finish, intervals[i][1]].max
+    i += 1
+  end
+
+  out << [start, finish]
+  out + intervals[i..]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def insert(intervals, new_interval)",
+      starter: "def insert(intervals, new_interval)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :insert
+
+tc \"insert([[1, 3], [6, 9]], [2, 5])\", [[1, 5], [6, 9]], insert([[1, 3], [6, 9]], [2, 5])
+tc \"insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8])\", [[1, 2], [3, 10], [12, 16]],
+   insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8])
+tc \"insert([], [5, 7])\", [[5, 7]], insert([], [5, 7])
+tc \"insert([[1, 5]], [2, 3])\", [[1, 5]], insert([[1, 5]], [2, 3])
+tc \"insert([[1, 5]], [6, 8])\", [[1, 5], [6, 8]], insert([[1, 5]], [6, 8])
+tc \"insert([[3, 5]], [1, 2])\", [[1, 2], [3, 5]], insert([[3, 5]], [1, 2])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc36_merge_intervals() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.",
+        "def merge(intervals)
+  # Forget the intervals and keep only their edges: +1 where one opens, -1
+  # where one closes. A merged interval runs from the edge that lifts the
+  # running count off zero to the edge that drops it back.
+  #
+  # Sorting by -delta ascending puts opens before closes at the same
+  # coordinate, so touching intervals join.
+  edges = []
+  intervals.each do |start, finish|
+    edges << [start, 1]
+    edges << [finish, -1]
+  end
+  edges.sort_by! { |position, delta| [position, -delta] }
+
+  out = []
+  depth = 0
+  start = 0
+  edges.each do |position, delta|
+    start = position if depth.zero?
+    depth += delta
+    out << [start, position] if depth.zero?
+  end
+  out
+end",
+      ),
+      #(
+        "Intervals",
+        "O(n log n) time · O(n) space",
+        "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.",
+        "def merge(intervals)
+  # Sorted by start, an interval can only ever overlap the one being built, so
+  # a single pass is enough: extend it, or begin a new one.
+  out = []
+  intervals.sort.each do |start, finish|
+    if !out.empty? && start <= out[-1][1]
+      out[-1][1] = [out[-1][1], finish].max
+    else
+      out << [start, finish]
+    end
+  end
+  out
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def merge(intervals)",
+      starter: "def merge(intervals)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :merge
+
+tc \"merge([[1, 3], [2, 6], [8, 10], [15, 18]])\", [[1, 6], [8, 10], [15, 18]], merge([[1, 3], [2, 6], [8, 10], [15, 18]])
+tc \"merge([[1, 4], [4, 5]])\", [[1, 5]], merge([[1, 4], [4, 5]])
+tc \"merge([])\", [], merge([])
+tc \"merge([[1, 4], [0, 4]])\", [[0, 4]], merge([[1, 4], [0, 4]])
+tc \"merge([[1, 4], [2, 3]])\", [[1, 4]], merge([[1, 4], [2, 3]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc37_non_overlapping() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy by Start",
+        "O(n log n) time · O(n) space",
+        "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.",
+        "def erase_overlap_intervals(intervals)
+  # Sorted by start instead: on an overlap you must drop one of the two, and
+  # dropping whichever ends later is always at least as good. Same greedy
+  # argument, made at the moment of the clash rather than in the sort order.
+  removed = 0
+  last_end = -Float::INFINITY
+
+  intervals.sort.each do |start, finish|
+    if start >= last_end
+      last_end = finish
+    else
+      removed += 1
+      last_end = [last_end, finish].min
+    end
+  end
+
+  removed
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.",
+        "def erase_overlap_intervals(intervals)
+  # Greedy on the end: among any set of intervals competing for the same
+  # space, keeping the one that finishes earliest leaves the most room for
+  # whatever comes next, and can never be worse.
+  removed = 0
+  last_end = -Float::INFINITY
+
+  intervals.sort_by { |interval| interval[1] }.each do |start, finish|
+    if start >= last_end
+      last_end = finish
+    else
+      removed += 1
+    end
+  end
+
+  removed
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def erase_overlap_intervals(intervals)",
+      starter: "def erase_overlap_intervals(intervals)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :erase_overlap_intervals
+
+tc \"erase_overlap_intervals([[1, 2], [2, 3], [3, 4], [1, 3]])\", 1, erase_overlap_intervals([[1, 2], [2, 3], [3, 4], [1, 3]])
+tc \"erase_overlap_intervals([[1, 2], [1, 2], [1, 2]])\", 2, erase_overlap_intervals([[1, 2], [1, 2], [1, 2]])
+tc \"erase_overlap_intervals([[1, 2], [2, 3]])\", 0, erase_overlap_intervals([[1, 2], [2, 3]])
+tc \"erase_overlap_intervals([])\", 0, erase_overlap_intervals([])
+tc \"erase_overlap_intervals([[1, 100], [11, 22], [1, 11], [2, 12]])\", 2,
+   erase_overlap_intervals([[1, 100], [11, 22], [1, 11], [2, 12]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc38_meeting_rooms() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.",
+        "def can_attend_meetings(intervals)
+  # Every pair, checked. Two intervals overlap when each starts before the
+  # other ends: the condition worth being able to write from memory, since
+  # it is easier to get right than its negation.
+  (0...intervals.length).each do |i|
+    (i + 1...intervals.length).each do |j|
+      a = intervals[i]
+      b = intervals[j]
+      return false if a[0] < b[1] && b[0] < a[1]
+    end
+  end
+  true
+end",
+      ),
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.",
+        "def can_attend_meetings(intervals)
+  # Sorted by start, the only meeting a given one can clash with is the one
+  # immediately before it: anything earlier started earlier still and would
+  # have clashed with that one first.
+  intervals.sort.each_cons(2).all? { |before, after| before[1] <= after[0] }
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def can_attend_meetings(intervals)",
+      starter: "def can_attend_meetings(intervals)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :can_attend_meetings
+
+tc \"can_attend_meetings([[0, 30], [5, 10], [15, 20]])\", false, can_attend_meetings([[0, 30], [5, 10], [15, 20]])
+tc \"can_attend_meetings([[7, 10], [2, 4]])\", true, can_attend_meetings([[7, 10], [2, 4]])
+tc \"can_attend_meetings([])\", true, can_attend_meetings([])
+tc \"can_attend_meetings([[1, 5]])\", true, can_attend_meetings([[1, 5]])
+tc \"can_attend_meetings([[1, 5], [5, 10]])\", true, can_attend_meetings([[1, 5], [5, 10]])
+tc \"can_attend_meetings([[5, 10], [1, 6]])\", false, can_attend_meetings([[5, 10], [1, 6]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc39_meeting_rooms_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.",
+        "def min_meeting_rooms(intervals)
+  # The busiest moment is always the start of some meeting, so there are only
+  # n moments worth testing. Count how many meetings cover each one and take
+  # the largest: O(n^2), and it needs no sort and no edge bookkeeping.
+  best = 0
+  intervals.each do |start, _finish|
+    running = intervals.count { |s, e| s <= start && start < e }
+    best = [best, running].max
+  end
+  best
+end",
+      ),
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.",
+        "def min_meeting_rooms(intervals)
+  # Rooms needed is the most meetings ever running at once, so the meetings
+  # themselves stop mattering, only their edges do. Walk the edges in time
+  # order and watch how high the count gets.
+  edges = []
+  intervals.each do |start, finish|
+    edges << [start, 1]
+    edges << [finish, -1]
+  end
+
+  # A room freed at the same moment another meeting starts can be reused, so
+  # closes come before opens here: the opposite of merging intervals.
+  edges.sort!
+
+  depth = 0
+  best = 0
+  edges.each do |_position, delta|
+    depth += delta
+    best = [best, depth].max
+  end
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_meeting_rooms(intervals)",
+      starter: "def min_meeting_rooms(intervals)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_meeting_rooms
+
+tc \"min_meeting_rooms([[0, 30], [5, 10], [15, 20]])\", 2, min_meeting_rooms([[0, 30], [5, 10], [15, 20]])
+tc \"min_meeting_rooms([[7, 10], [2, 4]])\", 1, min_meeting_rooms([[7, 10], [2, 4]])
+tc \"min_meeting_rooms([])\", 0, min_meeting_rooms([])
+tc \"min_meeting_rooms([[1, 5], [5, 10]])\", 1, min_meeting_rooms([[1, 5], [5, 10]])
+tc \"min_meeting_rooms(six overlapping meetings)\", 4,
+   min_meeting_rooms([[1, 10], [2, 7], [3, 19], [8, 12], [10, 20], [11, 30]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc40_min_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·q) time · O(n+q) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.",
+        "def min_interval(intervals, queries)
+  queries.map do |query|
+    lengths = intervals.filter_map { |start, finish| finish - start + 1 if start <= query && query <= finish }
+    lengths.empty? ? -1 : lengths.min
+  end
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n log n + n·q) time · O(n+q) space",
+        "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.",
+        "def min_interval(intervals, queries)
+  # Answer each query once, and never revisit it. Taking the intervals
+  # shortest first means the first interval to cover a query is already its
+  # answer, so every query leaves the pool the moment it is settled and the
+  # pool only ever shrinks.
+  answers = Array.new(queries.length, -1)
+  waiting = queries.each_with_index.map { |query, index| [index, query] }
+
+  intervals.sort_by { |start, finish| finish - start }.each do |start, finish|
+    waiting = waiting.reject do |index, query|
+      covered = start <= query && query <= finish
+      answers[index] = finish - start + 1 if covered
+      covered
+    end
+  end
+
+  answers
+end",
+      ),
+      #(
+        "Heap",
+        "O(n log n + q log q) time · O(n+q) space",
+        "The O((n + q) log n) answer. Walk the queries in time order, letting in every interval that has started by now, and keep the live ones in a heap ordered by length. The shortest on top is the answer once anything already ended has been discarded — and an interval ends only once, so that discarding is amortised free.",
+        "def min_interval(intervals, queries)
+  # The O((n + q) log n) answer. Walk the queries in time order, letting in
+  # every interval that has started by now, and keep the live ones in a heap
+  # by length. The shortest one on top is the answer once anything that has
+  # already ended is discarded, and an interval only ever ends once, so the
+  # discarding is amortised free.
+  ordered = intervals.sort
+  answers = {}
+  heap = []
+  i = 0
+
+  queries.sort.each do |query|
+    while i < ordered.length && ordered[i][0] <= query
+      start, finish = ordered[i]
+      heap_push(heap, [finish - start + 1, finish])
+      i += 1
+    end
+    heap_pop(heap) while !heap.empty? && heap[0][1] < query
+    answers[query] = heap.empty? ? -1 : heap[0][0]
+  end
+
+  queries.map { |query| answers[query] }
+end
+
+# Ruby has no heap in its core library, so here is a binary min-heap on a
+# plain array: the parent of index i sits at (i - 1) / 2.
+def heap_push(heap, item)
+  heap << item
+  i = heap.length - 1
+  while i > 0
+    parent = (i - 1) / 2
+    break if (heap[parent] <=> heap[i]) <= 0
+
+    heap[parent], heap[i] = heap[i], heap[parent]
+    i = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap[0]
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  i = 0
+  loop do
+    smallest = i
+    [2 * i + 1, 2 * i + 2].each do |child|
+      smallest = child if child < heap.length && (heap[child] <=> heap[smallest]) < 0
+    end
+    break if smallest == i
+
+    heap[smallest], heap[i] = heap[i], heap[smallest]
+    i = smallest
+  end
+  top
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_interval(intervals, queries)",
+      starter: "def min_interval(intervals, queries)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_interval
+
+tc \"min_interval([[1, 4], [2, 4], [3, 6], [4, 4]], [2, 3, 4, 5])\", [3, 3, 1, 4],
+   min_interval([[1, 4], [2, 4], [3, 6], [4, 4]], [2, 3, 4, 5])
+tc \"min_interval([[2, 3], [2, 5], [1, 8], [20, 25]], [2, 19, 5, 22])\", [2, -1, 4, 6],
+   min_interval([[2, 3], [2, 5], [1, 8], [20, 25]], [2, 19, 5, 22])
+tc \"min_interval([], [1, 2])\", [-1, -1], min_interval([], [1, 2])
+tc \"min_interval([[1, 10]], [])\", [], min_interval([[1, 10]], [])
+tc \"min_interval([[1, 3]], [0, 4])\", [-1, -1], min_interval([[1, 3]], [0, 4])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc41_maximum_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix Sums",
+        "O(n) time · O(1) space",
+        "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.",
+        "def max_sub_array(nums)
+  return 0 if nums.empty?
+
+  # The sum from i to j is prefix[j] - prefix[i-1], so the best subarray
+  # ending at j is prefix[j] minus the smallest prefix before it. One pass
+  # carrying that minimum answers the whole thing.
+  running = 0
+  smallest = 0
+  best = -Float::INFINITY
+  nums.each do |n|
+    running += n
+    best = [best, running - smallest].max
+    smallest = [smallest, running].min
+  end
+  best
+end",
+      ),
+      #(
+        "Kadane",
+        "O(n) time · O(1) space",
+        "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.",
+        "def max_sub_array(nums)
+  return 0 if nums.empty?
+
+  # Kadane: at each position the best subarray ending here either extends the
+  # one ending just before it or starts fresh. A running total that has gone
+  # negative can only hurt whatever follows, so it is dropped.
+  here = best = nums[0]
+  nums.drop(1).each do |n|
+    here = [n, here + n].max
+    best = [best, here].max
+  end
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_sub_array(nums)",
+      starter: "def max_sub_array(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_sub_array
+
+tc \"max_sub_array([-2, 1, -3, 4, -1, 2, 1, -5, 4])\", 6, max_sub_array([-2, 1, -3, 4, -1, 2, 1, -5, 4])
+tc \"max_sub_array([1])\", 1, max_sub_array([1])
+tc \"max_sub_array([5, 4, -1, 7, 8])\", 23, max_sub_array([5, 4, -1, 7, 8])
+tc \"max_sub_array([-1])\", -1, max_sub_array([-1])
+tc \"max_sub_array([-2, -1])\", -1, max_sub_array([-2, -1])
+tc \"max_sub_array([])\", 0, max_sub_array([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc42_jump_game() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backwards Greedy",
+        "O(n) time · O(1) space",
+        "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.",
+        "def can_jump(nums)
+  return true if nums.empty?
+
+  # Walk backwards carrying the leftmost index known to reach the end. Any
+  # index that can reach *that* can reach the end, so it becomes the new goal.
+  goal = nums.length - 1
+  (nums.length - 1).downto(0) do |i|
+    goal = i if i + nums[i] >= goal
+  end
+  goal.zero?
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.",
+        "def can_jump(nums)
+  # Only one number matters: the furthest index reachable so far. Walk forward
+  # and extend it; the moment the walk gets past it, nothing further is
+  # reachable.
+  reach = 0
+  nums.each_with_index do |jump, i|
+    return false if i > reach
+
+    reach = [reach, i + jump].max
+  end
+  reach >= nums.length - 1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def can_jump(nums)",
+      starter: "def can_jump(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :can_jump
+
+tc \"can_jump([2, 3, 1, 1, 4])\", true, can_jump([2, 3, 1, 1, 4])
+tc \"can_jump([3, 2, 1, 0, 4])\", false, can_jump([3, 2, 1, 0, 4])
+tc \"can_jump([0])\", true, can_jump([0])
+tc \"can_jump([])\", true, can_jump([])
+tc \"can_jump([1, 0, 1, 0])\", false, can_jump([1, 0, 1, 0])
+tc \"can_jump([2, 0, 0])\", true, can_jump([2, 0, 0])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc43_jump_game_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Reverse Greedy",
+        "O(n²) time · O(1) space",
+        "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.",
+        "def jump(nums)
+  return 0 if nums.length <= 1
+
+  # From the goal, step back to the *earliest* index that can reach it: taking
+  # the earliest can never cost more jumps, and it is the only choice that is
+  # obviously safe. O(n^2), and it makes the greedy argument visible.
+  goal = nums.length - 1
+  jumps = 0
+  while goal > 0
+    earliest = (0...nums.length).find { |i| i + nums[i] >= goal }
+    break if earliest.nil?
+
+    goal = earliest
+    jumps += 1
+  end
+  jumps
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.",
+        "def jump(nums)
+  # Breadth-first search without a queue. Everything reachable in k jumps
+  # forms a contiguous window; when the walk reaches that window's end, one
+  # more jump is spent and the next window runs to the furthest index seen.
+  jumps = 0
+  window_end = 0
+  furthest = 0
+
+  (0...nums.length - 1).each do |i|
+    furthest = [furthest, i + nums[i]].max
+    if i == window_end
+      jumps += 1
+      window_end = furthest
+    end
+  end
+
+  jumps
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def jump(nums)",
+      starter: "def jump(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :jump
+
+tc \"jump([2, 3, 1, 1, 4])\", 2, jump([2, 3, 1, 1, 4])
+tc \"jump([2, 3, 0, 1, 4])\", 2, jump([2, 3, 0, 1, 4])
+tc \"jump([0])\", 0, jump([0])
+tc \"jump([1])\", 0, jump([1])
+tc \"jump([1, 2, 3])\", 2, jump([1, 2, 3])
+tc \"jump([1, 1, 1, 1])\", 3, jump([1, 1, 1, 1])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc44_gas_station() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.",
+        "def can_complete_circuit(gas, cost)
+  # Drive the whole loop from each start and see whether the tank ever goes
+  # negative. O(n^2): the definition, and what the single pass replaces.
+  diffs = gas.zip(cost).map { |g, c| g - c }
+
+  diffs.each_index do |start|
+    tank = 0
+    survives = diffs.rotate(start).all? { |diff| (tank += diff) >= 0 }
+    return start if survives
+  end
+
+  -1
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.",
+        "def can_complete_circuit(gas, cost)
+  return -1 if gas.empty?
+
+  # Two facts do all the work. If the total gas is short of the total cost no
+  # start works at all; and if the tank runs dry between i and j, no station
+  # in between can start either, so the search jumps straight to j + 1.
+  total = 0
+  tank = 0
+  start = 0
+
+  gas.each_index do |i|
+    diff = gas[i] - cost[i]
+    total += diff
+    tank += diff
+    if tank < 0
+      start = i + 1
+      tank = 0
+    end
+  end
+
+  total >= 0 ? start : -1
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def can_complete_circuit(gas, cost)",
+      starter: "def can_complete_circuit(gas, cost)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :can_complete_circuit
+
+tc \"can_complete_circuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2])\", 3, can_complete_circuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2])
+tc \"can_complete_circuit([2, 3, 4], [3, 4, 3])\", -1, can_complete_circuit([2, 3, 4], [3, 4, 3])
+tc \"can_complete_circuit([5], [4])\", 0, can_complete_circuit([5], [4])
+tc \"can_complete_circuit([1, 2], [2, 1])\", 1, can_complete_circuit([1, 2], [2, 1])
+tc \"can_complete_circuit([], [])\", -1, can_complete_circuit([], [])
+tc \"can_complete_circuit([3, 1, 1], [1, 2, 2])\", 0, can_complete_circuit([3, 1, 1], [1, 2, 2])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc45_hand_of_straights() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n²) time · O(n) space",
+        "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.",
+        "def is_n_straight_hand(hand, group_size)
+  return false if group_size <= 0 || hand.length % group_size != 0
+
+  # No counts: sort, then peel one full run off the front at a time, removing
+  # each card as it is used. Slower, since every removal is a list walk, but
+  # the only thing to believe is that a group must begin with the smallest
+  # card left.
+  cards = hand.sort
+  until cards.empty?
+    smallest = cards[0]
+    (smallest...smallest + group_size).each do |card|
+      at = cards.index(card)
+      return false if at.nil?
+
+      cards.delete_at(at)
+    end
+  end
+
+  true
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.",
+        "def is_n_straight_hand(hand, group_size)
+  return false if group_size <= 0 || hand.length % group_size != 0
+
+  counts = hand.tally
+  counts.default = 0
+
+  # The smallest card left has no smaller neighbour to hide behind, so
+  # whatever group it belongs to must start with it. That removes all choice,
+  # which is what makes the greedy correct, and every copy of it needs its
+  # own group, so they are all taken at once.
+  counts.keys.sort.each do |smallest|
+    copies = counts[smallest]
+    next if copies.zero?
+
+    (smallest...smallest + group_size).each do |card|
+      return false if counts[card] < copies
+
+      counts[card] -= copies
+    end
+  end
+
+  true
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_n_straight_hand(hand, group_size)",
+      starter: "def is_n_straight_hand(hand, group_size)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_n_straight_hand
+
+tc \"is_n_straight_hand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)\", true, is_n_straight_hand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)
+tc \"is_n_straight_hand([1, 2, 3, 4, 5], 4)\", false, is_n_straight_hand([1, 2, 3, 4, 5], 4)
+tc \"is_n_straight_hand([1, 2, 3, 4, 5, 6], 2)\", true, is_n_straight_hand([1, 2, 3, 4, 5, 6], 2)
+tc \"is_n_straight_hand([], 1)\", true, is_n_straight_hand([], 1)
+tc \"is_n_straight_hand([1, 1, 2, 2, 3, 3], 3)\", true, is_n_straight_hand([1, 1, 2, 2, 3, 3], 3)
+tc \"is_n_straight_hand([8, 10, 12], 3)\", false, is_n_straight_hand([8, 10, 12], 3)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc46_merge_triplets() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Coverage Check",
+        "O(n) time · O(n) space",
+        "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.",
+        "def merge_triplets(triplets, target)
+  # Ask a different question: is each of the three positions hit exactly by
+  # some usable triplet? The answer is yes exactly when all three are covered:
+  # the same condition, arrived at without taking maxima.
+  usable = triplets.select { |t| (0...3).all? { |i| t[i] <= target[i] } }
+  (0...3).all? { |i| usable.any? { |t| t[i] == target[i] } }
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.",
+        "def merge_triplets(triplets, target)
+  # A triplet with any component above the target can never be used: merging
+  # takes maxima, so that component would be stuck too high forever. Throw
+  # those away and the rest can all be merged, because a max only ever helps.
+  best = [0, 0, 0]
+  triplets.each do |triplet|
+    next unless (0...3).all? { |i| triplet[i] <= target[i] }
+
+    best = (0...3).map { |i| [best[i], triplet[i]].max }
+  end
+  best == target
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def merge_triplets(triplets, target)",
+      starter: "def merge_triplets(triplets, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :merge_triplets
+
+tc \"merge_triplets([[2, 5, 3], [1, 8, 4], [1, 7, 5]], [2, 7, 5])\", true,
+   merge_triplets([[2, 5, 3], [1, 8, 4], [1, 7, 5]], [2, 7, 5])
+tc \"merge_triplets([[3, 4, 5], [4, 5, 6]], [3, 2, 5])\", false, merge_triplets([[3, 4, 5], [4, 5, 6]], [3, 2, 5])
+tc \"merge_triplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5])\", true,
+   merge_triplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5])
+tc \"merge_triplets([[1, 1, 1]], [1, 1, 1])\", true, merge_triplets([[1, 1, 1]], [1, 1, 1])
+tc \"merge_triplets([], [1, 1, 1])\", false, merge_triplets([], [1, 1, 1])
+tc \"merge_triplets([[1, 2, 3]], [3, 2, 1])\", false, merge_triplets([[1, 2, 3]], [3, 2, 1])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc47_partition_labels() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.",
+        "def partition_labels(s)
+  # Grow the piece one character at a time until nothing inside it also
+  # appears in what is left. No last-position map, the tail is asked
+  # directly, which is far slower but is the condition stated outright.
+  out = []
+  rest = s
+  until rest.empty?
+    size = 1
+    size += 1 while rest[0, size].each_char.any? { |c| rest[size..].include?(c) }
+    out << size
+    rest = rest[size..]
+  end
+  out
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.",
+        "def partition_labels(s)
+  # Overwriting as we go leaves each character mapped to its last position.
+  last = {}
+  s.each_char.with_index { |c, i| last[c] = i }
+
+  # A piece can only end where every character it contains has run out.
+  # Extend the end to the furthest last-position seen; when the walk catches
+  # up with it, the piece is closed.
+  out = []
+  start = 0
+  finish = -1
+  s.each_char.with_index do |c, i|
+    finish = [finish, last[c]].max
+    if i == finish
+      out << finish - start + 1
+      start = i + 1
+    end
+  end
+
+  out
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def partition_labels(s)",
+      starter: "def partition_labels(s)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :partition_labels
+
+tc 'partition_labels(\"ababcbacadefegdehijhklij\")', [9, 7, 8], partition_labels(\"ababcbacadefegdehijhklij\")
+tc 'partition_labels(\"eccbbbbdec\")', [10], partition_labels(\"eccbbbbdec\")
+tc 'partition_labels(\"a\")', [1], partition_labels(\"a\")
+tc 'partition_labels(\"\")', [], partition_labels(\"\")
+tc 'partition_labels(\"abc\")', [1, 1, 1], partition_labels(\"abc\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc48_valid_parenthesis_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Passes",
+        "O(n) time · O(n) space",
+        "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.",
+        "def check_valid_string(s)
+  # Two one-sided checks. Left to right with every star an opener asks whether
+  # there are ever too many closers; right to left with every star a closer
+  # asks whether there are ever too many openers. Passing both is exactly the
+  # condition, and each pass is the ordinary balance check.
+  never_negative(s, \"(\") && never_negative(s.reverse, \")\")
+end
+
+def never_negative(s, credit)
+  balance = 0
+  s.each_char do |c|
+    balance += c == credit || c == \"*\" ? 1 : -1
+    return false if balance < 0
+  end
+  true
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.",
+        "def check_valid_string(s)
+  # Rather than guessing what each star should be, carry the *range* of open
+  # counts still possible: low if every star so far were a closer, high if
+  # every one were an opener. High going negative means even the most generous
+  # reading has too many closers; low is clamped at zero because a star can
+  # always be nothing.
+  low = high = 0
+
+  s.each_char do |c|
+    case c
+    when \"(\"
+      low += 1
+      high += 1
+    when \")\"
+      low = [low - 1, 0].max
+      high -= 1
+    else
+      low = [low - 1, 0].max
+      high += 1
+    end
+    return false if high < 0
+  end
+
+  low.zero?
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def check_valid_string(s)",
+      starter: "def check_valid_string(s)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :check_valid_string
+
+tc 'check_valid_string(\"()\")', true, check_valid_string(\"()\")
+tc 'check_valid_string(\"(*)\")', true, check_valid_string(\"(*)\")
+tc 'check_valid_string(\"(*))\")', true, check_valid_string(\"(*))\")
+tc 'check_valid_string(\")(\")', false, check_valid_string(\")(\")
+tc 'check_valid_string(\"\")', true, check_valid_string(\"\")
+tc 'check_valid_string(\"*\")', true, check_valid_string(\"*\")
+tc 'check_valid_string(\")*\")', false, check_valid_string(\")*\")
+tc 'check_valid_string(\"(*()\")', true, check_valid_string(\"(*()\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc49_single_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.",
+        "def single_number(nums)
+  # Twice the sum of the distinct values counts every pair twice and the lone
+  # value twice; subtracting the real total leaves the lone value. No bit
+  # tricks, but it leans harder on the promise that everything else is a pair.
+  2 * nums.uniq.sum - nums.sum
+end",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.",
+        "def single_number(nums)
+  # XOR is its own inverse and does not care about order, so every value that
+  # appears twice cancels itself out and only the lone one survives.
+  result = 0
+  nums.each { |n| result ^= n }
+  result
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def single_number(nums)",
+      starter: "def single_number(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :single_number
+
+tc \"single_number([2, 2, 1])\", 1, single_number([2, 2, 1])
+tc \"single_number([4, 1, 2, 1, 2])\", 4, single_number([4, 1, 2, 1, 2])
+tc \"single_number([1])\", 1, single_number([1])
+tc \"single_number([-1, -1, -3])\", -3, single_number([-1, -1, -3])
+tc \"single_number([0, 1, 1])\", 0, single_number([0, 1, 1])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc50_number_of_one_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Shift & Test",
+        "O(log n) time · O(1) space",
+        "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.",
+        "def hamming_weight(n)
+  # One step per bit position rather than per set bit: 32 iterations whatever
+  # the input, but nothing to remember beyond \"look at the bottom bit, shift\".
+  count = 0
+  while n > 0
+    count += n & 1
+    n >>= 1
+  end
+  count
+end",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(k) time · O(1) space",
+        "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.",
+        "def hamming_weight(n)
+  # n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
+  # once per one bit rather than once per bit position.
+  count = 0
+  until n.zero?
+    n &= n - 1
+    count += 1
+  end
+  count
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def hamming_weight(n)",
+      starter: "def hamming_weight(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :hamming_weight
+
+tc \"hamming_weight(11)\", 3, hamming_weight(11)
+tc \"hamming_weight(128)\", 1, hamming_weight(128)
+tc \"hamming_weight(0)\", 0, hamming_weight(0)
+tc \"hamming_weight(2147483645)\", 30, hamming_weight(2147483645)
+tc \"hamming_weight(1)\", 1, hamming_weight(1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc51_counting_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(n log n) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.",
+        "def count_bits(n)
+  (0..n).map { |i| popcount(i) }
+end
+
+# Each number counted from scratch with the clear-lowest-bit trick. O(n log n)
+# against the dynamic version's O(n), and it remembers nothing between numbers,
+# which is exactly what the other one exploits.
+def popcount(n)
+  count = 0
+  while n != 0
+    n &= n - 1
+    count += 1
+  end
+  count
+end",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n) time · O(n) space",
+        "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).",
+        "def count_bits(n)
+  # Every number is some smaller number with one extra bit on the end:
+  # count(i) is count(i >> 1) plus whatever that last bit is. Each answer
+  # costs one lookup, so the whole array is O(n).
+  counts = Array.new(n + 1, 0)
+  (1..n).each do |i|
+    counts[i] = counts[i >> 1] + (i & 1)
+  end
+  counts
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def count_bits(n)",
+      starter: "def count_bits(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :count_bits
+
+tc \"count_bits(5)\", [0, 1, 1, 2, 1, 2], count_bits(5)
+tc \"count_bits(2)\", [0, 1, 1], count_bits(2)
+tc \"count_bits(0)\", [0], count_bits(0)
+tc \"count_bits(8)\", [0, 1, 1, 2, 1, 2, 2, 3, 1], count_bits(8)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc52_reverse_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · Strings",
+        "O(1) time · O(1) space",
+        "`n.to_s(2).rjust(32, \"0\").reverse.to_i(2)`: write the number in binary, pad to the full width, reverse the text, read it back in base 2. Slower and it allocates, but the explicit `rjust(32, \"0\")` makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.",
+        "def reverse_bits(n)
+  # Write the number out in binary, pad to the full width, reverse the text,
+  # read it back. The padding makes the thing the bit version keeps implicit,
+  # that the width is 32 and not however many bits this value needs, impossible
+  # to forget.
+  n.to_s(2).rjust(32, \"0\").reverse.to_i(2)
+end",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.",
+        "def reverse_bits(n)
+  # Peel the bottom bit off the input and push it onto the bottom of the
+  # result: the first bit out is the last bit in. Fixed at 32 rounds, because
+  # the width is part of the problem rather than a property of the value.
+  reversed_bits = 0
+  32.times do
+    reversed_bits = (reversed_bits << 1) | (n & 1)
+    n >>= 1
+  end
+  reversed_bits
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def reverse_bits(n)",
+      starter: "def reverse_bits(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :reverse_bits
+
+tc \"reverse_bits(43261596)\", 964176192, reverse_bits(43261596)
+tc \"reverse_bits(4294967293)\", 3221225471, reverse_bits(4294967293)
+tc \"reverse_bits(0)\", 0, reverse_bits(0)
+tc \"reverse_bits(1)\", 2147483648, reverse_bits(1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc53_missing_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(n) time · O(1) space",
+        "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.",
+        "def missing_number(nums)
+  # The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
+  # between that and the actual total is the missing value. One multiplication
+  # instead of a pass of XORs, but in a fixed-width language it overflows on
+  # inputs the XOR version handles fine, which is the trade worth knowing.
+  n = nums.length
+  n * (n + 1) / 2 - nums.sum
+end",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.",
+        "def missing_number(nums)
+  # XOR every value against every index it should have had. Each present
+  # number meets its own index and cancels; the missing one has an index with
+  # no partner, so that index is what survives.
+  result = nums.length
+  nums.each_with_index do |n, i|
+    result ^= i ^ n
+  end
+  result
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def missing_number(nums)",
+      starter: "def missing_number(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :missing_number
+
+tc \"missing_number([3, 0, 1])\", 2, missing_number([3, 0, 1])
+tc \"missing_number([0, 1])\", 2, missing_number([0, 1])
+tc \"missing_number([9, 6, 4, 2, 3, 5, 7, 0, 1])\", 8, missing_number([9, 6, 4, 2, 3, 5, 7, 0, 1])
+tc \"missing_number([0])\", 1, missing_number([0])
+tc \"missing_number([1])\", 0, missing_number([1])
+tc \"missing_number([])\", 0, missing_number([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc54_sum_of_two_integers() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Full Adder",
+        "O(1) time · O(1) space",
+        "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.",
+        "MASK = 0xFFFFFFFF
+LARGEST = 0x7FFFFFFF
+
+def get_sum(a, b)
+  # The same addition written as hardware: thirty-two full adders in a row,
+  # each taking two input bits and a carry and producing a sum bit and a carry
+  # out. Slower than the XOR loop, which stops as soon as no carries are left,
+  # but it is where the XOR loop comes from.
+  result = 0
+  carry = 0
+
+  32.times do |i|
+    x = (a >> i) & 1
+    y = (b >> i) & 1
+    xor = x ^ y
+    result |= (xor ^ carry) << i
+    carry = (x & y) | (carry & xor)
+  end
+
+  result <= LARGEST ? result : ~(result ^ MASK)
+end",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.",
+        "MASK = 0xFFFFFFFF
+LARGEST = 0x7FFFFFFF
+
+def get_sum(a, b)
+  # Addition without +. XOR is addition that forgets to carry; AND finds
+  # exactly the places a carry was owed, and shifting it left one puts it
+  # where it belongs. Repeat until nothing is owed.
+  a &= MASK
+  b &= MASK
+  while b != 0
+    carry = ((a & b) << 1) & MASK
+    a = (a ^ b) & MASK
+    b = carry
+  end
+
+  # Ruby integers grow without bound, so negatives have to be put back by
+  # hand: a 32-bit pattern above the signed maximum is a negative number.
+  a <= LARGEST ? a : ~(a ^ MASK)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def get_sum(a, b)",
+      starter: "def get_sum(a, b)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :get_sum
+
+tc \"get_sum(1, 2)\", 3, get_sum(1, 2)
+tc \"get_sum(2, 3)\", 5, get_sum(2, 3)
+tc \"get_sum(-1, 1)\", 0, get_sum(-1, 1)
+tc \"get_sum(-2, -3)\", -5, get_sum(-2, -3)
+tc \"get_sum(0, 0)\", 0, get_sum(0, 0)
+tc \"get_sum(-1, -1)\", -2, get_sum(-1, -1)
+tc \"get_sum(5, -3)\", 2, get_sum(5, -3)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc55_reverse_integer() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · Strings",
+        "O(log n) time · O(log n) space",
+        "`x.abs.to_s.reverse.to_i` reverses the digits as text and reads them back, and `to_i` drops the leading zeros for free. Ruby integers never overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.",
+        "LARGEST = 2_147_483_647
+SMALLEST = -2_147_483_648
+
+def reverse(x)
+  # Reversing the text cannot overflow here, so the range check is a plain
+  # comparison at the end rather than a guard inside the loop, which is only
+  # safe because the value is not held in 32 bits along the way.
+  magnitude = x.abs.to_s.reverse.to_i
+  result = x.negative? ? -magnitude : magnitude
+  result > LARGEST || result < SMALLEST ? 0 : result
+end",
+      ),
+      #(
+        "Math",
+        "O(log n) time · O(1) space",
+        "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.",
+        "LARGEST = 2_147_483_647
+SMALLEST = -2_147_483_648
+
+def reverse(x)
+  # Peel a digit off the bottom of the input and push it onto the bottom of
+  # the result. The overflow test has to happen *before* the multiply, because
+  # in a fixed-width language the multiply is where the value would be lost.
+  sign = x.negative? ? -1 : 1
+  remaining = x.abs
+  result = 0
+
+  while remaining != 0
+    return 0 if result > LARGEST / 10
+
+    result = result * 10 + remaining % 10
+    remaining /= 10
+  end
+
+  result *= sign
+  result > LARGEST || result < SMALLEST ? 0 : result
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def reverse(x)",
+      starter: "def reverse(x)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :reverse
+
+tc \"reverse(123)\", 321, reverse(123)
+tc \"reverse(-123)\", -321, reverse(-123)
+tc \"reverse(120)\", 21, reverse(120)
+tc \"reverse(0)\", 0, reverse(0)
+tc \"reverse(1534236469)\", 0, reverse(1534236469)
+tc \"reverse(-2147483648)\", 0, reverse(-2147483648)
+tc \"reverse(1463847412)\", 2147483641, reverse(1463847412)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc56_rotate_image() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Index Mapping",
+        "O(n²) time · O(n²) space",
+        "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.",
+        "def rotate(matrix)
+  # Straight from where each element lands: after a clockwise quarter turn the
+  # entry at (row, column) came from (n - 1 - column, row). Writing the mapping
+  # out once is the surest way not to get the direction backwards.
+  n = matrix.length
+  (0...n).map { |r| (0...n).map { |c| matrix[n - 1 - c][r] } }
+end",
+      ),
+      #(
+        "Nifty Ruby · Transpose",
+        "O(n²) time · O(n²) space",
+        "`matrix.transpose.map(&:reverse)`: a quarter turn is two reflections, through the main diagonal (`transpose`) and then through the vertical centre line (reverse each row). Neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.",
+        "def rotate(matrix)
+  # A quarter turn is a reflection through the main diagonal followed by a
+  # reflection through the vertical centre line. Two easy operations instead
+  # of one four-way element cycle, and neither needs index arithmetic.
+  matrix.transpose.map(&:reverse)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def rotate(matrix)",
+      starter: "def rotate(matrix)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :rotate
+
+tc \"rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\", [[7, 4, 1], [8, 5, 2], [9, 6, 3]], rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+tc \"rotate([[1, 2], [3, 4]])\", [[3, 1], [4, 2]], rotate([[1, 2], [3, 4]])
+tc \"rotate([[1]])\", [[1]], rotate([[1]])
+tc \"rotate([])\", [], rotate([])
+tc \"rotate(4x4)\", [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]],
+   rotate([[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc57_spiral_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · Rotate",
+        "O(m·n·min(m,n)) time · O(m·n) space",
+        "Take the top row, then turn the problem ninety degrees and do it again: `matrix[1..].transpose.reverse` rotates what is left anticlockwise, which puts the column you would have walked down next along the top. There is only ever one move to make and no boundary bookkeeping at all; the loop ends when the rotation of nothing comes back empty.",
+        "def spiral_order(matrix)
+  # Take the top row, then turn the problem ninety degrees and do it again.
+  # Rotating what is left anticlockwise puts the column you would have walked
+  # down next along the top, so there is only ever one move to make.
+  out = []
+  until matrix.empty?
+    out.concat(matrix[0])
+    matrix = matrix[1..].transpose.reverse
+  end
+  out
+end",
+      ),
+      #(
+        "Simulation",
+        "O(m·n) time · O(1) space",
+        "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.",
+        "def spiral_order(matrix)
+  return [] if matrix.empty?
+
+  # Four boundaries closing in. Each side is walked and then retired, and the
+  # two guards below are the ones everybody forgets: on a single remaining row
+  # or column the bottom and top edges are the same edge, so walking both
+  # would emit it twice.
+  top = 0
+  bottom = matrix.length - 1
+  left = 0
+  right = matrix[0].length - 1
+  out = []
+
+  while top <= bottom && left <= right
+    left.upto(right) { |c| out << matrix[top][c] }
+    (top + 1).upto(bottom) { |r| out << matrix[r][right] }
+    (right - 1).downto(left) { |c| out << matrix[bottom][c] } if top < bottom
+    (bottom - 1).downto(top + 1) { |r| out << matrix[r][left] } if left < right
+    top += 1
+    bottom -= 1
+    left += 1
+    right -= 1
+  end
+
+  out
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def spiral_order(matrix)",
+      starter: "def spiral_order(matrix)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :spiral_order
+
+tc \"spiral_order([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\", [1, 2, 3, 6, 9, 8, 7, 4, 5],
+   spiral_order([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+tc \"spiral_order([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])\", [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7],
+   spiral_order([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+tc \"spiral_order([[1]])\", [1], spiral_order([[1]])
+tc \"spiral_order([])\", [], spiral_order([])
+tc \"spiral_order([[1, 2, 3]])\", [1, 2, 3], spiral_order([[1, 2, 3]])
+tc \"spiral_order([[1], [2], [3]])\", [1, 2, 3], spiral_order([[1], [2], [3]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc58_set_matrix_zeroes() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(m·n·(m+n)) time · O(m·n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.",
+        "def set_zeroes(matrix)
+  # The condition stated outright: a cell is cleared exactly when its own row
+  # holds a zero or its own column does. Nothing is recorded and nothing is
+  # ordered, so the two-pass trap cannot arise, at the cost of rescanning a
+  # row and a column for every single cell.
+  columns = matrix.transpose
+  matrix.map do |row|
+    row.each_with_index.map { |value, c| row.include?(0) || columns[c].include?(0) ? 0 : value }
+  end
+end",
+      ),
+      #(
+        "Hash Set",
+        "O(m·n) time · O(m·n) space",
+        "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.",
+        "require \"set\"
+
+def set_zeroes(matrix)
+  # Two passes, and they cannot be one: writing a zero as you find it would be
+  # indistinguishable from a zero that was already there, and the whole grid
+  # would clear. So record which rows and columns are doomed first, then apply.
+  rows = Set.new
+  columns = Set.new
+  matrix.each_with_index do |row, r|
+    row.each_with_index do |value, c|
+      if value.zero?
+        rows << r
+        columns << c
+      end
+    end
+  end
+
+  matrix.each_with_index.map do |row, r|
+    row.each_with_index.map { |value, c| rows.include?(r) || columns.include?(c) ? 0 : value }
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def set_zeroes(matrix)",
+      starter: "require \"set\"
+
+def set_zeroes(matrix)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :set_zeroes
+
+tc \"set_zeroes([[1, 1, 1], [1, 0, 1], [1, 1, 1]])\", [[1, 0, 1], [0, 0, 0], [1, 0, 1]],
+   set_zeroes([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
+tc \"set_zeroes([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])\", [[0, 0, 0, 0], [0, 4, 5, 0], [0, 3, 1, 0]],
+   set_zeroes([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])
+tc \"set_zeroes([[1]])\", [[1]], set_zeroes([[1]])
+tc \"set_zeroes([[0]])\", [[0]], set_zeroes([[0]])
+tc \"set_zeroes([])\", [], set_zeroes([])
+tc \"set_zeroes([[1, 2], [3, 4]])\", [[1, 2], [3, 4]], set_zeroes([[1, 2], [3, 4]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc59_happy_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Fast & Slow Pointers",
+        "O(log n) time · O(1) space",
+        "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.",
+        "def is_happy(n)
+  # The same question with no memory at all: run one pointer at single speed
+  # and another at double, and they meet inside whatever cycle exists. Meeting
+  # at 1 means the cycle is the fixed point; meeting anywhere else means it is
+  # not. Constant space, which is the whole reason to know it.
+  slow = n
+  fast = square_digits(n)
+  while slow != fast
+    slow = square_digits(slow)
+    fast = square_digits(square_digits(fast))
+  end
+  slow == 1
+end
+
+def square_digits(n)
+  total = 0
+  while n != 0
+    digit = n % 10
+    total += digit * digit
+    n /= 10
+  end
+  total
+end",
+      ),
+      #(
+        "Hash Set",
+        "O(log n) time · O(log n) space",
+        "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.",
+        "require \"set\"
+
+def is_happy(n)
+  # The sequence has to repeat eventually: squares of digits are bounded, so
+  # there are only finitely many values it can reach. Remembering what has
+  # been seen turns \"does it loop?\" into a set lookup.
+  seen = Set.new
+  while n != 1 && !seen.include?(n)
+    seen << n
+    n = square_digits(n)
+  end
+  n == 1
+end
+
+def square_digits(n)
+  total = 0
+  while n != 0
+    digit = n % 10
+    total += digit * digit
+    n /= 10
+  end
+  total
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_happy(n)
+
+def square_digits(n)",
+      starter: "require \"set\"
+
+def is_happy(n)
+  raise NotImplementedError, \"todo\"
+end
+
+def square_digits(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_happy
+
+tc \"is_happy(19)\", true, is_happy(19)
+tc \"is_happy(2)\", false, is_happy(2)
+tc \"is_happy(1)\", true, is_happy(1)
+tc \"is_happy(7)\", true, is_happy(7)
+tc \"is_happy(4)\", false, is_happy(4)
+tc \"is_happy(100)\", true, is_happy(100)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc60_plus_one() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Ruby · Big Int",
+        "O(n²) time · O(n) space",
+        "Fold the digits into a number with `inject`, add one, and take it apart again with `Integer#digits`, which hands them back least significant first, hence the `reverse`. Safe because Ruby integers are arbitrary precision; in a language without them this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.",
+        "def plus_one(digits)
+  # Fold the digits into a number, add one, take it apart again. Ruby integers
+  # are arbitrary precision, so this is safe here; in a language where they are
+  # not, this is exactly the version that breaks, and handing you digits rather
+  # than a number is the problem saying so. Integer#digits comes back least
+  # significant first, hence the reverse.
+  value = digits.inject(0) { |acc, digit| acc * 10 + digit }
+  (value + 1).digits.reverse
+end",
+      ),
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.",
+        "def plus_one(digits)
+  # Adding one is a carry that starts at 1 and dies as soon as a digit below
+  # nine absorbs it. The only interesting case is when it never does, and the
+  # number grows a digit.
+  out = []
+  carry = 1
+  digits.reverse_each do |digit|
+    total = digit + carry
+    out << total % 10
+    carry = total / 10
+  end
+
+  out << carry if carry.positive?
+  out.reverse
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def plus_one(digits)",
+      starter: "def plus_one(digits)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :plus_one
+
+tc \"plus_one([1, 2, 3])\", [1, 2, 4], plus_one([1, 2, 3])
+tc \"plus_one([4, 3, 2, 1])\", [4, 3, 2, 2], plus_one([4, 3, 2, 1])
+tc \"plus_one([9])\", [1, 0], plus_one([9])
+tc \"plus_one([9, 9])\", [1, 0, 0], plus_one([9, 9])
+tc \"plus_one([0])\", [1], plus_one([0])
+tc \"plus_one([1, 9, 9])\", [2, 0, 0], plus_one([1, 9, 9])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc61_pow() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.",
+        "def my_pow(x, n)
+  magnitude = 1.0
+  n.abs.times { magnitude *= x }
+  n.negative? ? 1 / magnitude : magnitude
+end",
+      ),
+      #(
+        "Binary Exponentiation",
+        "O(log n) time · O(log n) space",
+        "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.",
+        "def my_pow(x, n)
+  return 1 / power(x, -n) if n.negative?
+
+  power(x, n)
+end
+
+# Halving the exponent halves the work: x^n is (x^(n/2))^2, with one extra
+# multiplication when n is odd. O(log n) multiplications rather than n.
+def power(x, n)
+  return 1.0 if n.zero?
+
+  half = power(x, n / 2)
+  n.odd? ? half * half * x : half * half
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def my_pow(x, n)
+
+def power(x, n)",
+      starter: "def my_pow(x, n)
+  raise NotImplementedError, \"todo\"
+end
+
+def power(x, n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :my_pow
+
+tc \"my_pow(2.0, 10)\", 1024.0, my_pow(2.0, 10)
+tc \"my_pow(2.0, -2)\", 0.25, my_pow(2.0, -2)
+tc \"my_pow(2.0, 0)\", 1.0, my_pow(2.0, 0)
+tc \"my_pow(0.5, 3)\", 0.125, my_pow(0.5, 3)
+tc \"my_pow(-2.0, 3)\", -8.0, my_pow(-2.0, 3)
+tc \"my_pow(2.0, 1)\", 2.0, my_pow(2.0, 1)
+tc \"my_pow(0.0, 5)\", 0.0, my_pow(0.0, 5)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc62_multiply_strings() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(n·(m+n)) time · O(m+n) space",
+        "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.",
+        "def multiply(num1, num2)
+  return \"0\" if num1 == \"0\" || num2 == \"0\"
+
+  # Long multiplication exactly as taught: one partial product per digit of
+  # the second number, each shifted left by its position, all added up. It
+  # needs string addition as well as string multiplication, which is why the
+  # accumulating version exists, but writing add once is worth it.
+  total = \"0\"
+  num2.reverse.each_char.with_index do |digit, shift|
+    total = add(total, times_digit(num1, digit.to_i) + \"0\" * shift)
+  end
+  total
+end
+
+def times_digit(number, digit)
+  out = []
+  carry = 0
+  number.reverse.each_char do |c|
+    product = c.to_i * digit + carry
+    out << product % 10
+    carry = product / 10
+  end
+  out << carry if carry.positive?
+  text = out.reverse.join.sub(/\\A0+/, \"\")
+  text.empty? ? \"0\" : text
+end
+
+def add(left, right)
+  out = []
+  carry = 0
+  i = left.length - 1
+  j = right.length - 1
+  while i >= 0 || j >= 0 || carry.positive?
+    total = carry
+    if i >= 0
+      total += left[i].to_i
+      i -= 1
+    end
+    if j >= 0
+      total += right[j].to_i
+      j -= 1
+    end
+    out << total % 10
+    carry = total / 10
+  end
+  text = out.reverse.join.sub(/\\A0+/, \"\")
+  text.empty? ? \"0\" : text
+end",
+      ),
+      #(
+        "Math",
+        "O(m·n) time · O(m+n) space",
+        "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.",
+        "def multiply(num1, num2)
+  return \"0\" if num1 == \"0\" || num2 == \"0\"
+
+  a = num1.reverse.chars.map(&:to_i)
+  b = num2.reverse.chars.map(&:to_i)
+
+  # Long multiplication with the carrying postponed. Digit i of one number
+  # times digit j of the other always lands at position i + j, so every
+  # product can be dropped straight into its slot and the carries settled in
+  # one sweep at the end.
+  slots = Array.new(a.length + b.length, 0)
+  a.each_with_index do |x, i|
+    b.each_with_index do |y, j|
+      slots[i + j] += x * y
+    end
+  end
+
+  carry = 0
+  digits = []
+  slots.each do |slot|
+    total = slot + carry
+    digits << total % 10
+    carry = total / 10
+  end
+
+  text = digits.reverse.join.sub(/\\A0+/, \"\")
+  text.empty? ? \"0\" : text
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def multiply(num1, num2)",
+      starter: "def multiply(num1, num2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :multiply
+
+tc 'multiply(\"2\", \"3\")', \"6\", multiply(\"2\", \"3\")
+tc 'multiply(\"123\", \"456\")', \"56088\", multiply(\"123\", \"456\")
+tc 'multiply(\"0\", \"52\")', \"0\", multiply(\"0\", \"52\")
+tc 'multiply(\"9\", \"9\")', \"81\", multiply(\"9\", \"9\")
+tc 'multiply(\"999\", \"999\")', \"998001\", multiply(\"999\", \"999\")
+tc 'multiply(\"123456789\", \"987654321\")', \"121932631112635269\", multiply(\"123456789\", \"987654321\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc63_detect_squares() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Side Length Scan",
+        "O(n) per count · O(n) space",
+        "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.",
+        "class DetectSquares
+  def initialize
+    @counts = Hash.new(0)
+  end
+
+  def add(point)
+    @counts[[point[0], point[1]]] += 1
+  end
+
+  def count(point)
+    x, y = point
+    total = 0
+
+    # Pick the corner directly above or below instead. That fixes the side
+    # length, which leaves two squares to check rather than one: the
+    # remaining corners can be to the left or to the right.
+    @counts.each do |(px, py), copies|
+      next if px != x || py == y
+
+      side = (py - y).abs
+      [x + side, x - side].each do |column|
+        total += copies * @counts.fetch([column, y], 0) * @counts.fetch([column, py], 0)
+      end
+    end
+
+    total
+  end
+end",
+      ),
+      #(
+        "Hash Map",
+        "O(n) per count · O(n) space",
+        "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.",
+        "class DetectSquares
+  def initialize
+    @counts = Hash.new(0)
+  end
+
+  def add(point)
+    @counts[[point[0], point[1]]] += 1
+  end
+
+  def count(point)
+    x, y = point
+    total = 0
+
+    # Pick the corner diagonally opposite: that one choice fixes the whole
+    # square, because the other two corners must be at (x, py) and (px, y).
+    # A valid diagonal partner shares neither coordinate and sits on a true
+    # diagonal, and duplicates multiply rather than repeat.
+    @counts.each do |(px, py), copies|
+      next if px == x || py == y || (px - x).abs != (py - y).abs
+
+      total += copies * @counts.fetch([x, py], 0) * @counts.fetch([px, y], 0)
+    end
+
+    total
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class DetectSquares
+  def initialize
+  def add(point)
+  def count(point)
+end",
+      starter: "class DetectSquares
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def add(point)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def count(point)
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :DetectSquares
+
+store = DetectSquares.new
+store.add([3, 10])
+store.add([11, 2])
+store.add([3, 2])
+
+tc \"count([11, 10]) with one of each corner\", 1, store.count([11, 10])
+tc \"count([14, 8]) -- no square\", 0, store.count([14, 8])
+
+store.add([11, 2])
+
+tc \"count([11, 10]) after adding [11, 2] twice\", 2, store.count([11, 10])
+tc \"count on an empty store\", 0, DetectSquares.new.count([0, 0])
+
+unit = DetectSquares.new
+unit.add([0, 1])
+unit.add([1, 0])
+unit.add([1, 1])
+
+tc \"count([0, 0]) on the unit square\", 1, unit.count([0, 0])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc64_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).",
+        "def climb_stairs(n)
+  ways(n, {})
+end
+
+# The same recurrence from the top down, with a cache. Slower and heavier
+# than the rolling pair, but it is the shape you reach for first when the
+# recurrence is not obviously a straight line, and the memo is the whole
+# difference between O(n) and O(2^n).
+def ways(k, memo)
+  return 1 if k <= 1
+
+  memo[k] ||= ways(k - 1, memo) + ways(k - 2, memo)
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.",
+        "def climb_stairs(n)
+  # The last move was either one step or two, so the ways to reach step n are
+  # the ways to reach n-1 plus the ways to reach n-2: Fibonacci with a
+  # staircase painted on it. Only the last two values matter.
+  previous = 0
+  current = 1
+  n.times do
+    previous, current = current, previous + current
+  end
+  current
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def climb_stairs(n)",
+      starter: "def climb_stairs(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :climb_stairs
+
+tc \"climb_stairs(2)\", 2, climb_stairs(2)
+tc \"climb_stairs(3)\", 3, climb_stairs(3)
+tc \"climb_stairs(1)\", 1, climb_stairs(1)
+tc \"climb_stairs(0)\", 1, climb_stairs(0)
+tc \"climb_stairs(10)\", 89, climb_stairs(10)
+tc \"climb_stairs(45)\", 1836311903, climb_stairs(45)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc65_min_cost_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backward DP",
+        "O(n) time · O(1) space",
+        "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.",
+        "def min_cost_climbing_stairs(cost)
+  # The same recurrence read the other way: instead of \"what did it cost to
+  # get here\", ask \"what will it cost to finish from here\". Walking backwards,
+  # the answer at each step is its own price plus the cheaper of the two
+  # ahead, and the start is the better of the first two.
+  one_ahead = 0
+  two_ahead = 0
+  cost.reverse_each do |price|
+    one_ahead, two_ahead = price + [one_ahead, two_ahead].min, one_ahead
+  end
+  [one_ahead, two_ahead].min
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.",
+        "def min_cost_climbing_stairs(cost)
+  # Cost to stand on each step, carried forward: getting here means having
+  # paid for one of the two steps below, whichever was cheaper. Two variables
+  # again, because nothing older than two steps back can matter.
+  one_back = 0
+  two_back = 0
+  cost.each do |price|
+    one_back, two_back = price + [one_back, two_back].min, one_back
+  end
+  [one_back, two_back].min
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def min_cost_climbing_stairs(cost)",
+      starter: "def min_cost_climbing_stairs(cost)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :min_cost_climbing_stairs
+
+tc \"min_cost_climbing_stairs([10, 15, 20])\", 15, min_cost_climbing_stairs([10, 15, 20])
+tc \"min_cost_climbing_stairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1])\", 6,
+   min_cost_climbing_stairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1])
+tc \"min_cost_climbing_stairs([0, 0])\", 0, min_cost_climbing_stairs([0, 0])
+tc \"min_cost_climbing_stairs([1, 2])\", 1, min_cost_climbing_stairs([1, 2])
+tc \"min_cost_climbing_stairs([0, 1, 1, 0])\", 1, min_cost_climbing_stairs([0, 1, 1, 0])
+tc \"min_cost_climbing_stairs([])\", 0, min_cost_climbing_stairs([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc66_house_robber() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.",
+        "def rob(nums)
+  best(nums, 0, {})
+end
+
+# The same choice written as a recursion from the front: rob this house and
+# skip the next, or skip this one. Exponential without the cache and linear
+# with it, which is the lesson, since the rolling pair hides that the problem
+# ever had a tree of choices at all.
+def best(nums, index, memo)
+  return 0 if index >= nums.length
+
+  memo[index] ||= [nums[index] + best(nums, index + 2, memo), best(nums, index + 1, memo)].max
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.",
+        "def rob(nums)
+  # At each house the choice is take it and add what was safe two houses back,
+  # or skip it and keep the best so far. Both answers are one number, so the
+  # whole table collapses to a pair.
+  best = 0
+  previous = 0
+  nums.each do |value|
+    best, previous = [best, previous + value].max, best
+  end
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def rob(nums)",
+      starter: "def rob(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :rob
+
+tc \"rob([1, 2, 3, 1])\", 4, rob([1, 2, 3, 1])
+tc \"rob([2, 7, 9, 3, 1])\", 12, rob([2, 7, 9, 3, 1])
+tc \"rob([5])\", 5, rob([5])
+tc \"rob([])\", 0, rob([])
+tc \"rob([2, 1, 1, 2])\", 4, rob([2, 1, 1, 2])
+tc \"rob([1, 2])\", 2, rob([1, 2])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc67_house_robber_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "One-Pass DP",
+        "O(n) time · O(1) space",
+        "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.",
+        "def rob(nums)
+  return 0 if nums.empty?
+  return nums[0] if nums.length == 1
+
+  # One pass carrying both stories at the same time: the run that is allowed
+  # to take the first house, and the run that is not. Neither ever looks at
+  # the other, so this is the two-pass version interleaved, useful when the
+  # input can only be walked once.
+  with_first = [0, 0]
+  without_first = [0, 0]
+
+  nums.each_with_index do |value, i|
+    with_first = step(with_first, value) if i != nums.length - 1
+    without_first = step(without_first, value) if i != 0
+  end
+
+  [with_first[0], without_first[0]].max
+end
+
+def step(state, value)
+  best, previous = state
+  [[best, previous + value].max, best]
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(n) space",
+        "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.",
+        "def rob(nums)
+  # The circle only matters through one constraint: the first and last houses
+  # are neighbours, so at most one of them is robbed. Ruling each out in turn
+  # leaves two ordinary straight-line problems, and the answer is the better.
+  return 0 if nums.empty?
+  return nums[0] if nums.length == 1
+
+  [straight(nums[1..]), straight(nums[...-1])].max
+end
+
+def straight(nums)
+  best = 0
+  previous = 0
+  nums.each do |value|
+    best, previous = [best, previous + value].max, best
+  end
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def rob(nums)
+
+def straight(nums)",
+      starter: "def rob(nums)
+  raise NotImplementedError, \"todo\"
+end
+
+def straight(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :rob
+
+tc \"rob([2, 3, 2])\", 3, rob([2, 3, 2])
+tc \"rob([1, 2, 3, 1])\", 4, rob([1, 2, 3, 1])
+tc \"rob([1, 2, 3])\", 3, rob([1, 2, 3])
+tc \"rob([1])\", 1, rob([1])
+tc \"rob([])\", 0, rob([])
+tc \"rob([1, 2])\", 2, rob([1, 2])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc68_longest_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.",
+        "def longest_palindrome(s)
+  # Every start with every length. O(n^3) once the palindrome check is counted:
+  # the definition, and what centre expansion is an optimisation of.
+  best = \"\"
+  (0...s.length).each do |start|
+    (start + 1..s.length).each do |finish|
+      candidate = s[start...finish]
+      best = candidate if candidate.length > best.length && candidate == candidate.reverse
+    end
+  end
+  best
+end",
+      ),
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.",
+        "def longest_palindrome(s)
+  # Every palindrome has a centre, and there are only 2n of them: n single
+  # characters and n gaps between them. Growing outwards from each is O(n^2)
+  # total and needs no table.
+  best_start = 0
+  best_length = 0
+
+  s.length.times do |i|
+    [[i, i], [i, i + 1]].each do |left, right|
+      start, length = expand(s, left, right)
+      if length > best_length
+        best_start = start
+        best_length = length
+      end
+    end
+  end
+
+  s[best_start, best_length]
+end
+
+# Widens while the ends match, then reports where it stopped as a start and a
+# length. The two pointers have gone one step too far by then, which is where
+# the +1 and the -1 come from.
+def expand(s, left, right)
+  while left >= 0 && right < s.length && s[left] == s[right]
+    left -= 1
+    right += 1
+  end
+  [left + 1, right - left - 1]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def longest_palindrome(s)
+
+def expand(s, left, right)",
+      starter: "def longest_palindrome(s)
+  raise NotImplementedError, \"todo\"
+end
+
+def expand(s, left, right)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :longest_palindrome
+
+tc 'longest_palindrome(\"cbbd\")', \"bb\", longest_palindrome(\"cbbd\")
+tc 'longest_palindrome(\"a\")', \"a\", longest_palindrome(\"a\")
+tc 'longest_palindrome(\"\")', \"\", longest_palindrome(\"\")
+tc 'longest_palindrome(\"forgeeksskeegfor\")', \"geeksskeeg\", longest_palindrome(\"forgeeksskeegfor\")
+tc 'longest_palindrome(\"aaaa\")', \"aaaa\", longest_palindrome(\"aaaa\")
+tc 'longest_palindrome(\"racecar\")', \"racecar\", longest_palindrome(\"racecar\")
+tc 'longest_palindrome(\"abb\")', \"bb\", longest_palindrome(\"abb\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc69_palindromic_substrings() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n²) space",
+        "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.",
+        "def count_substrings(s)
+  # The table says whether s[i..j] is a palindrome. It is when its ends match
+  # and whatever is between them already was, so the spans have to be filled
+  # shortest first, which is the whole reason for the outer loop over length.
+  n = s.length
+  table = {}
+  total = 0
+
+  n.times do |length|
+    (0...n - length).each do |i|
+      j = i + length
+      inside = j - i < 2 ? true : table[[i + 1, j - 1]]
+      table[[i, j]] = s[i] == s[j] && inside
+      total += 1 if table[[i, j]]
+    end
+  end
+
+  total
+end",
+      ),
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.",
+        "def count_substrings(s)
+  # Same 2n centres as finding the longest one, except that here every
+  # successful widening is itself an answer, so the count is how many times
+  # the expansion succeeded rather than how far it got.
+  total = 0
+  s.length.times do |i|
+    total += grow(s, i, i) + grow(s, i, i + 1)
+  end
+  total
+end
+
+def grow(s, left, right)
+  count = 0
+  while left >= 0 && right < s.length && s[left] == s[right]
+    count += 1
+    left -= 1
+    right += 1
+  end
+  count
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def count_substrings(s)
+
+def grow(s, left, right)",
+      starter: "def count_substrings(s)
+  raise NotImplementedError, \"todo\"
+end
+
+def grow(s, left, right)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :count_substrings
+
+tc 'count_substrings(\"abc\")', 3, count_substrings(\"abc\")
+tc 'count_substrings(\"aaa\")', 6, count_substrings(\"aaa\")
+tc 'count_substrings(\"\")', 0, count_substrings(\"\")
+tc 'count_substrings(\"a\")', 1, count_substrings(\"a\")
+tc 'count_substrings(\"aba\")', 4, count_substrings(\"aba\")
+tc 'count_substrings(\"abccba\")', 9, count_substrings(\"abccba\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc70_decode_ways() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.",
+        "def num_decodings(s)
+  return 0 if s.empty?
+
+  ways(s, 0, {})
+end
+
+# The same two choices as a recursion from the front: take one character, or
+# take two if they read as 10 to 26. Reaching the end is one complete
+# decoding, which is why the base case returns 1 rather than 0.
+def ways(s, i, memo)
+  return 1 if i >= s.length
+  return 0 if s[i] == \"0\"
+
+  memo[i] ||= begin
+    total = ways(s, i + 1, memo)
+    total += ways(s, i + 2, memo) if i + 1 < s.length && (10..26).cover?(s[i, 2].to_i)
+    total
+  end
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.",
+        "def num_decodings(s)
+  return 0 if s.empty?
+
+  # Two rolling counts. The ways to decode up to here are the ways up to the
+  # previous character (if this one can stand alone) plus the ways up to the
+  # one before that (if this one and its predecessor form a legal pair). A
+  # leading zero kills the first branch; anything outside 10..26 the second.
+  two_back = 1
+  one_back = 1
+  s.each_char.with_index do |c, i|
+    alone = c == \"0\" ? 0 : one_back
+    paired = i.positive? && (10..26).cover?(s[i - 1, 2].to_i) ? two_back : 0
+    two_back, one_back = one_back, alone + paired
+  end
+
+  one_back
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def num_decodings(s)",
+      starter: "def num_decodings(s)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :num_decodings
+
+tc 'num_decodings(\"12\")', 2, num_decodings(\"12\")
+tc 'num_decodings(\"226\")', 3, num_decodings(\"226\")
+tc 'num_decodings(\"06\")', 0, num_decodings(\"06\")
+tc 'num_decodings(\"0\")', 0, num_decodings(\"0\")
+tc 'num_decodings(\"\")', 0, num_decodings(\"\")
+tc 'num_decodings(\"10\")', 1, num_decodings(\"10\")
+tc 'num_decodings(\"2101\")', 1, num_decodings(\"2101\")
+tc 'num_decodings(\"11106\")', 2, num_decodings(\"11106\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc71_coin_change() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(amount·coins) time · O(amount) space",
+        "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.",
+        "require \"set\"
+
+def coin_change(coins, amount)
+  return 0 if amount.zero?
+
+  # The amounts reachable with k coins form one level of a breadth-first
+  # search from zero, so the first level containing the target is the answer.
+  # Same bound as the table, but it stops the moment it arrives rather than
+  # filling in every amount below the target.
+  frontier = [0]
+  seen = Set[0]
+  used = 0
+
+  until frontier.empty?
+    used += 1
+    following = []
+    frontier.each do |total|
+      coins.each do |coin|
+        nxt = total + coin
+        return used if nxt == amount
+
+        following << nxt if nxt < amount && seen.add?(nxt)
+      end
+    end
+    frontier = following
+  end
+
+  -1
+end",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(amount·coins) time · O(amount) space",
+        "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.",
+        "def coin_change(coins, amount)
+  # Build up from zero: the cheapest way to make a target is one coin more
+  # than the cheapest way to make what is left after removing some coin. An
+  # amount with no entry is simply unreachable, which saves inventing a
+  # sentinel for infinity.
+  table = { 0 => 0 }
+
+  (1..amount).each do |target|
+    options = coins.filter_map { |coin| table[target - coin] if coin <= target }
+    table[target] = options.min + 1 unless options.empty?
+  end
+
+  table.fetch(amount, -1)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def coin_change(coins, amount)",
+      starter: "def coin_change(coins, amount)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :coin_change
+
+tc \"coin_change([1, 2, 5], 11)\", 3, coin_change([1, 2, 5], 11)
+tc \"coin_change([2], 3)\", -1, coin_change([2], 3)
+tc \"coin_change([1], 0)\", 0, coin_change([1], 0)
+tc \"coin_change([], 5)\", -1, coin_change([], 5)
+tc \"coin_change([1, 3, 4], 6)\", 2, coin_change([1, 3, 4], 6)
+tc \"coin_change([2, 5, 10, 1], 27)\", 4, coin_change([2, 5, 10, 1], 27)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc72_maximum_product_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix & Suffix Products",
+        "O(n) time · O(n) space",
+        "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.",
+        "def max_product(nums)
+  return 0 if nums.empty?
+
+  # A different argument entirely: the best subarray always runs to one end of
+  # the block it sits in, so sweeping running products from both directions,
+  # resetting at every zero, is enough.
+  [sweep(nums), sweep(nums.reverse)].max
+end
+
+def sweep(nums)
+  running = 1
+  best = -Float::INFINITY
+  nums.each do |n|
+    running = running.zero? ? n : running * n
+    best = [best, running].max
+  end
+  best
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.",
+        "def max_product(nums)
+  return 0 if nums.empty?
+
+  # A negative number turns the best running product into the worst and the
+  # worst into the best, so both have to be carried. Zero resets them both,
+  # which falls out of taking the element itself as an option.
+  high = low = best = nums[0]
+  nums.drop(1).each do |n|
+    candidates = [n, high * n, low * n]
+    high, low = candidates.max, candidates.min
+    best = [best, high].max
+  end
+
+  best
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_product(nums)",
+      starter: "def max_product(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_product
+
+tc \"max_product([2, 3, -2, 4])\", 6, max_product([2, 3, -2, 4])
+tc \"max_product([-2, 0, -1])\", 0, max_product([-2, 0, -1])
+tc \"max_product([-2, 3, -4])\", 24, max_product([-2, 3, -4])
+tc \"max_product([0])\", 0, max_product([0])
+tc \"max_product([-2])\", -2, max_product([-2])
+tc \"max_product([2, -5, -2, -4, 3])\", 24, max_product([2, -5, -2, -4, 3])
+tc \"max_product([])\", 0, max_product([])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc73_word_break() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n) space",
+        "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.",
+        "require \"set\"
+
+def word_break(s, word_dict)
+  words = word_dict.to_set
+  memo = {}
+
+  # Top-down: from this position, does any dictionary word start here and
+  # leave a suffix that also breaks? Without the cache the same suffix is
+  # asked about once per way of reaching it, which is where the exponential
+  # blow-up on inputs like \"aaaa...b\" comes from.
+  breaks = lambda do |start|
+    return true if start >= s.length
+
+    memo[start] = ((start + 1)..s.length).any? { |stop| words.include?(s[start...stop]) && breaks.(stop) } unless memo.key?(start)
+    memo[start]
+  end
+
+  breaks.(0)
+end",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n) space",
+        "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.",
+        "require \"set\"
+
+def word_break(s, word_dict)
+  words = word_dict.to_set
+
+  # Reachable positions rather than a table of booleans: start at 0, and a
+  # position is reachable when some word in the dictionary bridges the gap
+  # from a position already reached.
+  reached = Set[0]
+  (1..s.length).each do |stop|
+    reached << stop if (0...stop).any? { |start| reached.include?(start) && words.include?(s[start...stop]) }
+  end
+
+  reached.include?(s.length)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def word_break(s, word_dict)",
+      starter: "require \"set\"
+
+def word_break(s, word_dict)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :word_break
+
+tc 'word_break(\"leetcode\", [\"leet\", \"code\"])', true, word_break(\"leetcode\", [\"leet\", \"code\"])
+tc 'word_break(\"applepenapple\", [\"apple\", \"pen\"])', true, word_break(\"applepenapple\", [\"apple\", \"pen\"])
+tc 'word_break(\"catsandog\", [\"cats\", \"dog\", \"sand\", \"and\", \"cat\"])', false,
+   word_break(\"catsandog\", [\"cats\", \"dog\", \"sand\", \"and\", \"cat\"])
+tc 'word_break(\"\", [\"a\"])', true, word_break(\"\", [\"a\"])
+tc 'word_break(\"a\", [])', false, word_break(\"a\", [])
+tc 'word_break(\"aaaaaaa\", [\"aaa\", \"aaaa\"])', true, word_break(\"aaaaaaa\", [\"aaa\", \"aaaa\"])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc74_longest_increasing_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n) space",
+        "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.",
+        "def length_of_lis(nums)
+  # The longest subsequence ending at each position: one plus the best of
+  # every earlier position holding a smaller value. Building the answers in
+  # order means every \"earlier position\" is already known.
+  endings = []
+  best = 0
+
+  nums.each do |n|
+    here = 1 + (endings.filter_map { |value, length| length if value < n }.max || 0)
+    endings << [n, here]
+    best = [best, here].max
+  end
+
+  best
+end",
+      ),
+      #(
+        "Patience Sorting",
+        "O(n log n) time · O(n) space",
+        "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.",
+        "def length_of_lis(nums)
+  # Patience sorting. Keep the smallest value that any subsequence of each
+  # length ends with; that list is always sorted, so each number either
+  # extends it or replaces the first entry it is no bigger than. The list is
+  # not the answer subsequence: only its length is meaningful.
+  tails = []
+  nums.each do |n|
+    at = tails.bsearch_index { |tail| tail >= n } || tails.length
+    tails[at] = n
+  end
+  tails.length
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def length_of_lis(nums)",
+      starter: "def length_of_lis(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :length_of_lis
+
+tc \"length_of_lis([10, 9, 2, 5, 3, 7, 101, 18])\", 4, length_of_lis([10, 9, 2, 5, 3, 7, 101, 18])
+tc \"length_of_lis([0, 1, 0, 3, 2, 3])\", 4, length_of_lis([0, 1, 0, 3, 2, 3])
+tc \"length_of_lis([7, 7, 7, 7, 7, 7, 7])\", 1, length_of_lis([7, 7, 7, 7, 7, 7, 7])
+tc \"length_of_lis([])\", 0, length_of_lis([])
+tc \"length_of_lis([1])\", 1, length_of_lis([1])
+tc \"length_of_lis([4, 10, 4, 3, 8, 9])\", 3, length_of_lis([4, 10, 4, 3, 8, 9])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc75_partition_equal_subset() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n·sum) time · O(n·sum) space",
+        "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.",
+        "def can_partition(nums)
+  total = nums.sum
+  return false if total.odd?
+
+  memo = {}
+
+  # Take this number or leave it, keyed by how much is still owed and how much
+  # of the list is left. Written as a recursion it is obviously a search over
+  # subsets; the cache is what stops it enumerating all 2^n of them.
+  reachable = lambda do |index, owed|
+    return true if owed.zero?
+    return false if index >= nums.length || owed.negative?
+
+    key = [index, owed]
+    memo[key] = reachable.(index + 1, owed - nums[index]) || reachable.(index + 1, owed) unless memo.key?(key)
+    memo[key]
+  end
+
+  reachable.(0, total / 2)
+end",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n·sum) time · O(sum) space",
+        "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.",
+        "require \"set\"
+
+def can_partition(nums)
+  total = nums.sum
+  return false if total.odd?
+
+  # Subset sum in disguise: an equal split exists exactly when some subset
+  # adds up to half the total. Carry the set of sums reachable so far and
+  # widen it by each number: no ordering, no table, and duplicates cost
+  # nothing because a set collapses them.
+  half = total / 2
+  reachable = Set[0]
+  nums.each do |n|
+    reachable |= reachable.map { |reached| reached + n }.select { |sum| sum <= half }
+  end
+
+  reachable.include?(half)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def can_partition(nums)",
+      starter: "require \"set\"
+
+def can_partition(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :can_partition
+
+tc \"can_partition([1, 5, 11, 5])\", true, can_partition([1, 5, 11, 5])
+tc \"can_partition([1, 2, 3, 5])\", false, can_partition([1, 2, 3, 5])
+tc \"can_partition([2, 2])\", true, can_partition([2, 2])
+tc \"can_partition([1])\", false, can_partition([1])
+tc \"can_partition([1, 1])\", true, can_partition([1, 1])
+tc \"can_partition([3, 3, 3, 4, 5])\", true, can_partition([3, 3, 3, 4, 5])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc76_kth_largest_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n log n) per add · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.",
+        "class KthLargest
+  def initialize(k, nums)
+    @k = k
+    @seen = nums.dup
+  end
+
+  # Keep the whole stream and sort on demand. Wrong for a real stream, since
+  # memory grows without bound and every query costs a sort, but it is the
+  # definition, and it is what the bounded heap has to be checked against.
+  def add(val)
+    @seen << val
+    return nil if @seen.length < @k
+
+    @seen.sort.reverse[@k - 1]
+  end
+end",
+      ),
+      #(
+        "Heap",
+        "O(log k) per add · O(k) space",
+        "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.",
+        "class KthLargest
+  def initialize(k, nums)
+    @k = k
+    # Only the k largest values can ever be the answer, so a min-heap of
+    # size k is enough: the smallest thing in it is the answer, and anything
+    # smaller than that is discarded on arrival in O(log k).
+    @heap = []
+    nums.each { |n| heap_push(@heap, n) }
+    heap_pop(@heap) while @heap.length > k
+  end
+
+  def add(val)
+    heap_push(@heap, val)
+    heap_pop(@heap) if @heap.length > @k
+    @heap.length == @k ? @heap.first : nil
+  end
+end
+
+# Ruby's standard library has no heap, so here is one: an array kept as a
+# binary min-heap, the smallest always at index 0. A push sifts the new item
+# up past bigger parents; a pop moves the last item to the root and sifts it
+# down past smaller children. Both are O(log n).
+def heap_push(heap, item)
+  heap << item
+  i = heap.length - 1
+  while i.positive?
+    parent = (i - 1) / 2
+    break if (heap[parent] <=> heap[i]) <= 0
+
+    heap[parent], heap[i] = heap[i], heap[parent]
+    i = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap.first
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  i = 0
+  loop do
+    smallest = i
+    [2 * i + 1, 2 * i + 2].each do |child|
+      smallest = child if child < heap.length && (heap[child] <=> heap[smallest]).negative?
+    end
+    break if smallest == i
+
+    heap[i], heap[smallest] = heap[smallest], heap[i]
+    i = smallest
+  end
+  top
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class KthLargest
+  def initialize(k, nums)
+  def add(val)
+end
+
+def heap_push(heap, item)
+
+def heap_pop(heap)",
+      starter: "class KthLargest
+  def initialize(k, nums)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def add(val)
+    raise NotImplementedError, \"todo\"
+  end
+end
+
+def heap_push(heap, item)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_pop(heap)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :KthLargest
+
+def stream(k, initial, added)
+  store = KthLargest.new(k, initial)
+  added.map { |value| store.add(value) }
+end
+
+tc \"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\", [4, 5, 5, 8, 8], stream(3, [4, 5, 8, 2], [3, 5, 10, 9, 4])
+tc \"k = 1 over [] then 1, 2, 0\", [1, 2, 2], stream(1, [], [1, 2, 0])
+tc \"k = 2 over [] then 5, 5\", [nil, 5], stream(2, [], [5, 5])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc77_last_stone_weight() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".",
+        "def last_stone_weight(stones)
+  # No ordering kept at all: scan for the heaviest, remove it, scan again.
+  # O(n) per round against a heap's O(log n), which is worse, but it makes
+  # clear that the only operation the problem needs is \"give me the largest\",
+  # exactly the interface a heap provides.
+  stones = stones.dup
+
+  while stones.length > 1
+    heaviest = stones.delete_at(stones.index(stones.max))
+    following = stones.delete_at(stones.index(stones.max))
+    stones << heaviest - following if heaviest != following
+  end
+
+  stones.first || 0
+end",
+      ),
+      #(
+        "Heap",
+        "O(n log n) time · O(n) space",
+        "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.",
+        "def last_stone_weight(stones)
+  # Always the two heaviest, so the collection has to give up its maximum over
+  # and over, which is exactly what a heap is for. This heap is a min-heap, so
+  # the values go in negated and come back out the same way.
+  heap = []
+  stones.each { |stone| heap_push(heap, -stone) }
+
+  while heap.length > 1
+    heaviest = -heap_pop(heap)
+    following = -heap_pop(heap)
+    heap_push(heap, -(heaviest - following)) if heaviest != following
+  end
+
+  heap.empty? ? 0 : -heap.first
+end
+
+# Ruby's standard library has no heap, so here is one: an array kept as a
+# binary min-heap, the smallest always at index 0. A push sifts the new item
+# up past bigger parents; a pop moves the last item to the root and sifts it
+# down past smaller children. Both are O(log n).
+def heap_push(heap, item)
+  heap << item
+  i = heap.length - 1
+  while i.positive?
+    parent = (i - 1) / 2
+    break if (heap[parent] <=> heap[i]) <= 0
+
+    heap[parent], heap[i] = heap[i], heap[parent]
+    i = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap.first
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  i = 0
+  loop do
+    smallest = i
+    [2 * i + 1, 2 * i + 2].each do |child|
+      smallest = child if child < heap.length && (heap[child] <=> heap[smallest]).negative?
+    end
+    break if smallest == i
+
+    heap[i], heap[smallest] = heap[smallest], heap[i]
+    i = smallest
+  end
+  top
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def last_stone_weight(stones)
+
+def heap_push(heap, item)
+
+def heap_pop(heap)",
+      starter: "def last_stone_weight(stones)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_push(heap, item)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_pop(heap)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :last_stone_weight
+
+tc \"last_stone_weight([2, 7, 4, 1, 8, 1])\", 1, last_stone_weight([2, 7, 4, 1, 8, 1])
+tc \"last_stone_weight([1])\", 1, last_stone_weight([1])
+tc \"last_stone_weight([])\", 0, last_stone_weight([])
+tc \"last_stone_weight([2, 2])\", 0, last_stone_weight([2, 2])
+tc \"last_stone_weight([3, 7, 2])\", 2, last_stone_weight([3, 7, 2])
+tc \"last_stone_weight([10, 4, 2, 10])\", 2, last_stone_weight([10, 4, 2, 10])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc78_k_closest_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.",
+        "def k_closest(points, k)
+  # Sorting by *squared* distance rather than distance: the square root is
+  # monotonic, so it cannot change the order, and skipping it keeps everything
+  # in integers with no rounding to argue about.
+  points.sort_by { |x, y| x * x + y * y }.first(k)
+end",
+      ),
+      #(
+        "Heap",
+        "O(n log k) time · O(k) space",
+        "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.",
+        "def k_closest(points, k)
+  # Pull the nearest of what is left out k times rather than ordering
+  # everything: O(n·k) against a full sort's O(n log n), so it wins exactly
+  # when k is small, the same argument that makes a bounded heap of size k
+  # the textbook answer here.
+  remaining = points.dup
+  closest = []
+  k.times do
+    break if remaining.empty?
+
+    nearest = remaining.each_index.min_by { |i| remaining[i][0]**2 + remaining[i][1]**2 }
+    closest << remaining.delete_at(nearest)
+  end
+  closest
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def k_closest(points, k)",
+      starter: "def k_closest(points, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :k_closest
+
+# Any order is acceptable, so every case compares sorted.
+def sorted_closest(points, k) = k_closest(points, k).map(&:to_a).sort
+
+tc \"k_closest([[1, 3], [-2, 2]], 1)\", [[-2, 2]], sorted_closest([[1, 3], [-2, 2]], 1)
+tc \"k_closest([[3, 3], [5, -1], [-2, 4]], 2)\", [[-2, 4], [3, 3]], sorted_closest([[3, 3], [5, -1], [-2, 4]], 2)
+tc \"k_closest([], 0)\", [], sorted_closest([], 0)
+tc \"k_closest([[0, 0]], 1)\", [[0, 0]], sorted_closest([[0, 0]], 1)
+tc \"k_closest([[1, 1], [2, 2], [3, 3]], 2)\", [[1, 1], [2, 2]], sorted_closest([[1, 1], [2, 2], [3, 3]], 2)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc79_kth_largest_array() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.",
+        "def find_kth_largest(nums, k)
+  # Sorting answers every k at once, which is more than asked for but is the
+  # version nobody gets wrong. O(n log n).
+  return nil if k < 1 || k > nums.length
+
+  nums.sort.reverse[k - 1]
+end",
+      ),
+      #(
+        "Quickselect",
+        "O(n) average time · O(n) space",
+        "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.",
+        "def find_kth_largest(nums, k)
+  return nil if k < 1 || k > nums.length
+
+  quickselect(nums, k)
+end
+
+# Quickselect: partition around a pivot, then recurse into the side that must
+# contain the answer rather than sorting both. Expected O(n), because the work
+# halves each time instead of being repeated, the same saving binary search
+# makes over a scan.
+def quickselect(nums, k)
+  pivot, *rest = nums
+  bigger = rest.select { |n| n > pivot }
+  equal = rest.select { |n| n == pivot }
+  smaller = rest.select { |n| n < pivot }
+
+  return quickselect(bigger, k) if k <= bigger.length
+  return pivot if k <= bigger.length + 1 + equal.length
+
+  quickselect(smaller, k - bigger.length - 1 - equal.length)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_kth_largest(nums, k)",
+      starter: "def find_kth_largest(nums, k)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_kth_largest
+
+tc \"find_kth_largest([3, 2, 1, 5, 6, 4], 2)\", 5, find_kth_largest([3, 2, 1, 5, 6, 4], 2)
+tc \"find_kth_largest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)\", 4, find_kth_largest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)
+tc \"find_kth_largest([1], 1)\", 1, find_kth_largest([1], 1)
+tc \"find_kth_largest([2, 1], 2)\", 1, find_kth_largest([2, 1], 2)
+tc \"find_kth_largest([7, 6, 5, 4, 3, 2, 1], 3)\", 5, find_kth_largest([7, 6, 5, 4, 3, 2, 1], 3)
+tc \"find_kth_largest([], 1)\", nil, find_kth_largest([], 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc80_task_scheduler() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(n·k log k) time · O(k) space",
+        "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.",
+        "def least_interval(tasks, n)
+  # Run the schedule instead of computing it. Each round runs the n + 1 most
+  # frequent tasks still outstanding, which is the greedy choice, and needs
+  # the collection to hand back its largest values over and over, exactly the
+  # heap's job. Note the zeros are dropped before each round: a finished task
+  # is not an idle slot, and counting it as one is the easy mistake here.
+  remaining = tasks.tally.values
+  elapsed = 0
+
+  loop do
+    outstanding = remaining.select(&:positive?).sort.reverse
+    return elapsed if outstanding.empty?
+
+    running = outstanding.first(n + 1)
+    remaining = running.map { |count| count - 1 } + outstanding.drop(n + 1)
+
+    # The last round costs only as many ticks as it actually uses.
+    elapsed += remaining.any?(&:positive?) ? n + 1 : running.length
+  end
+end",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(k) space",
+        "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.",
+        "def least_interval(tasks, n)
+  return 0 if tasks.empty?
+
+  counts = tasks.tally.values
+  busiest = counts.max
+  ties = counts.count(busiest)
+
+  # Lay the most frequent task out first with gaps of n between its copies.
+  # That skeleton is (busiest - 1) full frames of n + 1 slots, plus the final
+  # row of every task tied for busiest. Everything else either fits into an
+  # idle slot or has already pushed the total past the skeleton, in which
+  # case no idling happens and the answer is just the number of tasks.
+  [tasks.length, (busiest - 1) * (n + 1) + ties].max
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def least_interval(tasks, n)",
+      starter: "def least_interval(tasks, n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :least_interval
+
+tc 'least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 2)', 8, least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 2)
+tc 'least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 0)', 6, least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 0)
+tc 'least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 3)', 10, least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 3)
+tc \"least_interval([], 2)\", 0, least_interval([], 2)
+tc 'least_interval([\"A\"], 5)', 1, least_interval([\"A\"], 5)
+tc \"least_interval(four As and six singles, 2)\", 10,
+   least_interval([\"A\", \"A\", \"A\", \"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\"], 2)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc81_design_twitter() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Design",
+        "O(all tweets) per feed · O(all tweets) space",
+        "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.",
+        "require \"set\"
+
+class Twitter
+  def initialize
+    # The clock only ever increases, so it orders tweets across every user
+    # without any real timestamps being involved.
+    @clock = 0
+    @tweets = []
+    @following = {}
+  end
+
+  def post_tweet(user_id, tweet_id)
+    @tweets << [@clock, user_id, tweet_id]
+    @clock += 1
+  end
+
+  # One global timeline, filtered. Simple, and the wrong shape at scale: it
+  # walks every tweet ever posted for one user's ten.
+  def get_news_feed(user_id)
+    visible = @following.fetch(user_id, Set.new) | [user_id]
+    @tweets.reverse.select { |_clock, author, _id| visible.include?(author) }.map(&:last).first(10)
+  end
+
+  def follow(follower_id, followee_id)
+    (@following[follower_id] ||= Set.new) << followee_id
+  end
+
+  def unfollow(follower_id, followee_id)
+    @following[follower_id]&.delete(followee_id)
+  end
+end",
+      ),
+      #(
+        "Heap",
+        "O(followees) per feed · O(all tweets) space",
+        "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.",
+        "require \"set\"
+
+class Twitter
+  def initialize
+    @clock = 0
+    @tweets = {}
+    @following = {}
+  end
+
+  # Tweets stored per author rather than in one global list, newest last.
+  def post_tweet(user_id, tweet_id)
+    (@tweets[user_id] ||= []) << [@clock, tweet_id]
+    @clock += 1
+  end
+
+  # A k-way merge over the timelines of the people being followed, which only
+  # ever needs the ten newest, so taking the ten largest of the last ten from
+  # each author does it without touching every tweet. Enumerable#max(n) is
+  # Ruby's heapq.nlargest, and it hands them back newest first.
+  def get_news_feed(user_id)
+    visible = @following.fetch(user_id, Set.new) | [user_id]
+    candidates = visible.flat_map { |author| @tweets.fetch(author, []).last(10) }
+    candidates.max(10).map(&:last)
+  end
+
+  def follow(follower_id, followee_id)
+    (@following[follower_id] ||= Set.new) << followee_id
+  end
+
+  def unfollow(follower_id, followee_id)
+    @following[follower_id]&.delete(followee_id)
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class Twitter
+  def initialize
+  def post_tweet(user_id, tweet_id)
+  def get_news_feed(user_id)
+  def follow(follower_id, followee_id)
+  def unfollow(follower_id, followee_id)
+end",
+      starter: "require \"set\"
+
+class Twitter
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def post_tweet(user_id, tweet_id)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def get_news_feed(user_id)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def follow(follower_id, followee_id)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def unfollow(follower_id, followee_id)
+    raise NotImplementedError, \"todo\"
+  end
+end",
+      harness: "need :Twitter
+
+t = Twitter.new
+t.post_tweet(1, 5)
+tc \"get_news_feed(1) after posting 5\", [5], t.get_news_feed(1)
+
+t.follow(1, 2)
+t.post_tweet(2, 6)
+tc \"get_news_feed(1) after following 2 who posted 6\", [6, 5], t.get_news_feed(1)
+tc \"get_news_feed(2) sees only its own\", [6], t.get_news_feed(2)
+tc \"get_news_feed(3) for a user with nothing\", [], t.get_news_feed(3)
+
+t.unfollow(1, 2)
+tc \"get_news_feed(1) after unfollowing 2\", [5], t.get_news_feed(1)
+
+eleven = Twitter.new
+(1..11).each { |i| eleven.post_tweet(1, i) }
+tc \"get_news_feed caps at ten, newest first\", [11, 10, 9, 8, 7, 6, 5, 4, 3, 2], eleven.get_news_feed(1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc82_find_median_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorted List",
+        "O(n) per operation · O(n) space",
+        "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.",
+        "class MedianFinder
+  def initialize
+    @values = []
+  end
+
+  # One sorted list, kept in order on insertion. Simpler to believe than two
+  # halves, and the median is then just a lookup, at the cost of an O(n)
+  # insert where the two-heap version pays O(log n).
+  def add_num(num)
+    at = @values.bsearch_index { |value| value > num } || @values.length
+    @values.insert(at, num)
+  end
+
+  def find_median
+    n = @values.length
+    return 0.0 if n.zero?
+
+    (@values[n / 2] + @values[(n - 1) / 2]) / 2.0
+  end
+end",
+      ),
+      #(
+        "Two Heaps",
+        "O(log n) per operation · O(n) space",
+        "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.",
+        "class MedianFinder
+  def initialize
+    # @lower is the smaller half as a max-heap (negated, since the heap below
+    # is a min-heap); @upper is the larger half as a min-heap. The median is
+    # always at one or both of those two roots.
+    @lower = []
+    @upper = []
+  end
+
+  def add_num(num)
+    heap_push(@lower, -num)
+    # The smaller half must not hold anything bigger than the larger half's
+    # smallest, and may hold at most one more element than it.
+    heap_push(@upper, -heap_pop(@lower))
+    heap_push(@lower, -heap_pop(@upper)) if @upper.length > @lower.length
+  end
+
+  def find_median
+    return 0.0 if @lower.empty?
+    return -@lower.first.to_f if @lower.length > @upper.length
+
+    (-@lower.first + @upper.first) / 2.0
+  end
+end
+
+# Ruby's standard library has no heap, so here is one: an array kept as a
+# binary min-heap, the smallest always at index 0. A push sifts the new item
+# up past bigger parents; a pop moves the last item to the root and sifts it
+# down past smaller children. Both are O(log n).
+def heap_push(heap, item)
+  heap << item
+  i = heap.length - 1
+  while i.positive?
+    parent = (i - 1) / 2
+    break if (heap[parent] <=> heap[i]) <= 0
+
+    heap[parent], heap[i] = heap[i], heap[parent]
+    i = parent
+  end
+end
+
+def heap_pop(heap)
+  top = heap.first
+  last = heap.pop
+  return top if heap.empty?
+
+  heap[0] = last
+  i = 0
+  loop do
+    smallest = i
+    [2 * i + 1, 2 * i + 2].each do |child|
+      smallest = child if child < heap.length && (heap[child] <=> heap[smallest]).negative?
+    end
+    break if smallest == i
+
+    heap[i], heap[smallest] = heap[smallest], heap[i]
+    i = smallest
+  end
+  top
+end",
+      ),
+    ],
+    check: Check(
+      signature: "class MedianFinder
+  def initialize
+  def add_num(num)
+  def find_median
+end
+
+def heap_push(heap, item)
+
+def heap_pop(heap)",
+      starter: "class MedianFinder
+  def initialize
+    raise NotImplementedError, \"todo\"
+  end
+
+  def add_num(num)
+    raise NotImplementedError, \"todo\"
+  end
+
+  def find_median
+    raise NotImplementedError, \"todo\"
+  end
+end
+
+def heap_push(heap, item)
+  raise NotImplementedError, \"todo\"
+end
+
+def heap_pop(heap)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :MedianFinder
+
+def medians(values)
+  finder = MedianFinder.new
+  values.map do |value|
+    finder.add_num(value)
+    finder.find_median
+  end
+end
+
+tc \"medians of 1, 2, 3\", [1.0, 1.5, 2.0], medians([1, 2, 3])
+tc \"medians of 1, 2, 3, 4, 5\", [1.0, 1.5, 2.0, 2.5, 3.0], medians([1, 2, 3, 4, 5])
+tc \"medians arriving out of order\", [5.0, 3.0, 2.0, 2.5], medians([5, 1, 2, 3])
+tc \"medians of negatives\", [-1.0, -1.5], medians([-1, -2])
+tc \"median before anything is added\", 0.0, MedianFinder.new.find_median",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc83_subsets() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.",
+        "def subsets(nums)
+  # The in-or-out choices *are* the bits of a number, so counting from 0 to
+  # 2^n - 1 enumerates every subset exactly once with no recursion at all.
+  # Worth knowing: it also gives every subset a stable index, which matters
+  # when subsets have to be compared or cached. Integer#[] reads one bit.
+  (0...(1 << nums.length)).map do |mask|
+    nums.select.with_index { |_value, i| mask[i] == 1 }
+  end
+end",
+      ),
+      #(
+        "Recursion",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.",
+        "def subsets(nums)
+  # Every element is either in or out, independently, so the subsets of a list
+  # are the subsets of its tail twice over: once with the head added and once
+  # without. That is the whole recursion, and it is why there are 2^n of them.
+  return [[]] if nums.empty?
+
+  head, *tail = nums
+  without = subsets(tail)
+  without.map { |subset| [head] + subset } + without
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def subsets(nums)",
+      starter: "def subsets(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :subsets
+
+# Both the outer order and the order within each subset are free.
+def sorted_subsets(nums) = subsets(nums).map { |s| s.sort.join(\",\") }.sort
+
+tc \"subsets([1, 2, 3])\", [\"\", \"1\", \"1,2\", \"1,2,3\", \"1,3\", \"2\", \"2,3\", \"3\"], sorted_subsets([1, 2, 3])
+tc \"subsets([0])\", [\"\", \"0\"], sorted_subsets([0])
+tc \"subsets([])\", [\"\"], sorted_subsets([])
+tc \"subsets of five elements count\", 32, subsets([1, 2, 3, 4, 5]).length",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc84_combination_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(t·2ᵗ) time · O(t·2ᵗ) space",
+        "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.",
+        "def combination_sum(candidates, target)
+  usable = candidates.select(&:positive?).sort
+
+  # Bottom-up instead of by recursion: the combinations making a target are
+  # every combination making a smaller amount with one more candidate added.
+  # Requiring each added candidate to be no smaller than the combination's
+  # largest is what keeps one combination from appearing in several orders.
+  table = { 0 => [[]] }
+  (1..target).each do |amount|
+    found = []
+    usable.each do |candidate|
+      break if candidate > amount
+
+      table.fetch(amount - candidate, []).each do |combination|
+        found << [candidate] + combination if combination.empty? || candidate >= combination[0]
+      end
+    end
+    table[amount] = found
+  end
+
+  table.fetch(target, [])
+end",
+      ),
+      #(
+        "Backtracking",
+        "O(2ᵗ) time · O(t) space",
+        "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.",
+        "def combination_sum(candidates, target)
+  build(candidates, target)
+end
+
+# Each step either takes the current candidate again (reuse is allowed) or
+# drops it for good. Never going back to a dropped candidate is what stops the
+# same combination appearing in several orders, so no deduplication is needed.
+def build(candidates, target)
+  return [[]] if target.zero?
+  return [] if candidates.empty?
+
+  first, *rest = candidates
+  return build(rest, target) if first > target || first <= 0
+
+  with_first = build(candidates, target - first).map { |combination| [first] + combination }
+  with_first + build(rest, target)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def combination_sum(candidates, target)
+
+def build(candidates, target)",
+      starter: "def combination_sum(candidates, target)
+  raise NotImplementedError, \"todo\"
+end
+
+def build(candidates, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :combination_sum
+
+def sorted_sums(candidates, target) = combination_sum(candidates, target).map { |c| c.sort.join(\",\") }.sort
+
+tc \"combination_sum([2, 3, 6, 7], 7)\", [\"2,2,3\", \"7\"], sorted_sums([2, 3, 6, 7], 7)
+tc \"combination_sum([2, 3, 5], 8)\", [\"2,2,2,2\", \"2,3,3\", \"3,5\"], sorted_sums([2, 3, 5], 8)
+tc \"combination_sum([2], 1)\", [], sorted_sums([2], 1)
+tc \"combination_sum([1], 0)\", [\"\"], sorted_sums([1], 0)
+tc \"combination_sum([], 3)\", [], sorted_sums([], 3)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc85_permutations() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative Insertion",
+        "O(n·n!) time · O(n·n!) space",
+        "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.",
+        "def permute(nums)
+  # Build up instead of choosing: every permutation of n elements is a
+  # permutation of n-1 with the new element wedged into one of its n
+  # positions. No recursion into a shrinking remainder, and it explains the
+  # factorial directly: one more choice of position at every step.
+  permutations = [[]]
+  nums.each do |value|
+    permutations = permutations.flat_map do |permutation|
+      (0..permutation.length).map { |at| permutation.dup.insert(at, value) }
+    end
+  end
+  permutations
+end",
+      ),
+      #(
+        "Backtracking",
+        "O(n·n!) time · O(n·n!) space",
+        "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.",
+        "def permute(nums)
+  # Pick each element in turn as the first, then permute what is left.
+  # Removing the chosen element from the remainder is what the \"used\" set does
+  # in an in-place version; here the remainder is simply a shorter list.
+  return [[]] if nums.empty?
+
+  nums.each_with_index.flat_map do |value, i|
+    rest = nums[0...i] + nums[(i + 1)..]
+    permute(rest).map { |tail| [value] + tail }
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def permute(nums)",
+      starter: "def permute(nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :permute
+
+# The outer order is free but the order *within* each permutation is the answer.
+def sorted_permutations(nums) = permute(nums).map { |p| p.join(\",\") }.sort
+
+tc \"permute([1, 2, 3])\", [\"1,2,3\", \"1,3,2\", \"2,1,3\", \"2,3,1\", \"3,1,2\", \"3,2,1\"], sorted_permutations([1, 2, 3])
+tc \"permute([0, 1])\", [\"0,1\", \"1,0\"], sorted_permutations([0, 1])
+tc \"permute([1])\", [\"1\"], sorted_permutations([1])
+tc \"permute([])\", [\"\"], sorted_permutations([])
+tc \"permute of four elements count\", 24, permute([1, 2, 3, 4]).length",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc86_subsets_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Counting",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.",
+        "def subsets_with_dup(nums)
+  # A different framing: the answer is not a choice per *element* but a choice
+  # per distinct *value*: how many copies of it to take, from none up to
+  # however many there are. Duplicates then cannot arise at all, so there is
+  # no skipping rule to remember.
+  subsets = [[]]
+  nums.tally.sort.each do |value, count|
+    subsets = subsets.flat_map do |subset|
+      (0..count).map { |taken| subset + [value] * taken }
+    end
+  end
+  subsets
+end",
+      ),
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.",
+        "def subsets_with_dup(nums)
+  build(nums.sort)
+end
+
+# Sorting puts equal values next to each other, which is what makes the
+# duplicate rule expressible: when the head is skipped, skip *every* copy of it
+# at once. Skipping one copy and keeping the next would rebuild the same subset
+# by a different route.
+def build(sorted_nums)
+  return [[]] if sorted_nums.empty?
+
+  first = sorted_nums[0]
+  with_first = build(sorted_nums.drop(1)).map { |subset| [first] + subset }
+
+  past = 1
+  past += 1 while past < sorted_nums.length && sorted_nums[past] == first
+
+  with_first + build(sorted_nums.drop(past))
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def subsets_with_dup(nums)
+
+def build(sorted_nums)",
+      starter: "def subsets_with_dup(nums)
+  raise NotImplementedError, \"todo\"
+end
+
+def build(sorted_nums)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :subsets_with_dup
+
+def sorted_subsets(nums) = subsets_with_dup(nums).map { |s| s.sort.join(\",\") }.sort
+
+tc \"subsets_with_dup([1, 2, 2])\", [\"\", \"1\", \"1,2\", \"1,2,2\", \"2\", \"2,2\"], sorted_subsets([1, 2, 2])
+tc \"subsets_with_dup([0])\", [\"\", \"0\"], sorted_subsets([0])
+tc \"subsets_with_dup([])\", [\"\"], sorted_subsets([])
+tc \"subsets_with_dup([1, 1, 1])\", [\"\", \"1\", \"1,1\", \"1,1,1\"], sorted_subsets([1, 1, 1])
+tc \"subsets_with_dup([4, 4, 4, 1, 4]) count\", 10, subsets_with_dup([4, 4, 4, 1, 4]).length",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc87_combination_sum_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·4ⁿ) time · O(n·2ⁿ) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.",
+        "def combination_sum2(candidates, target)
+  # Generate every subset that hits the target and collapse the repeats
+  # afterwards. Correct, and exponentially wasteful on inputs with many equal
+  # values, which is exactly why the skipping rule is worth getting right.
+  found = []
+  every_subset(candidates.sort).each do |subset|
+    found << subset if subset.sum == target && !found.include?(subset)
+  end
+  found
+end
+
+def every_subset(sorted_candidates)
+  return [[]] if sorted_candidates.empty?
+
+  first, *rest = sorted_candidates
+  without = every_subset(rest)
+  without.map { |subset| [first] + subset } + without
+end",
+      ),
+      #(
+        "Backtracking",
+        "O(2ⁿ) time · O(n²) space",
+        "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.",
+        "def combination_sum2(candidates, target)
+  build(candidates.sort, target)
+end
+
+# Each candidate is used at most once, so taking one moves past it. The
+# duplicate rule is the same as in Subsets II: skipping a value means skipping
+# every copy of it, otherwise the same combination is rebuilt from a different
+# copy of the same number.
+def build(sorted_candidates, target)
+  return [[]] if target.zero?
+  return [] if sorted_candidates.empty?
+
+  first = sorted_candidates[0]
+  return [] if first > target
+
+  with_first = build(sorted_candidates.drop(1), target - first).map { |rest| [first] + rest }
+
+  past = 1
+  past += 1 while past < sorted_candidates.length && sorted_candidates[past] == first
+
+  with_first + build(sorted_candidates.drop(past), target)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def combination_sum2(candidates, target)
+
+def build(sorted_candidates, target)",
+      starter: "def combination_sum2(candidates, target)
+  raise NotImplementedError, \"todo\"
+end
+
+def build(sorted_candidates, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :combination_sum2
+
+def sorted_sums(candidates, target) = combination_sum2(candidates, target).map { |c| c.sort.join(\",\") }.sort
+
+tc \"combination_sum2([10, 1, 2, 7, 6, 1, 5], 8)\", [\"1,1,6\", \"1,2,5\", \"1,7\", \"2,6\"], sorted_sums([10, 1, 2, 7, 6, 1, 5], 8)
+tc \"combination_sum2([2, 5, 2, 1, 2], 5)\", [\"1,2,2\", \"5\"], sorted_sums([2, 5, 2, 1, 2], 5)
+tc \"combination_sum2([], 3)\", [], sorted_sums([], 3)
+tc \"combination_sum2([1], 1)\", [\"1\"], sorted_sums([1], 1)
+tc \"combination_sum2([2], 1)\", [], sorted_sums([2], 1)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc88_word_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.",
+        "require \"set\"
+
+def exist(board, word)
+  return true if word.empty?
+  return false if board.empty?
+
+  # Depth-first from every starting square, with the path so far held in a set
+  # so a letter is never reused within one attempt. The set is per-path rather
+  # than global: a square rejected on one route must still be available on
+  # another, which is the difference between backtracking and plain search.
+  # The bounds check comes first because a negative index wraps in Ruby.
+  walk = lambda do |r, c, remaining, used|
+    return true if remaining.empty?
+    return false if used.include?([r, c]) || !r.between?(0, board.length - 1) || !c.between?(0, board[0].length - 1)
+    return false if board[r][c] != remaining[0]
+    return true if remaining.length == 1
+
+    used |= [[r, c]]
+    [[-1, 0], [1, 0], [0, -1], [0, 1]].any? { |dr, dc| walk.(r + dr, c + dc, remaining[1..], used) }
+  end
+
+  board.each_index.any? do |r|
+    board[0].each_index.any? { |c| walk.(r, c, word, Set.new) }
+  end
+end",
+      ),
+      #(
+        "Pruned Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.",
+        "require \"set\"
+
+def exist(board, word)
+  return true if word.empty?
+  return false if board.empty?
+
+  letters = board.flatten.tally
+  needed = word.chars.tally
+
+  # Two cheap checks before any searching. If the board does not hold enough
+  # copies of some letter, no search can succeed. And searching from whichever
+  # end of the word is rarer on the board starts from fewer squares: the
+  # branching factor at the root is what dominates.
+  return false if needed.any? { |letter, count| letters.fetch(letter, 0) < count }
+
+  word = word.reverse if letters.fetch(word[0], 0) > letters.fetch(word[-1], 0)
+
+  walk = lambda do |r, c, remaining, used|
+    return false if used.include?([r, c]) || !r.between?(0, board.length - 1) || !c.between?(0, board[0].length - 1)
+    return false if board[r][c] != remaining[0]
+    return true if remaining.length == 1
+
+    used |= [[r, c]]
+    [[-1, 0], [1, 0], [0, -1], [0, 1]].any? { |dr, dc| walk.(r + dr, c + dc, remaining[1..], used) }
+  end
+
+  board.each_index.any? do |r|
+    board[0].each_index.any? { |c| walk.(r, c, word, Set.new) }
+  end
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def exist(board, word)",
+      starter: "require \"set\"
+
+def exist(board, word)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :exist
+
+board = [\"ABCE\", \"SFCS\", \"ADEE\"].map(&:chars)
+
+tc 'exist(board, \"ABCCED\")', true, exist(board, \"ABCCED\")
+tc 'exist(board, \"SEE\")', true, exist(board, \"SEE\")
+tc 'exist(board, \"ABCB\")', false, exist(board, \"ABCB\")
+tc 'exist(board, \"\")', true, exist(board, \"\")
+tc 'exist(board, \"Z\")', false, exist(board, \"Z\")
+tc 'exist([], \"A\")', false, exist([], \"A\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc89_palindrome_partitioning() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.",
+        "def partition(s)
+  build(s)
+end
+
+# Every partition starts with some palindromic prefix, so the choice at each
+# step is only how long that prefix is. Cutting there and recursing on the rest
+# reaches each partition exactly once, in order, with nothing to dedupe.
+def build(remaining)
+  return [[]] if remaining.empty?
+
+  (1..remaining.length).flat_map do |size|
+    prefix = remaining[0, size]
+    next [] unless prefix == prefix.reverse
+
+    build(remaining[size..]).map { |rest| [prefix] + rest }
+  end
+end",
+      ),
+      #(
+        "DP + Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.",
+        "def partition(s)
+  n = s.length
+
+  # Work out which spans are palindromes once, up front, rather than
+  # re-testing the same prefix on every branch of the search. The search is
+  # then pure choice: a table lookup replaces a linear scan at every step.
+  table = {}
+  (0...n).each do |span|
+    (0...(n - span)).each do |i|
+      j = i + span
+      inside = j - i < 2 || table[[i + 1, j - 1]]
+      table[[i, j]] = s[i] == s[j] && inside
+    end
+  end
+
+  build = lambda do |start|
+    return [[]] if start >= n
+
+    (start...n).flat_map do |stop|
+      next [] unless table[[start, stop]]
+
+      build.(stop + 1).map { |rest| [s[start..stop]] + rest }
+    end
+  end
+
+  build.(0)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def partition(s)
+
+def build(remaining)",
+      starter: "def partition(s)
+  raise NotImplementedError, \"todo\"
+end
+
+def build(remaining)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :partition
+
+# The order of pieces within a partition is the answer, so only the outer list
+# is normalised. Comma rather than a pipe: a pipe sorts after letters.
+def sorted_partitions(s) = partition(s).map { |pieces| pieces.join(\",\") }.sort
+
+tc 'partition(\"aab\")', [\"a,a,b\", \"aa,b\"], sorted_partitions(\"aab\")
+tc 'partition(\"a\")', [\"a\"], sorted_partitions(\"a\")
+tc 'partition(\"\")', [\"\"], sorted_partitions(\"\")
+tc 'partition(\"aba\")', [\"a,b,a\", \"aba\"], sorted_partitions(\"aba\")
+tc 'partition(\"abc\")', [\"a,b,c\"], sorted_partitions(\"abc\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc90_letter_combinations() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.",
+        "KEYPAD = {
+  \"2\" => \"abc\", \"3\" => \"def\", \"4\" => \"ghi\", \"5\" => \"jkl\",
+  \"6\" => \"mno\", \"7\" => \"pqrs\", \"8\" => \"tuv\", \"9\" => \"wxyz\"
+}.freeze
+
+def letter_combinations(digits)
+  return [] if digits.empty?
+
+  # The same cross product built by folding rather than recursing: hold every
+  # combination of the digits seen so far and extend each by every letter of
+  # the next. No call stack, and the growth is visible: the list multiplies
+  # in size at each step.
+  digits.each_char.reduce([\"\"]) do |combinations, digit|
+    combinations.flat_map { |prefix| KEYPAD.fetch(digit, \"\").chars.map { |letter| prefix + letter } }
+  end
+end",
+      ),
+      #(
+        "Recursion",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.",
+        "KEYPAD = {
+  \"2\" => \"abc\", \"3\" => \"def\", \"4\" => \"ghi\", \"5\" => \"jkl\",
+  \"6\" => \"mno\", \"7\" => \"pqrs\", \"8\" => \"tuv\", \"9\" => \"wxyz\"
+}.freeze
+
+def letter_combinations(digits)
+  return [] if digits.empty?
+
+  build(digits)
+end
+
+# One choice per digit, independently, so the answer is the cross product of
+# the letter sets. Written as a recursion here: pick a letter for the first
+# digit, then every combination of the rest.
+def build(digits)
+  return [\"\"] if digits.empty?
+
+  tails = build(digits[1..])
+  KEYPAD.fetch(digits[0], \"\").chars.flat_map { |letter| tails.map { |tail| letter + tail } }
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def letter_combinations(digits)
+
+def build(digits)",
+      starter: "def letter_combinations(digits)
+  raise NotImplementedError, \"todo\"
+end
+
+def build(digits)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :letter_combinations
+
+tc 'letter_combinations(\"23\")', [\"ad\", \"ae\", \"af\", \"bd\", \"be\", \"bf\", \"cd\", \"ce\", \"cf\"], letter_combinations(\"23\").sort
+tc 'letter_combinations(\"\")', [], letter_combinations(\"\").sort
+tc 'letter_combinations(\"2\")', [\"a\", \"b\", \"c\"], letter_combinations(\"2\").sort
+tc 'letter_combinations(\"9\")', [\"w\", \"x\", \"y\", \"z\"], letter_combinations(\"9\").sort
+tc 'letter_combinations(\"79\") count', 16, letter_combinations(\"79\").length",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc91_n_queens() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²·n!) time · O(n) space",
+        "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.",
+        "def solve_n_queens(n)
+  # One queen per row with no two sharing a column *is* a permutation of the
+  # columns, so the row and column rules are satisfied by construction and
+  # only the diagonals are left to test. Generating all n! and filtering is
+  # far slower than pruning as you go (it explores arrangements a backtracker
+  # would have abandoned at the second queen) but it names what the search
+  # space actually is.
+  (0...n).to_a.permutation
+         .select { |chosen| no_diagonal_clash(chosen) }
+         .map { |chosen| chosen.map { |c| \".\" * c + \"Q\" + \".\" * (n - c - 1) } }
+end
+
+def no_diagonal_clash(chosen)
+  chosen.each_index.to_a.combination(2).all? do |r1, r2|
+    (r1 - r2).abs != (chosen[r1] - chosen[r2]).abs
+  end
+end",
+      ),
+      #(
+        "Backtracking",
+        "O(n!) time · O(n²) space",
+        "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.",
+        "require \"set\"
+
+def solve_n_queens(n)
+  boards = []
+
+  # One queen per row, so the only choice is which column. A diagonal is
+  # identified by row - column and an anti-diagonal by row + column, which
+  # turns \"is this square attacked?\" into three set lookups, and lets the
+  # search abandon a whole subtree the moment one fails.
+  place = lambda do |row, chosen, columns, diagonals, anti_diagonals|
+    if row == n
+      boards << chosen.map { |c| \".\" * c + \"Q\" + \".\" * (n - c - 1) }
+      return
+    end
+    n.times do |column|
+      next if columns.include?(column) || diagonals.include?(row - column) || anti_diagonals.include?(row + column)
+
+      place.(
+        row + 1,
+        chosen + [column],
+        columns | [column],
+        diagonals | [row - column],
+        anti_diagonals | [row + column]
+      )
+    end
+  end
+
+  place.(0, [], Set.new, Set.new, Set.new)
+  boards
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def solve_n_queens(n)",
+      starter: "require \"set\"
+
+def solve_n_queens(n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :solve_n_queens
+
+def sorted_boards(n) = solve_n_queens(n).map { |board| board.join(\"|\") }.sort
+
+tc \"solve_n_queens(4)\", [\"..Q.|Q...|...Q|.Q..\", \".Q..|...Q|Q...|..Q.\"], sorted_boards(4)
+tc \"solve_n_queens(1)\", [\"Q\"], sorted_boards(1)
+tc \"solve_n_queens(2)\", [], sorted_boards(2)
+tc \"solve_n_queens(3)\", [], sorted_boards(3)
+tc \"solve_n_queens(6) count\", 4, solve_n_queens(6).length",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc92_unique_paths() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.",
+        "def unique_paths(m, n)
+  return 0 if m <= 0 || n <= 0
+
+  # Only right and down moves, so the ways to reach a square are the ways to
+  # reach the one above plus the one to its left. Rows are filled top to
+  # bottom, and only the row above is ever needed, so one row of counters
+  # does for the whole grid.
+  row = Array.new(n, 1)
+  (m - 1).times do
+    (1...n).each { |c| row[c] += row[c - 1] }
+  end
+
+  row[-1]
+end",
+      ),
+      #(
+        "Math",
+        "O(min(m,n)) time · O(1) space",
+        "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.",
+        "def unique_paths(m, n)
+  return 0 if m <= 0 || n <= 0
+
+  # Every path is exactly m-1 downs and n-1 rights in some order, so the count
+  # is the number of ways to choose which of the m+n-2 moves are downs: a
+  # binomial coefficient, and no grid at all. Multiplying and dividing in step
+  # keeps every intermediate an exact integer.
+  downs = m - 1
+  total = m + n - 2
+  result = 1
+  (1..downs).each do |i|
+    result = result * (total - downs + i) / i
+  end
+
+  result
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def unique_paths(m, n)",
+      starter: "def unique_paths(m, n)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :unique_paths
+
+tc \"unique_paths(3, 7)\", 28, unique_paths(3, 7)
+tc \"unique_paths(3, 2)\", 3, unique_paths(3, 2)
+tc \"unique_paths(7, 3)\", 28, unique_paths(7, 3)
+tc \"unique_paths(1, 5)\", 1, unique_paths(1, 5)
+tc \"unique_paths(0, 5)\", 0, unique_paths(0, 5)
+tc \"unique_paths(10, 10)\", 48620, unique_paths(10, 10)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc93_longest_common_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.",
+        "def longest_common_subsequence(text1, text2)
+  memo = {}
+
+  # The same recurrence from the front, with a cache. Written this way the
+  # choice is explicit (match and advance both, or give up one character
+  # from one side) which the rolling row hides behind its indices.
+  best = lambda do |i, j|
+    return 0 if i >= text1.length || j >= text2.length
+
+    memo[[i, j]] ||=
+      if text1[i] == text2[j]
+        best.(i + 1, j + 1) + 1
+      else
+        [best.(i + 1, j), best.(i, j + 1)].max
+      end
+  end
+
+  best.(0, 0)
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.",
+        "def longest_common_subsequence(text1, text2)
+  # Compare the last characters: equal means both are used and the answer is
+  # one more than the rest, different means the best of dropping one or the
+  # other. Filled row by row, only the previous row is ever needed.
+  previous = Array.new(text2.length + 1, 0)
+
+  text1.each_char do |a|
+    row = Array.new(text2.length + 1, 0)
+    text2.each_char.with_index(1) do |b, j|
+      row[j] = a == b ? previous[j - 1] + 1 : [previous[j], row[j - 1]].max
+    end
+    previous = row
+  end
+
+  previous[-1]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def longest_common_subsequence(text1, text2)",
+      starter: "def longest_common_subsequence(text1, text2)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :longest_common_subsequence
+
+tc 'longest_common_subsequence(\"abcde\", \"ace\")', 3, longest_common_subsequence(\"abcde\", \"ace\")
+tc 'longest_common_subsequence(\"abc\", \"abc\")', 3, longest_common_subsequence(\"abc\", \"abc\")
+tc 'longest_common_subsequence(\"abc\", \"def\")', 0, longest_common_subsequence(\"abc\", \"def\")
+tc 'longest_common_subsequence(\"\", \"abc\")', 0, longest_common_subsequence(\"\", \"abc\")
+tc 'longest_common_subsequence(\"bsbininm\", \"jmjkbkjkv\")', 1, longest_common_subsequence(\"bsbininm\", \"jmjkbkjkv\")
+tc 'longest_common_subsequence(\"ezupkr\", \"ubmrapg\")', 2, longest_common_subsequence(\"ezupkr\", \"ubmrapg\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc94_coin_change_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n·t) time · O(n·t) space",
+        "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.",
+        "def change(amount, coins)
+  usable = coins.select(&:positive?)
+  memo = {}
+
+  # The same \"combinations not permutations\" rule stated as a choice instead
+  # of a loop order: either use this coin again, or set it aside for good.
+  # Setting it aside permanently is what fixes one order per combination.
+  ways = lambda do |index, remaining|
+    return 1 if remaining.zero?
+    return 0 if index >= usable.length
+
+    memo[[index, remaining]] ||= begin
+      using = usable[index] <= remaining ? ways.(index, remaining - usable[index]) : 0
+      using + ways.(index + 1, remaining)
+    end
+  end
+
+  ways.(0, amount)
+end",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n·t) time · O(t) space",
+        "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.",
+        "def change(amount, coins)
+  # Combinations, not permutations, and that is entirely decided by the loop
+  # order. Coins on the outside means each coin is considered once and for all
+  # before the next is looked at, so 1+2 and 2+1 can never both be counted.
+  # Swapping the loops would count orderings instead.
+  ways = Array.new(amount + 1, 0)
+  ways[0] = 1
+
+  coins.each do |coin|
+    next if coin <= 0
+
+    (coin..amount).each { |target| ways[target] += ways[target - coin] }
+  end
+
+  ways[amount]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def change(amount, coins)",
+      starter: "def change(amount, coins)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :change
+
+tc \"change(5, [1, 2, 5])\", 4, change(5, [1, 2, 5])
+tc \"change(3, [2])\", 0, change(3, [2])
+tc \"change(10, [10])\", 1, change(10, [10])
+tc \"change(0, [1])\", 1, change(0, [1])
+tc \"change(5, [])\", 0, change(5, [])
+tc \"change(11, [1, 2, 5])\", 11, change(11, [1, 2, 5])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc95_target_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n·S) time · O(S) space",
+        "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.",
+        "def find_target_sum_ways(nums, target)
+  # The state that matters is only the running total, not which signs produced
+  # it, so carry a map from reachable total to how many ways reach it, and
+  # widen it by each number twice, once added and once subtracted. Different
+  # sign choices landing on the same total merge, which is what stops the
+  # work being exponential.
+  totals = { 0 => 1 }
+
+  nums.each do |n|
+    following = Hash.new(0)
+    totals.each do |total, count|
+      following[total + n] += count
+      following[total - n] += count
+    end
+    totals = following
+  end
+
+  totals.fetch(target, 0)
+end",
+      ),
+      #(
+        "Subset Sum",
+        "O(n·S) time · O(S) space",
+        "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.",
+        "def find_target_sum_ways(nums, target)
+  # Rewrite the problem. If P is the set given a plus and N the set given a
+  # minus, then P - N = target and P + N = total, so P = (total + target) / 2.
+  # That turns a sign-assignment question into \"how many subsets sum to a
+  # fixed value\": a knapsack, with no negative totals to track at all.
+  total = nums.sum
+  wanted = total + target
+  return 0 if wanted.negative? || wanted.odd? || total < target.abs
+
+  goal = wanted / 2
+  counts = { 0 => 1 }
+  nums.each do |n|
+    following = Hash.new(0).merge(counts)
+    counts.each do |reached, ways|
+      following[reached + n] += ways if reached + n <= goal
+    end
+    counts = following
+  end
+
+  counts.fetch(goal, 0)
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def find_target_sum_ways(nums, target)",
+      starter: "def find_target_sum_ways(nums, target)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :find_target_sum_ways
+
+tc \"find_target_sum_ways([1, 1, 1, 1, 1], 3)\", 5, find_target_sum_ways([1, 1, 1, 1, 1], 3)
+tc \"find_target_sum_ways([1], 1)\", 1, find_target_sum_ways([1], 1)
+tc \"find_target_sum_ways([1], 2)\", 0, find_target_sum_ways([1], 2)
+tc \"find_target_sum_ways([0, 0, 0, 0, 0], 0)\", 32, find_target_sum_ways([0, 0, 0, 0, 0], 0)
+tc \"find_target_sum_ways([], 0)\", 1, find_target_sum_ways([], 0)
+tc \"find_target_sum_ways([1, 2, 3, 4, 5], 3)\", 3, find_target_sum_ways([1, 2, 3, 4, 5], 3)",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc96_stock_with_cooldown() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.",
+        "def max_profit(prices)
+  memo = {}
+
+  # The same three states as an explicit choice at each day: buy, sell, or do
+  # nothing. After selling the recursion skips a day, which is the cooldown
+  # stated where it happens rather than encoded in which value is read.
+  best = lambda do |day, holding|
+    return 0 if day >= prices.length
+
+    memo[[day, holding]] ||= begin
+      waiting = best.(day + 1, holding)
+      acting =
+        if holding
+          prices[day] + best.(day + 2, false)
+        else
+          best.(day + 1, true) - prices[day]
+        end
+      [waiting, acting].max
+    end
+  end
+
+  best.(0, false)
+end",
+      ),
+      #(
+        "State Machine DP",
+        "O(n) time · O(1) space",
+        "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.",
+        "def max_profit(prices)
+  # Three states rather than one number: holding a share, having just sold (so
+  # today is the cooldown), and free to act. Each day's states depend only on
+  # yesterday's, so the whole thing is three rolling values, and the cooldown
+  # is expressed simply by \"free\" never reading \"sold\" from the same day.
+  hold = -Float::INFINITY
+  sold = -Float::INFINITY
+  rest = 0
+
+  prices.each do |price|
+    hold, sold, rest = [hold, rest - price].max, hold + price, [rest, sold].max
+  end
+
+  [sold, rest, 0].max
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def max_profit(prices)",
+      starter: "def max_profit(prices)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :max_profit
+
+tc \"max_profit([1, 2, 3, 0, 2])\", 3, max_profit([1, 2, 3, 0, 2])
+tc \"max_profit([1])\", 0, max_profit([1])
+tc \"max_profit([])\", 0, max_profit([])
+tc \"max_profit([2, 1])\", 0, max_profit([2, 1])
+tc \"max_profit([1, 2, 3, 4, 5])\", 4, max_profit([1, 2, 3, 4, 5])
+tc \"max_profit([6, 1, 3, 2, 4, 7])\", 6, max_profit([6, 1, 3, 2, 4, 7])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc97_interleaving_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.",
+        "def is_interleave(s1, s2, s3)
+  return false if s1.length + s2.length != s3.length
+
+  memo = {}
+
+  # How much of each source has been used is the entire state: the position
+  # in the target is their sum, so it never has to be tracked. That collapse
+  # from three indices to two is what makes the table two-dimensional.
+  works = lambda do |i, j|
+    return true if i == s1.length && j == s2.length
+
+    key = [i, j]
+    unless memo.key?(key)
+      target = s3[i + j]
+      memo[key] = (i < s1.length && s1[i] == target && works.(i + 1, j)) ||
+                  (j < s2.length && s2[j] == target && works.(i, j + 1))
+    end
+    memo[key]
+  end
+
+  works.(0, 0)
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.",
+        "def is_interleave(s1, s2, s3)
+  return false if s1.length + s2.length != s3.length
+
+  # Bottom-up over the same two-index state. Row i says which prefixes of s2
+  # can pair with the first i characters of s1; each row depends only on the
+  # one above and on itself to the left, so one row suffices.
+  row = [true] + [false] * s2.length
+  (1..s2.length).each do |j|
+    row[j] = row[j - 1] && s2[j - 1] == s3[j - 1]
+  end
+
+  (1..s1.length).each do |i|
+    row[0] = row[0] && s1[i - 1] == s3[i - 1]
+    (1..s2.length).each do |j|
+      target = s3[i + j - 1]
+      row[j] = (row[j] && s1[i - 1] == target) || (row[j - 1] && s2[j - 1] == target)
+    end
+  end
+
+  row[s2.length]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def is_interleave(s1, s2, s3)",
+      starter: "def is_interleave(s1, s2, s3)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :is_interleave
+
+tc 'is_interleave(\"aabcc\", \"dbbca\", \"aadbbcbcac\")', true, is_interleave(\"aabcc\", \"dbbca\", \"aadbbcbcac\")
+tc 'is_interleave(\"aabcc\", \"dbbca\", \"aadbbbaccc\")', false, is_interleave(\"aabcc\", \"dbbca\", \"aadbbbaccc\")
+tc 'is_interleave(\"\", \"\", \"\")', true, is_interleave(\"\", \"\", \"\")
+tc 'is_interleave(\"a\", \"\", \"a\")', true, is_interleave(\"a\", \"\", \"a\")
+tc 'is_interleave(\"\", \"b\", \"b\")', true, is_interleave(\"\", \"b\", \"b\")
+tc 'is_interleave(\"abc\", \"def\", \"adbecf\")', true, is_interleave(\"abc\", \"def\", \"adbecf\")",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc98_longest_increasing_path() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sort + DP",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.",
+        "def longest_increasing_path(matrix)
+  return 0 if matrix.empty? || matrix[0].empty?
+
+  rows = matrix.length
+  columns = matrix[0].length
+
+  # The same acyclicity used the other way round: process the squares from
+  # largest value to smallest, and by the time a square is reached every
+  # square it can move to has already been settled. A topological order
+  # without ever building the graph: sorting by value *is* the order.
+  cells = []
+  matrix.each_with_index do |row, r|
+    row.each_with_index { |value, c| cells << [value, r, c] }
+  end
+  lengths = {}
+
+  cells.sort.reverse_each do |value, r, c|
+    best = 1
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].each do |dr, dc|
+      nr = r + dr
+      nc = c + dc
+      next unless nr.between?(0, rows - 1) && nc.between?(0, columns - 1)
+
+      best = [best, 1 + lengths[[nr, nc]]].max if matrix[nr][nc] > value
+    end
+    lengths[[r, c]] = best
+  end
+
+  lengths.values.max
+end",
+      ),
+      #(
+        "DFS + Memo",
+        "O(m·n) time · O(m·n) space",
+        "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.",
+        "def longest_increasing_path(matrix)
+  return 0 if matrix.empty? || matrix[0].empty?
+
+  rows = matrix.length
+  columns = matrix[0].length
+  memo = {}
+
+  # Strictly increasing means the moves can never form a cycle (the grid is
+  # a directed acyclic graph) so the longest path from each square is
+  # well-defined and can simply be cached. Without that guarantee memoisation
+  # would be unsound, which is the fact the problem is really testing.
+  longest = lambda do |r, c|
+    memo[[r, c]] ||= begin
+      best = 1
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].each do |dr, dc|
+        nr = r + dr
+        nc = c + dc
+        next unless nr.between?(0, rows - 1) && nc.between?(0, columns - 1)
+
+        best = [best, 1 + longest.(nr, nc)].max if matrix[nr][nc] > matrix[r][c]
+      end
+      best
+    end
+  end
+
+  (0...rows).to_a.product((0...columns).to_a).map { |r, c| longest.(r, c) }.max
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def longest_increasing_path(matrix)",
+      starter: "def longest_increasing_path(matrix)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :longest_increasing_path
+
+tc \"longest_increasing_path([[9, 9, 4], [6, 6, 8], [2, 1, 1]])\", 4, longest_increasing_path([[9, 9, 4], [6, 6, 8], [2, 1, 1]])
+tc \"longest_increasing_path([[3, 4, 5], [3, 2, 6], [2, 2, 1]])\", 4, longest_increasing_path([[3, 4, 5], [3, 2, 6], [2, 2, 1]])
+tc \"longest_increasing_path([[1]])\", 1, longest_increasing_path([[1]])
+tc \"longest_increasing_path([])\", 0, longest_increasing_path([])
+tc \"longest_increasing_path([[1, 2], [3, 4]])\", 3, longest_increasing_path([[1, 2], [3, 4]])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc99_distinct_subsequences() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.",
+        "def num_distinct(s, t)
+  memo = {}
+
+  # The choice written out: when the characters match, either use this source
+  # character for this target character or skip it; when they do not, skipping
+  # is the only option. Running out of target is one complete subsequence,
+  # which is why the base case is 1 rather than 0.
+  ways = lambda do |i, j|
+    return 1 if j >= t.length
+    return 0 if i >= s.length
+
+    memo[[i, j]] ||= begin
+      total = ways.(i + 1, j)
+      total += ways.(i + 1, j + 1) if s[i] == t[j]
+      total
+    end
+  end
+
+  ways.(0, 0)
+end",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.",
+        "def num_distinct(s, t)
+  # Row j counts the ways to build the first j characters of t out of the
+  # source seen so far. A new source character can extend a count at j-1 into
+  # one at j, but only if it matches t[j-1].
+  #
+  # The row must be swept right to left: left to right, an update at j-1 feeds
+  # straight into j and the same source character gets used twice.
+  row = [1] + [0] * t.length
+
+  s.each_char do |c|
+    t.length.downto(1) do |j|
+      row[j] += row[j - 1] if c == t[j - 1]
+    end
+  end
+
+  row[t.length]
+end",
+      ),
+    ],
+    check: Check(
+      signature: "def num_distinct(s, t)",
+      starter: "def num_distinct(s, t)
+  raise NotImplementedError, \"todo\"
+end",
+      harness: "need :num_distinct
+
+tc 'num_distinct(\"rabbbit\", \"rabbit\")', 3, num_distinct(\"rabbbit\", \"rabbit\")
+tc 'num_distinct(\"babgbag\", \"bag\")', 5, num_distinct(\"babgbag\", \"bag\")
+tc 'num_distinct(\"\", \"a\")', 0, num_distinct(\"\", \"a\")
+tc 'num_distinct(\"a\", \"\")', 1, num_distinct(\"a\", \"\")
+tc 'num_distinct(\"abc\", \"abc\")', 1, num_distinct(\"abc\", \"abc\")
+tc 'num_distinct(\"aaa\", \"aa\")', 3, num_distinct(\"aaa\", \"aa\")",
+      graded: True,
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -611,7 +12604,150 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
     "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc100_edit_distance" -> Ok(nc100_edit_distance())
+    "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
+    "nc102_regular_expression_matching" ->
+      Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
     "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
+    "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
+    "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
+    "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
+    "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" ->
+      Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
+    "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
+    "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
+    "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
+    "nc17_min_stack" -> Ok(nc17_min_stack())
+    "nc18_daily_temperatures" -> Ok(nc18_daily_temperatures())
+    "nc19_binary_search" -> Ok(nc19_binary_search())
+    "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
+    "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
+    "nc35_insert_interval" -> Ok(nc35_insert_interval())
+    "nc36_merge_intervals" -> Ok(nc36_merge_intervals())
+    "nc37_non_overlapping" -> Ok(nc37_non_overlapping())
+    "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
+    "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
+    "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
+    "nc56_rotate_image" -> Ok(nc56_rotate_image())
+    "nc57_spiral_matrix" -> Ok(nc57_spiral_matrix())
+    "nc58_set_matrix_zeroes" -> Ok(nc58_set_matrix_zeroes())
+    "nc59_happy_number" -> Ok(nc59_happy_number())
+    "nc60_plus_one" -> Ok(nc60_plus_one())
+    "nc61_pow" -> Ok(nc61_pow())
+    "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
+    "nc63_detect_squares" -> Ok(nc63_detect_squares())
+    "nc64_climbing_stairs" -> Ok(nc64_climbing_stairs())
+    "nc65_min_cost_climbing_stairs" -> Ok(nc65_min_cost_climbing_stairs())
+    "nc66_house_robber" -> Ok(nc66_house_robber())
+    "nc67_house_robber_ii" -> Ok(nc67_house_robber_ii())
+    "nc68_longest_palindrome" -> Ok(nc68_longest_palindrome())
+    "nc69_palindromic_substrings" -> Ok(nc69_palindromic_substrings())
+    "nc70_decode_ways" -> Ok(nc70_decode_ways())
+    "nc71_coin_change" -> Ok(nc71_coin_change())
+    "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
+    "nc73_word_break" -> Ok(nc73_word_break())
+    "nc74_longest_increasing_subsequence" ->
+      Ok(nc74_longest_increasing_subsequence())
+    "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
+    "nc92_unique_paths" -> Ok(nc92_unique_paths())
+    "nc93_longest_common_subsequence" -> Ok(nc93_longest_common_subsequence())
+    "nc94_coin_change_ii" -> Ok(nc94_coin_change_ii())
+    "nc95_target_sum" -> Ok(nc95_target_sum())
+    "nc96_stock_with_cooldown" -> Ok(nc96_stock_with_cooldown())
+    "nc97_interleaving_string" -> Ok(nc97_interleaving_string())
+    "nc98_longest_increasing_path" -> Ok(nc98_longest_increasing_path())
+    "nc99_distinct_subsequences" -> Ok(nc99_distinct_subsequences())
     _ -> Error(Nil)
   }
 }

@@ -1,0 +1,4 @@
+@kind Nifty Ruby · gsub
+@big-o O(n²) time · O(n) space
+@order 1
+No stack: `gsub(/\(\)|\[\]|\{\}/, "")` strips every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why "([)]" fails — neither pair is ever adjacent.

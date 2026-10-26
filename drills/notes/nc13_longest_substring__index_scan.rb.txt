@@ -1,0 +1,4 @@
+@kind Nifty Ruby · String#index
+@big-o O(n²) time · O(1) space
+@order 1
+No set and no map: `s.index(char, start)` asks the string itself for the first copy of this character inside the current window. Anything earlier than `right` is a repeat, so restart just past it.

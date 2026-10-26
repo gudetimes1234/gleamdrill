@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Reverse
+@big-o O(n) time · O(n) space
+@order 1
+Strip with `gsub(/[^[:alnum:]]/, "")`, then compare against `reverse`. Allocates a second string instead of converging two pointers, but it is one line of intent.

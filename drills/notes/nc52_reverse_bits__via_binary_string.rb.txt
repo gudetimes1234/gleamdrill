@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Strings
+@big-o O(1) time · O(1) space
+@order 1
+`n.to_s(2).rjust(32, "0").reverse.to_i(2)`: write the number in binary, pad to the full width, reverse the text, read it back in base 2. Slower and it allocates, but the explicit `rjust(32, "0")` makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.

@@ -58,9 +58,8 @@ open http://localhost:8080
 | Deck | Drills | Runs |
 |---|---|---|
 | NeetCode 150 — Python, Gleam, TypeScript | 150 each, 2+ solutions per problem | browser |
-| NeetCode 150 — Elixir, Go | 150 each, 2+ solutions per problem | server sandbox |
+| NeetCode 150 — Elixir, Go, Ruby | 150 each, 2+ solutions per problem | server sandbox |
 | NeetCode 150 — Haskell | 150, one solution per problem | server sandbox |
-| NeetCode 150 — Ruby | the first 10 so far, 2 solutions each | server sandbox |
 | Gleam Language Tour | 63 lessons | browser, not scheduled |
 | System Design | 20 multiple-choice + exam mode | self-graded |
 | System Design Board | 6 component-selection boards, 36-piece palette | auto-graded |

@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Rotate
+@big-o O(m·n·min(m,n)) time · O(m·n) space
+@order 1
+Take the top row, then turn the problem ninety degrees and do it again: `matrix[1..].transpose.reverse` rotates what is left anticlockwise, which puts the column you would have walked down next along the top. There is only ever one move to make and no boundary bookkeeping at all; the loop ends when the rotation of nothing comes back empty.

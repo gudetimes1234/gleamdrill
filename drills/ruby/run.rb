@@ -59,6 +59,48 @@ def need(*names)
   end
 end
 
+# LeetCode's node classes, given to every drill as Go's prelude gives them:
+# a solution uses them and never defines them.
+class ListNode
+  attr_accessor :val, :next
+
+  def initialize(val = 0, next_node = nil)
+    @val = val
+    @next = next_node
+  end
+end
+
+class TreeNode
+  attr_accessor :val, :left, :right
+
+  def initialize(val = 0, left = nil, right = nil)
+    @val = val
+    @left = left
+    @right = right
+  end
+end
+
+# Clone Graph's node: values are 1-based.
+class Node
+  attr_accessor :val, :neighbors
+
+  def initialize(val = 0, neighbors = [])
+    @val = val
+    @neighbors = neighbors
+  end
+end
+
+# Copy List with Random Pointer's node.
+class RandomNode
+  attr_accessor :val, :next, :random
+
+  def initialize(val = 0, next_node = nil, random = nil)
+    @val = val
+    @next = next_node
+    @random = random
+  end
+end
+
 dir = ARGV[0] || "."
 begin
   $stdout = Drill::OUTPUT

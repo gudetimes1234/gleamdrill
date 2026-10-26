@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Big Ints
+@big-o O(n+m) time · O(n+m) space
+@order 1
+Turn both lists into whole numbers, add, take the sum apart again with `divmod(10)`. It reads well, and it is safe only because Ruby's Integer quietly grows into a bignum past 64 bits, which is precisely why the problem is posed as a list of digits in languages where it would overflow instead.

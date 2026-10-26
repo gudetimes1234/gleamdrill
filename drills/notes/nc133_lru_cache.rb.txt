@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Hash Order
+@big-o O(1) per operation · O(capacity) space
+@order 1
+Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A Ruby Hash remembers insertion order, so `delete` then reassign makes a key the newest, and `shift` drops the oldest. The recency list comes free with the map.

@@ -1,0 +1,4 @@
+@kind Nifty Ruby · Strings
+@big-o O(log n) time · O(log n) space
+@order 1
+`x.abs.to_s.reverse.to_i` reverses the digits as text and reads them back, and `to_i` drops the leading zeros for free. Ruby integers never overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.
