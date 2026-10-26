@@ -13,7 +13,7 @@ PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
         run logs clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
-        tour-vendor tour-report audit sql
+        tour-vendor tour-report audit sql tui tui-test tui-runners
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -140,6 +140,24 @@ fsrs-vectors:
 # pure modules -- guest store, queue, keys, walk and the update handlers.
 app-test:
 	gleam test --target javascript
+
+# The terminal app (tui/, etui on Node 22+): the same catalogue, scheduler
+# and tmux keys, on the desktop or in Termux. GLEAMDRILL_API points it at a
+# local backend, e.g. http://127.0.0.1:1637.
+tui:
+	cd tui && gleam run
+
+# Its own logic: keys, the prefix and command line, run reports, the guest file.
+tui-test:
+	cd tui && gleam test
+
+# Every drill's reference solution through the terminal's local runners
+# (python3, Node, gleam), then every starter stub, which must fail. Minutes.
+tui-runners:
+	cd tui && for lang in python typescript gleam; do \
+		gleam run -m runners_check -- $$lang && \
+		gleam run -m runners_check -- $$lang 1000 starters || exit 1; \
+	done
 
 # Recaptures those responses from a running backend. Run after changing
 # anything the API returns.

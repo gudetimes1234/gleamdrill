@@ -1,0 +1,29 @@
+name = "gleamdrill_tui"
+version = "0.1.0"
+description = "GleamDrill in the terminal, on etui, run by Node: the desktop and Termux."
+
+# JavaScript, like the app: the catalogue and the tmux layer it shares come
+# across as they are, FFI and all, with nothing ported to Erlang. Node 22+
+# (`pkg install nodejs` on Termux).
+target = "javascript"
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+gleam_javascript = ">= 1.0.1 and < 2.0.0"
+gleam_json = ">= 3.1.0 and < 4.0.0"
+gleam_time = ">= 1.10.0 and < 2.0.0"
+etui = ">= 2.0.0 and < 3.0.0"
+
+# The web app itself, for its catalogue, scheduler glue, guest store and
+# tmux command language. Only modules that don't touch the DOM are imported.
+gleamdrill = { path = ".." }
+wire = { path = "../wire" }
+fsrs = { path = "../fsrs" }
+
+# Held at the app's own version: plinth 0.11 dropped the storage module the
+# app's stores import.
+plinth = ">= 0.10.2 and < 0.11.0"
+
+[dev-dependencies]
+argv = ">= 1.0.0 and < 2.0.0"
+gleeunit = ">= 1.0.0 and < 2.0.0"
