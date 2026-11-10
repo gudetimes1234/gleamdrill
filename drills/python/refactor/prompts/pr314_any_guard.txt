@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: any() as a guard, not a flag loop
+Rewrite checkout(cart) so the bad-quantity guard is a single `if any(...)`: no flag variable set inside a loop.

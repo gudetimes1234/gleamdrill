@@ -1,0 +1,3 @@
+section: Errors
+title: No outer err shadowed by :=
+sumAll declares var err error up top, but the n, err := in the loop shadows it, so the final return total, err only ever returns that unused nil. Drop the outer err and return nil explicitly at the end.

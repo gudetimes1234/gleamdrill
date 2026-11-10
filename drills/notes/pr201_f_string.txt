@@ -1,0 +1,2 @@
+Concatenation needs a str() around every number and hides the shape of the line between the pluses. An f-string shows the finished text with the values dropped in where they go.
+Source: PEP 498 (literal string interpolation) and the Python tutorial, Input and Output: formatted string literals.

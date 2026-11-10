@@ -1,0 +1,2 @@
+A chain of isinstance tests is dispatch on shape, which is what structural pattern matching is for. Each `case int():` names the type it handles, the wildcard `case _:` is the explicit fallback, and patterns can grow to destructure the value later.
+Source: PEP 636 (structural pattern matching: tutorial) and PEP 634 (specification).

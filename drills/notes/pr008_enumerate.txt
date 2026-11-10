@@ -1,0 +1,2 @@
+range(len(x)) makes you look every item up by index; enumerate hands you the index and the item together, so the loop reads as what it does.
+Source: Python docs, Built-in Functions: enumerate(), and PEP 279.

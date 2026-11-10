@@ -1,0 +1,2 @@
+A value that can be computed from other state should be computed, not stored: a property derives total from items on every read, so no method can forget to update it. Callers still write cart.total, so the interface doesn't change.
+Source: Python docs, Built-in Functions: property.

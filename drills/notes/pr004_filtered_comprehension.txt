@@ -1,0 +1,2 @@
+The if clause of a comprehension is the filter, so keeping some items is one expression instead of a loop, a test and an append nested three deep.
+Source: Python tutorial, Data Structures: list comprehensions (the optional if clauses).

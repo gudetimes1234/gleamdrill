@@ -1,0 +1,3 @@
+section: Errors
+title: defer Unlock, not unlock on every path
+Take calls t.mu.Unlock() separately before each return, so a new early return could easily forget it. Unlock once with defer straight after Lock.

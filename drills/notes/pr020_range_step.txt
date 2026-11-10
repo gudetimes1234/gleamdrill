@@ -1,0 +1,2 @@
+range's third argument jumps straight to the start of each chunk, and a slice cuts the chunk out. No state carries between passes, and the short last chunk falls out of the slice.
+Source: Python docs, Built-in Types: range (the step argument) and common sequence operations (slicing).

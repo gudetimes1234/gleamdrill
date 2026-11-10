@@ -1,0 +1,3 @@
+section: Types & Methods
+title: iota, not hand-numbered constants
+Number the Weekday constants with iota instead of writing each value by hand.

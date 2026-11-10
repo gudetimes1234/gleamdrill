@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: A dict comprehension with if, not a filter loop
+Rewrite in_stock(stock) as one dict comprehension with an `if` clause that keeps only items with a positive count: no loop that fills a result dict.

@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Equal, not a compare loop
+Rewrite sameOrder(a, b) with slices.Equal: no length check, no loop.

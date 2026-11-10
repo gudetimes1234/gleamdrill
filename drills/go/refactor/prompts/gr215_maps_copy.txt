@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: maps.Copy, not a copy loop
+Rewrite settings(overrides) to copy the overrides onto the defaults with the maps package: no loop.

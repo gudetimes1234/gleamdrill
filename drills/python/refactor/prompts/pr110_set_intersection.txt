@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: Set intersection, not nested loops
+Rewrite shared_tags(a, b) with a set intersection (`&` or .intersection) and return it sorted: no nested loops comparing every pair.

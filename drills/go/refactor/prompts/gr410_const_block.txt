@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A const block, not repeated strings
+The role names are typed out again in every check, so one typo silently denies access. Declare them once in a const block and compare against the constants.

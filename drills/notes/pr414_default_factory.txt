@@ -1,0 +1,2 @@
+field(default_factory=list) gives each instance its own new list, which is the only reason the None default existed. The field then declares its real default, and __post_init__ has nothing left to do.
+Source: Python docs, dataclasses: Mutable default values, and dataclasses.field (default_factory).

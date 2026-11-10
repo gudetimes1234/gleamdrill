@@ -1,0 +1,7 @@
+need("is_palindrome")
+tc("is_palindrome('Level')", True, is_palindrome("Level"))
+tc("is_palindrome('python')", False, is_palindrome("python"))
+tc("is_palindrome('abba')", True, is_palindrome("abba"))
+tc("is_palindrome('') -- empty reads the same both ways", True, is_palindrome(""))
+uses(r"\[\s*::\s*-1\s*\]|\breversed\(", "a [::-1] slice")
+avoids(r"^\s*for\b.*:\s*$", "a loop building the reverse")

@@ -1,0 +1,7 @@
+need("by_code")
+tc("by_code({'France': 'FR', 'Japan': 'JP'})", {"FR": "France", "JP": "Japan"}, by_code({"France": "FR", "Japan": "JP"}))
+tc("by_code({'Peru': 'PE'})", {"PE": "Peru"}, by_code({"Peru": "PE"}))
+tc("by_code({'A': 'X', 'B': 'X'}) -- a repeated code keeps the last name", {"X": "B"}, by_code({"A": "X", "B": "X"}))
+tc("by_code({})", {}, by_code({}))
+uses(r"\{.+:.+\bfor\b.+\bin\b.+\}", "a dict comprehension")
+avoids(r"^\s*\w+\[.+\]\s*=", "assigning keys one by one")

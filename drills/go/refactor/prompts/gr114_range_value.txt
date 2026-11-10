@@ -1,0 +1,3 @@
+section: Control Flow
+title: range over values, not indexes
+Rewrite countLong(lines, limit) with a for range over the values: no counter loop and no lines[i].

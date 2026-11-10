@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Repeat, not a loop of +=
+progressBar adds one # or - at a time in two loops. Build each run with strings.Repeat.

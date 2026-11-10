@@ -1,0 +1,2 @@
+Putting the formatting on the type means a Cents value prints as money wherever it goes, in Sprintf, Println or a log line, and the signature says the int is an amount of money.
+Source: the fmt package docs ("Stringer") and the Go spec, "Type definitions".

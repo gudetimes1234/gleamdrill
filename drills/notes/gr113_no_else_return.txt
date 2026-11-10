@@ -1,0 +1,2 @@
+When the if body ends in return the else can never be reached from it, so it only adds a level of indentation. Go style drops it and lets the main case sit at the function's left margin.
+Source: Effective Go, "If".

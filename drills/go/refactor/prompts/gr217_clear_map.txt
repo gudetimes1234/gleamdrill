@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: clear, not a delete loop
+Rewrite resetTally(tally) with the clear built-in: no loop of deletes.

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: match on types, not an isinstance chain
+Rewrite describe(value) with a match statement using class patterns like `case int():`: no isinstance/elif chain. Keep bool ahead of int.

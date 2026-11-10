@@ -1,0 +1,2 @@
+Named results are good documentation in the signature, but a naked return makes the reader reconstruct their current values. In anything longer than a few lines, say what you return.
+Source: Go Code Review Comments, "Named Result Parameters", and the Google Go Style Guide, "Naked returns".

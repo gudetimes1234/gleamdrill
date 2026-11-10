@@ -1,0 +1,7 @@
+need("cart_total")
+tc("cart_total([(3, 2), (5, 1)])", 11, cart_total([(3, 2), (5, 1)]))
+tc("cart_total([(4, 0)]) -- zero quantity", 0, cart_total([(4, 0)]))
+tc("cart_total([(10, 3), (1, 1), (2, 2)])", 35, cart_total([(10, 3), (1, 1), (2, 2)]))
+tc("cart_total([]) -- empty cart", 0, cart_total([]))
+uses(r"\bsum\(", "sum()")
+avoids(r"\+=", "a running total with +=")

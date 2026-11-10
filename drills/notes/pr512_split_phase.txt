@@ -1,0 +1,2 @@
+Split Phase: parsing the text and pricing the order are separate concerns. Splitting them through an intermediate data structure lets each phase be read, tested and changed on its own.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Split Phase.

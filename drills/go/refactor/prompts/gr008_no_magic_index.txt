@@ -1,0 +1,3 @@
+section: Errors
+title: Return from the loop, not a -1 marker
+userIndex stores -1 as an in-band "not found" marker, breaks out of the loop, then checks for -1. Return the index straight from the loop and the error after it, with no magic value.

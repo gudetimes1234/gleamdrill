@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Join, not a separator loop
+csvRow builds the row in a loop, adding a comma before every field but the first. Use strings.Join(fields, ",").

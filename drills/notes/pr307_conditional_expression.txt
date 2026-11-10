@@ -1,0 +1,2 @@
+When both branches only assign one variable, the statement form spends four lines and repeats the name. `x = a if cond else b` makes it one assignment, so it's obvious the variable is always set.
+Source: PEP 308 (conditional expressions).

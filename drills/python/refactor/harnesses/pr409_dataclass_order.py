@@ -1,0 +1,8 @@
+need("Version")
+tc("sorted([Version(1, 10), Version(1, 2), Version(0, 9)])", "[Version(major=0, minor=9), Version(major=1, minor=2), Version(major=1, minor=10)]", repr(sorted([Version(1, 10), Version(1, 2), Version(0, 9)])))
+tc("Version(1, 2) < Version(1, 10)", True, Version(1, 2) < Version(1, 10))
+tc("Version(2, 0) > Version(1, 9)", True, Version(2, 0) > Version(1, 9))
+tc("Version(2, 0) == Version(2, 0)", True, Version(2, 0) == Version(2, 0))
+tc("max([Version(3, 1), Version(3, 0)])", "Version(major=3, minor=1)", repr(max([Version(3, 1), Version(3, 0)])))
+uses(r"order\s*=\s*True", "dataclass(order=True)")
+avoids(r"def __(init|eq|lt|le|gt|ge|repr)__", "hand-written dunder methods")

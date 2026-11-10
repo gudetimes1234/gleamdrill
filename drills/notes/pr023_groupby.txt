@@ -1,0 +1,2 @@
+groupby yields each run of equal adjacent items as a key and a group, which is exactly run-length encoding. It only joins neighbours, so on sorted input it groups by value.
+Source: Python docs, itertools: groupby().

@@ -1,0 +1,2 @@
+Comparing one variable against a run of constants with || repeats the variable every time and hides the set. A case list names the set once and the compiler rejects a duplicate value.
+Source: Effective Go, "Switch".

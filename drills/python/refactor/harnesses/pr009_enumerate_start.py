@@ -1,0 +1,7 @@
+need("numbered")
+tc("numbered(['eggs', 'milk'])", ["1. eggs", "2. milk"], numbered(["eggs", "milk"]))
+tc("numbered(['tea'])", ["1. tea"], numbered(["tea"]))
+tc("numbered(['a', 'b', 'c'])", ["1. a", "2. b", "3. c"], numbered(["a", "b", "c"]))
+tc("numbered([]) -- empty list", [], numbered([]))
+uses(r"\benumerate\([^()]*,\s*(start\s*=\s*)?1\s*\)", "enumerate starting at 1")
+avoids(r"\+=?\s*1\b", "counting by hand with + 1")

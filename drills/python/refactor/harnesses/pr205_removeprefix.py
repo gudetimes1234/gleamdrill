@@ -1,0 +1,8 @@
+need("ticket_number")
+tc("ticket_number('TICKET-0042')", "0042", ticket_number("TICKET-0042"))
+tc("ticket_number('  TICKET-7 ') -- whitespace trimmed", "7", ticket_number("  TICKET-7 "))
+tc("ticket_number('0099') -- no prefix, unchanged", "0099", ticket_number("0099"))
+tc("ticket_number('TICKET-TICKET-1') -- only one prefix comes off", "TICKET-1", ticket_number("TICKET-TICKET-1"))
+tc("ticket_number('')", "", ticket_number(""))
+uses(r"\.removeprefix\(", "removeprefix()")
+avoids(r"\.startswith\(", "a startswith() check")

@@ -1,0 +1,3 @@
+section: Errors
+title: errors.As, not a type assertion
+badField pulls the field name out with err.(*FieldError), which fails once the error is wrapped. Use errors.As with a *FieldError target instead.

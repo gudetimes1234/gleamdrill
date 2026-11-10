@@ -14,7 +14,8 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 
-const stash_epilogue = "
+const stash_epilogue =
+  "
 
 import json as __gleamdrill_json__
 from browser import self as __gleamdrill_self__
@@ -27,7 +28,8 @@ __gleamdrill_self__.__gleamdrill_result__ = __gleamdrill_json__.dumps(__results_
 /// crashing is exactly the case worth reading. Only stdout is redirected:
 /// Brython reports tracebacks through stderr, and swallowing those would cost
 /// the error messages.
-const capture_prologue = "import sys as __gleamdrill_sys__
+const capture_prologue =
+  "import sys as __gleamdrill_sys__
 from browser import self as __gleamdrill_self__
 
 
@@ -106,6 +108,12 @@ fn serve(request: Request) -> Nil {
     capture_prologue
     <> request.solution
     <> "\n\n"
+    // Below the solution, so its line numbers stay as reported. Refactoring
+    // harnesses match patterns against it (`uses`, `avoids`); a JSON string
+    // is a valid Python string literal.
+    <> "__source__ = "
+    <> json.to_string(json.string(request.solution))
+    <> "\n"
     <> request.harness
     <> stash_epilogue
   let outcome = ffi_run_python(program)

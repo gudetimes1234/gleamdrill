@@ -1,0 +1,2 @@
+A function named for what it computes turns a block of mechanics into one readable call, and the total can now be tested and reused on its own. If you need a comment to say what a block does, that comment is the name of a function waiting to be extracted.
+Source: Martin Fowler's refactoring catalog, Extract Function (refactoring.com/catalog/extractFunction.html).

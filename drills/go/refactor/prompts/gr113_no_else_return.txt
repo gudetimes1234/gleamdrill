@@ -1,0 +1,3 @@
+section: Control Flow
+title: No else after return
+Rewrite plural(n, word) without the else: the if returns, so the other case can follow it at the top level.

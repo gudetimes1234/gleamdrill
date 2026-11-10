@@ -1,0 +1,3 @@
+section: Refactorings
+title: Decompose conditional · summer charge
+charge buries the rule in a raw month test and two bare formulas. Extract the condition into an isSummer-style predicate and each branch into its own function, so charge reads as the rule.

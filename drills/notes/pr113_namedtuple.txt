@@ -1,0 +1,2 @@
+`v[0]` makes every reader remember which slot means what. A namedtuple gives the slots names, so `v.major` documents itself, while it stays a tuple: it still unpacks, sorts and compares exactly like before.
+Source: the Python docs, collections: namedtuple (and typing.NamedTuple).

@@ -1,0 +1,7 @@
+need("open_tickets")
+tc("open_tickets([{'id': 1, 'open': True}], [{'id': 2, 'open': False}, {'id': 3, 'open': True}])", [1, 3], open_tickets([{"id": 1, "open": True}], [{"id": 2, "open": False}, {"id": 3, "open": True}]))
+tc("open_tickets([], [{'id': 9, 'open': True}]) -- nothing new today", [9], open_tickets([], [{"id": 9, "open": True}]))
+tc("open_tickets([{'id': 4, 'open': False}], [])", [], open_tickets([{"id": 4, "open": False}], []))
+tc("open_tickets([], []) -- no tickets at all", [], open_tickets([], []))
+uses(r"\bchain\b", "itertools.chain")
+avoids(r"\.append\(", "appending to an accumulator")

@@ -1,0 +1,2 @@
+A defined type like type Celsius float64 costs nothing at run time but makes the unit part of the signature: passing a Fahrenheit where a Celsius is expected no longer compiles. Untyped constants such as 100 still convert on their own.
+Source: The Go Programming Language Specification, "Type definitions".

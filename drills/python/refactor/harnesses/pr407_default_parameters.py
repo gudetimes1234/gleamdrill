@@ -1,0 +1,7 @@
+need("format_price", "format_price_euro", "format_price_rounded")
+tc("format_price(3.5)", "$3.50", format_price(3.5))
+tc("format_price(0) -- zero", "$0.00", format_price(0))
+tc("format_price_euro(12)", "€12.00", format_price_euro(12))
+tc("format_price_rounded(7.6)", "$8", format_price_rounded(7.6))
+uses(r"def format_price\([^)]*=", "default parameters on format_price")
+avoids(r"(?s):\.\df.*:\.\df", "the format spec repeated in each function")

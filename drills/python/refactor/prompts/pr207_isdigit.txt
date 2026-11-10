@@ -1,0 +1,3 @@
+section: Strings
+title: isdigit, not checking each character
+Rewrite is_pin(code) with str.isdigit(): no loop over the characters and no string of digits to check against.

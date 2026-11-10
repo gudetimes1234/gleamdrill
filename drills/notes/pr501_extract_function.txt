@@ -1,0 +1,2 @@
+Extract Function turns a block you would need a comment to explain into a call whose name says what it does. invoice_lines then reads as the steps of the job, and each step can be read and tested on its own.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Extract Function.

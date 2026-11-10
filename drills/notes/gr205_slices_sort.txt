@@ -1,0 +1,2 @@
+A hand-rolled exchange sort is quadratic and easy to get subtly wrong. slices.Sort is generic over any ordered type, runs in O(n log n), and is one obvious line.
+Source: the Go standard library docs, package slices.

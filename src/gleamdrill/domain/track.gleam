@@ -87,11 +87,19 @@ pub fn label(track: Track) -> String {
 /// label would drown the titles.
 pub fn tag(track: Track) -> String {
   case language(track) {
-    Ok(problem.Python) -> "py"
+    Ok(problem.Python) ->
+      case string.starts_with(track, catalog.name) {
+        True -> "py"
+        False -> "pr"
+      }
     Ok(problem.Gleam) -> "gl"
     Ok(problem.TypeScript) -> "ts"
     Ok(problem.Elixir) -> "ex"
-    Ok(problem.Go) -> "go"
+    Ok(problem.Go) ->
+      case string.starts_with(track, catalog.name) {
+        True -> "go"
+        False -> "gr"
+      }
     Ok(problem.Haskell) -> "hs"
     Ok(problem.Ruby) ->
       case string.starts_with(track, catalog.name) {

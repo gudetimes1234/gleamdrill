@@ -1,0 +1,2 @@
+Go strings are immutable, so each += allocates a new string and copies everything so far: quadratic work for a long loop. A strings.Builder appends into one growing buffer and makes the string once at the end.
+Source: the Go standard library docs, strings.Builder.

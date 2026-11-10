@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: A comprehension with if, not a guarded append
+Rewrite passing(scores) as a list comprehension with an if clause: no loop, no append.

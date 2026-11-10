@@ -1,0 +1,2 @@
+r.Replace is already a func(string) string bound to r, so a closure that just calls it adds a layer and nothing else. Method values work anywhere a function value is expected.
+Source: The Go Programming Language Specification, "Method values".

@@ -1,0 +1,2 @@
+Naming the condition and each branch says why the code splits, not just how. if isSummer(month) is the business rule; month >= 6 && month <= 8 is a detail it hides.
+Source: Martin Fowler's refactoring catalog, Decompose Conditional (refactoring.com/catalog/decomposeConditional.html).

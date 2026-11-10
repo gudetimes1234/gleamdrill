@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: A frozen dataclass for sets, not __hash__ by hand
+Cell hand-writes __init__, __eq__, __hash__ and __repr__ so it can live in sets. Make it a frozen dataclass, which provides all four from its fields.

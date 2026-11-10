@@ -1,0 +1,8 @@
+need("Cell")
+tc("len({Cell(0, 0), Cell(0, 0), Cell(0, 1)})", 2, len({Cell(0, 0), Cell(0, 0), Cell(0, 1)}))
+tc("Cell(1, 2) in {Cell(1, 2)}", True, Cell(1, 2) in {Cell(1, 2)})
+tc("Cell(1, 2) == Cell(2, 1)", False, Cell(1, 2) == Cell(2, 1))
+tc('{Cell(0, 0): "start"}[Cell(0, 0)]', "start", {Cell(0, 0): "start"}[Cell(0, 0)])
+tc("repr(Cell(1, 2))", "Cell(row=1, col=2)", repr(Cell(1, 2)))
+uses(r"frozen\s*=\s*True", "dataclass(frozen=True)")
+avoids(r"def __(init|eq|hash|repr)__", "hand-written __init__, __eq__, __hash__ or __repr__")

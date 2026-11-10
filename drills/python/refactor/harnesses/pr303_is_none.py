@@ -1,0 +1,7 @@
+need("display_name")
+tc("display_name('Robert', 'Bob')", "Bob", display_name("Robert", "Bob"))
+tc("display_name('Robert', None)", "Robert", display_name("Robert", None))
+tc("display_name('Robert', '') -- empty is still a nickname", "", display_name("Robert", ""))
+tc("display_name('Ann', 'Annie')", "Annie", display_name("Ann", "Annie"))
+uses(r"\bis\s+(not\s+)?None\b", "is None")
+avoids(r"[=!]=\s*None\b", "== None or != None")

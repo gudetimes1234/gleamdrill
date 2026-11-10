@@ -1,0 +1,2 @@
+str.isdigit answers "is every character a digit" in one call, and it is False for the empty string, so the loop and the hand-typed digit list go away.
+Source: Python docs, Built-in Types: str.isdigit().

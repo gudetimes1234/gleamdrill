@@ -1,0 +1,2 @@
+A type assertion only sees the outermost error. errors.As searches the whole wrap chain for the first error of the target's type and fills in the target, so wrapped validation errors are still found.
+Source: the errors package docs (errors.As) and the Go blog, "Working with Errors in Go 1.13".

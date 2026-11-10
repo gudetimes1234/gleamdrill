@@ -1,0 +1,2 @@
+A type switch asks the dynamic type once and binds the value already converted in each case. Chained assertions repeat the probe and the ok dance for every type.
+Source: Effective Go, "Type switch".

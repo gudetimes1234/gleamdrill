@@ -1,0 +1,2 @@
+join only puts the separator between items, so the empty list, the single item and the first-item special case all come out right with no branches.
+Source: Python docs, Built-in Types: str.join().

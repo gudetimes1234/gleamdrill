@@ -1,0 +1,7 @@
+need("positions")
+tc("positions(['ann', 'bo', 'cy'])", {"ann": 0, "bo": 1, "cy": 2}, positions(["ann", "bo", "cy"]))
+tc("positions(['a', 'b', 'a']) -- a repeat keeps its last index", {"a": 2, "b": 1}, positions(["a", "b", "a"]))
+tc("positions(['solo'])", {"solo": 0}, positions(["solo"]))
+tc("positions([])", {}, positions([]))
+uses(r"\benumerate\(", "enumerate")
+avoids(r"\+=\s*1\b", "a hand-bumped counter")

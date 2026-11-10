@@ -1,0 +1,2 @@
+A marker like -1 is an in-band error: a value of the right type that secretly means failure and has to be checked by convention. Returning from the loop and keeping the error in its own result says the same thing with nothing to forget.
+Source: Go Code Review Comments, "In-Band Errors" (go.dev/wiki/CodeReviewComments).

@@ -1,0 +1,7 @@
+need("Light", "label", "next_light")
+tc("label(Light.RED)", "Red", label(Light.RED))
+tc("label(Light.YELLOW)", "Yellow", label(Light.YELLOW))
+tc("next_light(Light.GREEN) == Light.YELLOW", True, next_light(Light.GREEN) == Light.YELLOW)
+tc("label(next_light(Light.RED))", "Green", label(next_light(Light.RED)))
+uses(r"\((enum\.)?\w*Enum\)", "an Enum class")
+avoids(r"\{\s*\d+\s*:\s*['\"]", "a dict from numbers to names")

@@ -1,0 +1,7 @@
+need("is_image")
+tc("is_image('png')", True, is_image("png"))
+tc("is_image('webp')", True, is_image("webp"))
+tc("is_image('pdf')", False, is_image("pdf"))
+tc("is_image('') -- empty extension", False, is_image(""))
+uses(r"\bin\s*[\(\[\{]|\bin\s+[A-Z_]+\b", "a membership test")
+avoids(r"==.*\bor\b", "an or-chain of ==")

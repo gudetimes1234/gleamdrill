@@ -1,0 +1,2 @@
+Lowercasing both sides allocates two new strings per comparison only to throw them away. EqualFold compares rune by rune under Unicode case folding and says what you mean.
+Source: the Go standard library docs, strings.EqualFold.

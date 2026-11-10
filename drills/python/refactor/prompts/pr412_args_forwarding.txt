@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: *args and **kwargs, not re-listed parameters
+The wrapper inside shout re-lists greet's parameters, so it only fits that one function. Make it take *args and **kwargs and pass them straight through.

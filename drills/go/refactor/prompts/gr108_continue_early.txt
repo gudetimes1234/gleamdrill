@@ -1,0 +1,3 @@
+section: Control Flow
+title: continue early, not a nested loop body
+Rewrite headlines(lines) so the loop skips blank and comment lines with continue up front: no if nested in an if.

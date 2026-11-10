@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: A conditional expression for a simple choice
+Rewrite item_count(count) so the singular/plural word is chosen with a conditional expression (`a if cond else b`): no if/else statement assigning it.

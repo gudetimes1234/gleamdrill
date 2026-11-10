@@ -1,0 +1,2 @@
+A method keeps the behaviour next to the type it belongs to, shows up when you type r., and lets Rect satisfy an interface such as interface{ Area() float64 } later. A free function taking the struct first is a method in disguise.
+Source: Effective Go, "Methods".

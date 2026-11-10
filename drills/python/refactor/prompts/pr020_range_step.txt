@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: range with a step, not a filling bucket
+Rewrite chunks(items, size) as slices taken at range(0, len(items), size): no bucket that fills and empties.

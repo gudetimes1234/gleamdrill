@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: defaultdict(list), not if-missing-then-create
+Group the amounts with a collections.defaultdict(list) so every append is one line, and return a plain dict at the end: no `not in` check.

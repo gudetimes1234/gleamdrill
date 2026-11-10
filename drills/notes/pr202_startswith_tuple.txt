@@ -1,0 +1,2 @@
+startswith and endswith accept a tuple and match if any entry does. The list of prefixes becomes data you can read, extend or move into a constant.
+Source: Python docs, Built-in Types: str.startswith() (prefix can be a tuple).

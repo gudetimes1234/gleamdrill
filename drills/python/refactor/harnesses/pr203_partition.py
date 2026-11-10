@@ -1,0 +1,7 @@
+need("split_header")
+tc("split_header('Content-Type: text/html')", ("Content-Type", "text/html"), split_header("Content-Type: text/html"))
+tc("split_header('Host: example.com:8080') -- only the first colon splits", ("Host", "example.com:8080"), split_header("Host: example.com:8080"))
+tc("split_header('X-Empty:') -- no value", ("X-Empty", ""), split_header("X-Empty:"))
+tc("split_header('Accept:*/*')", ("Accept", "*/*"), split_header("Accept:*/*"))
+uses(r"\.partition\(|\.split\([^)]*,\s*(maxsplit\s*=\s*)?1\s*\)", "partition or split with maxsplit=1")
+avoids(r"\.find\(|\.index\(", "find() and index arithmetic")

@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Contains, not Index != -1
+countMentions checks strings.Index(m, ...) != -1 to ask whether a message mentions the name. Ask strings.Contains directly.

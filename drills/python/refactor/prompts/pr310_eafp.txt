@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Try the lookup, not check every level
+Rewrite port_for(config, name) to just index config["servers"][name]["port"] inside try/except KeyError, returning 8080 when any level is missing: no `in` checks first.

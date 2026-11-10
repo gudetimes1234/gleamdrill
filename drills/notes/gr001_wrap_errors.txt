@@ -1,0 +1,2 @@
+%v formats the cause into the message and throws the error value away, so errors.Is and errors.As can no longer find ErrNotFound underneath. %w keeps the same message and wraps the original, so the chain stays inspectable.
+Source: the Go blog, "Working with Errors in Go 1.13", and the fmt.Errorf docs.

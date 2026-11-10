@@ -1,0 +1,2 @@
+A flag that starts False and flips to True inside a loop is any() written out by hand. any(...) over a generator says "is there at least one" in one line, stops at the first hit, and leaves no flag to misread.
+Source: the Python docs, Built-in Functions: any.

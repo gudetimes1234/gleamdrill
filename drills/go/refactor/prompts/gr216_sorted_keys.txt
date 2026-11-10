@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: Sort map keys with slices.Sort
+Rewrite the key sort in inventory(stock) with slices.Sort: no sort.Slice with a less function.

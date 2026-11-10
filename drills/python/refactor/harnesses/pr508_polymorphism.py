@@ -1,0 +1,7 @@
+need("make_bird")
+tc('make_bird("european").speed()', 35, make_bird("european").speed())
+tc('make_bird("african", 3).speed()', 34, make_bird("african", 3).speed())
+tc('make_bird("african").speed() -- no coconuts', 40, make_bird("african").speed())
+tc('make_bird("norwegian").speed()', 0, make_bird("norwegian").speed())
+uses(r"^class \w+\(\s*Bird\s*\)", "subclasses of Bird")
+avoids(r"self\.kind\b", "speed checking self.kind")

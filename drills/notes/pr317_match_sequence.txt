@@ -1,0 +1,2 @@
+Checking a list's length and then indexing each slot is destructuring done by hand. A sequence pattern like ["go", direction] checks the length, the literal and binds the rest in one line, so each case reads like the command it accepts.
+Source: PEP 636 (structural pattern matching: tutorial), the adventure-game command examples.

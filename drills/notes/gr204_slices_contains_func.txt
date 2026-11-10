@@ -1,0 +1,2 @@
+A loop that returns true on the first hit and false at the end is an any-match. ContainsFunc names that, so the reader sees the question and the condition and nothing else.
+Source: the Go standard library docs, package slices.

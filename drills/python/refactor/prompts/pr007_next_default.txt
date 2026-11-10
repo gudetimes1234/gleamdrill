@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: next with a default, not loop and return
+Rewrite first_overdue(invoices) with next() over a generator and a default of None: no for loop.

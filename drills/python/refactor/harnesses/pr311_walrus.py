@@ -1,0 +1,7 @@
+need("clean", "tags")
+tc("tags([' Py ', 'GO', '  '])", ["py", "go"], tags([" Py ", "GO", "  "]))
+tc("tags(['a'])", ["a"], tags(["a"]))
+tc("tags(['', ' '])", [], tags(["", " "]))
+tc("tags([])", [], tags([]))
+uses(r":=", "an assignment expression (:=)")
+avoids(r"clean\(.*clean\(", "calling clean twice for one tag")

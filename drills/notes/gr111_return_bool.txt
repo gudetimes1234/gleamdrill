@@ -1,0 +1,2 @@
+The condition already is the bool the function promises. Wrapping it in if/return true/return false adds three lines that restate it.
+Source: staticcheck, check S1008 (simplify returning boolean expression).

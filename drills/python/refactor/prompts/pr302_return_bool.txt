@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Return the boolean, not True/False branches
+Rewrite can_vote(age, registered) to return the condition itself: no if/else returning True or False.

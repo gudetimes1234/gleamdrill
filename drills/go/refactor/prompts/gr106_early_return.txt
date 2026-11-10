@@ -1,0 +1,3 @@
+section: Control Flow
+title: Early returns, not nested ifs
+Rewrite validate(name, age) with guard clauses that return each problem as soon as it is found: no else, no if nested in an if.

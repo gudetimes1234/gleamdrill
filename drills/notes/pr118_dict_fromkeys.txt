@@ -1,0 +1,2 @@
+set() drops duplicates but forgets order; dicts keep insertion order (guaranteed since 3.7). dict.fromkeys(items) keeps the first occurrence of each item as a key, in order and in linear time, so list() of it is an ordered de-dup.
+Source: the Python docs, Built-in Types: dict.fromkeys (and the note that dicts preserve insertion order).

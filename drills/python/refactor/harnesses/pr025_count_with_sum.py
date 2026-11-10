@@ -1,0 +1,7 @@
+need("count_long")
+tc("count_long(['a', 'tree', 'banana'], 3)", 2, count_long(["a", "tree", "banana"], 3))
+tc("count_long(['abc'], 3) -- exactly n is not longer", 0, count_long(["abc"], 3))
+tc("count_long(['xy', 'xyz'], 0)", 2, count_long(["xy", "xyz"], 0))
+tc("count_long([], 1) -- no words", 0, count_long([], 1))
+uses(r"\bsum\(|\blen\(\s*\[", "sum() over the matches")
+avoids(r"\+=", "a counter with +=")

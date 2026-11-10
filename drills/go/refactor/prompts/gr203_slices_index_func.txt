@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.IndexFunc for the first match
+Rewrite firstNegative(nums) with slices.IndexFunc and a predicate: no loop.

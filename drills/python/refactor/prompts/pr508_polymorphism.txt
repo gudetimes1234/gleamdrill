@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace Conditional with Polymorphism · birds
+Bird.speed switches on self.kind. Give each kind with its own speed a subclass of Bird that overrides speed, and have make_bird pick the class.

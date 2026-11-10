@@ -1,0 +1,2 @@
+When the zero value is ready to use, nobody can forget the setup call, and a Counter can sit inside another struct with no constructor at all. Reading a nil map is already safe in Go; only the first write needs the map made.
+Source: Effective Go, "Allocation with new" (make the zero value useful).

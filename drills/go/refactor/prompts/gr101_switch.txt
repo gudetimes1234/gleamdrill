@@ -1,0 +1,3 @@
+section: Control Flow
+title: A switch, not an else-if chain
+Rewrite shippingCost(zone) as a switch on zone: no else-if chain.

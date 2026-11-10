@@ -1,0 +1,2 @@
+Each nested if pushes the real work one level deeper. Turning the conditions into guards that `continue` keeps the loop body flat: the reasons to skip come first, and the one thing the loop does sits at the bottom, unindented.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Nested Conditional with Guard Clauses.

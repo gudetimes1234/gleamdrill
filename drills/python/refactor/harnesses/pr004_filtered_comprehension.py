@@ -1,0 +1,7 @@
+need("passing")
+tc("passing([72, 49, 50, 13])", [72, 50], passing([72, 49, 50, 13]))
+tc("passing([10, 20]) -- nobody passes", [], passing([10, 20]))
+tc("passing([99])", [99], passing([99]))
+tc("passing([])", [], passing([]))
+uses(r"\[[^\[\]]*\bfor\b[^\[\]]*\bin\b[^\[\]]*\bif\b[^\[\]]*\]", "a comprehension with an if clause")
+avoids(r"\.append\(", "appending to an accumulator")

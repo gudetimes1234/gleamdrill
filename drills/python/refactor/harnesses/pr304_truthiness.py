@@ -1,0 +1,7 @@
+need("first_or_default")
+tc("first_or_default([4, 5], 0)", 4, first_or_default([4, 5], 0))
+tc("first_or_default([], 0) -- empty gives the default", 0, first_or_default([], 0))
+tc("first_or_default(['x'], 'none')", "x", first_or_default(["x"], "none"))
+tc("first_or_default([None], 'none') -- a None item is still an item", None, first_or_default([None], "none"))
+uses(r"\bif\s+(not\s+)?items\b", "if items")
+avoids(r"\blen\(", "len()")

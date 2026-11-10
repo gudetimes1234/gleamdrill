@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: A dict lookup, not an if/elif chain
+Rewrite status_text(code) as a lookup in a dict from code to text, falling back to "Unknown": no if/elif chain.

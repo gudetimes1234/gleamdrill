@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: sorted with a key, not decorate and sort
+Rewrite ranking(scores) as one sorted(...) call with a key (highest score first, ties by name): no list of (key, name) pairs built by hand and sorted in place.

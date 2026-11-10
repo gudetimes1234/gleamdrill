@@ -1,0 +1,2 @@
+Guard clauses say "this case is unusual, handle it and leave", so the main path is not buried in an else. Each condition can be read on its own without tracking which branch you are in.
+Source: Martin Fowler's refactoring catalog, Replace Nested Conditional with Guard Clauses (refactoring.com/catalog/replaceNestedConditionalWithGuardClauses.html).

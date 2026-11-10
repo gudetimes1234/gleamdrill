@@ -1,0 +1,2 @@
+Copying a loop body for a second list doubles every future change. chain walks several iterables as one without building a combined copy, so the body appears once.
+Source: Python docs, itertools: chain().

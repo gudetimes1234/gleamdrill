@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: A list comprehension, not a loop and append
+Rewrite with_tax(prices) as a list comprehension: no accumulator, no append.

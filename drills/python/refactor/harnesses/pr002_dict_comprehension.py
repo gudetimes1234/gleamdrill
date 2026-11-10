@@ -1,0 +1,7 @@
+need("price_index")
+tc("price_index([('Tea', 3.5), ('Mug', 8)])", {"tea": 3.5, "mug": 8}, price_index([("Tea", 3.5), ("Mug", 8)]))
+tc("price_index([('PEN', 1.25)])", {"pen": 1.25}, price_index([("PEN", 1.25)]))
+tc("price_index([('Tea', 3), ('TEA', 4)]) -- the later price wins", {"tea": 4}, price_index([("Tea", 3), ("TEA", 4)]))
+tc("price_index([]) -- nothing in, empty dict out", {}, price_index([]))
+uses(r"\{[^{}]*:[^{}]*\bfor\b[^{}]*\bin\b[^{}]*\}", "a dict comprehension")
+avoids(r"^\s*\w+\[.+\]\s*=[^=]", "assigning keys one at a time")

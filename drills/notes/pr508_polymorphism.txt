@@ -1,0 +1,2 @@
+Replace Conditional with Polymorphism: each kind of bird becomes a subclass that knows its own speed, so adding a kind means adding a class instead of editing every conditional that checks kind.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Conditional with Polymorphism.

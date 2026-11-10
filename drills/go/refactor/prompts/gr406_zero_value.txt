@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A useful zero value, not an Init method
+Counter only works after someone calls Init. Make the zero value usable: let Add create the map on first use, and delete Init so var c Counter is enough.

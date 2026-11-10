@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: A set comprehension, not add in a loop
+Rewrite domains(emails) with a set comprehension feeding sorted(): no empty set, no .add().

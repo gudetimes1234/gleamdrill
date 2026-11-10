@@ -1,0 +1,8 @@
+need("is_comment")
+tc("is_comment('# todo')", True, is_comment("# todo"))
+tc("is_comment('// note')", True, is_comment("// note"))
+tc("is_comment('; ini style')", True, is_comment("; ini style"))
+tc("is_comment('x = 1 # trailing')", False, is_comment("x = 1 # trailing"))
+tc("is_comment('') -- empty line", False, is_comment(""))
+uses(r"startswith\(\s*\(", "startswith with a tuple")
+avoids(r"\bor\b", "a chain of or")

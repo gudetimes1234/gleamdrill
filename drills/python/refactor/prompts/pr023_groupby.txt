@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: itertools.groupby, not tracking the last run
+Rewrite runs(text) with itertools.groupby: no peeking at result[-1] to extend the current run.

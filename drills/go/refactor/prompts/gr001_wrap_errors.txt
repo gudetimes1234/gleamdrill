@@ -1,0 +1,3 @@
+section: Errors
+title: Wrap with %w, not %v
+loadProfile adds context to the error with %v, which turns the cause into plain text. Wrap it with %w so callers can still ask errors.Is(err, ErrNotFound).

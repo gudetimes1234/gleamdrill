@@ -1,0 +1,2 @@
+TrimPrefix states the intent and does the bounds check itself, so there is no length to keep in sync with the literal and no chance of slicing past the end.
+Source: the Go standard library docs, strings.TrimPrefix and strings.HasPrefix.

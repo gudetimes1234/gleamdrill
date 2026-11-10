@@ -1,0 +1,2 @@
+The spec makes deleting from a map during its own range loop safe: a removed entry that hasn't been reached is simply not produced. So the scratch slice and second pass are unnecessary.
+Source: The Go Programming Language Specification, "For statements with range clause".

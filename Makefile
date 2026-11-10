@@ -71,6 +71,8 @@ content:
 	  src/gleamdrill/content/problems/generated/embedded_haskell.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_ruby.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_ruby_refactor.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_python_refactor.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_go_refactor.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_tour.gleam \
 	  src/gleamdrill/content/problems/generated/approaches.gleam
 
@@ -80,10 +82,10 @@ content:
 # is not done until this passes.
 verify: content fsrs-test wire-test app-test server-test tour-check
 	cd drills && gleam run -m solutions
-	cd drills/python && python3 verify_all.py
+	cd drills/python && python3 verify_all.py && python3 refactor/verify_all.py
 	cd drills/ts && bun verify_all.ts
 	cd drills/elixir && elixir verify_all.exs
-	cd drills/go && gofmt -l solutions harnesses prelude.go && ./verify_all.sh
+	cd drills/go && gofmt -l solutions harnesses prelude.go refactor/before refactor/after refactor/harnesses && ./verify_all.sh && python3 refactor/verify_all.py
 	cd drills/haskell && ./verify_all.sh
 	cd drills/ruby && ./verify_all.sh && refactor/verify_all.sh
 

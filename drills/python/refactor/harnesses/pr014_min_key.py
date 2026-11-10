@@ -1,0 +1,6 @@
+need("cheapest")
+tc("cheapest([{'shop': 'A', 'price': 9}, {'shop': 'B', 'price': 4}, {'shop': 'C', 'price': 6}])", "B", cheapest([{"shop": "A", "price": 9}, {"shop": "B", "price": 4}, {"shop": "C", "price": 6}]))
+tc("cheapest([{'shop': 'Only', 'price': 1}])", "Only", cheapest([{"shop": "Only", "price": 1}]))
+tc("cheapest([{'shop': 'X', 'price': 5}, {'shop': 'Y', 'price': 5}]) -- a tie keeps the first", "X", cheapest([{"shop": "X", "price": 5}, {"shop": "Y", "price": 5}]))
+uses(r"\bmin\([^)]*\bkey\s*=", "min() with key=")
+avoids(r"^\s*for\b.*:\s*$", "a for loop")

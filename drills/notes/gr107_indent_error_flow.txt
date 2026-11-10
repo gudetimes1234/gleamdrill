@@ -1,0 +1,2 @@
+Go code checks the error, returns, and carries on at the left margin, so the normal path reads straight down. Wrapping the success case in err == nil pushes it inward and parks the error handling far below.
+Source: Go Code Review Comments, "Indent Error Flow" (go.dev/wiki/CodeReviewComments).

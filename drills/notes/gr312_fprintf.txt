@@ -1,0 +1,2 @@
+Sprintf builds a temporary string that WriteString immediately copies; Fprintf formats straight into the Builder's buffer because the Builder is an io.Writer.
+Source: the Go standard library docs, fmt.Fprintf and strings.Builder.

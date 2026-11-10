@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: enumerate, not range(len())
+Rewrite positions(letters, target) with enumerate(): no range(len(...)) and no indexing by position.

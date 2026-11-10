@@ -1,0 +1,2 @@
+A with block calls __enter__ and __exit__ for you and runs __exit__ however the block ends, including on an exception. It's the try/finally pattern built into the language, so the release can't be forgotten or put in the wrong place.
+Source: PEP 343 (the "with" statement) and the Python docs, The with statement.

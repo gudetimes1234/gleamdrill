@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: A map as a set, not a nested scan
+Rewrite firstSeen(words) to remember seen words in a map used as a set: no inner loop over the output.

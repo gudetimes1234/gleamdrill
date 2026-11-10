@@ -16,8 +16,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"go/scanner"
+	"go/token"
 	"io"
 	"os"
+	"regexp"
 	"runtime/debug"
 	"sort"
 	"strconv"
@@ -113,6 +116,54 @@ func show(v any) string {
 // tc is one case: a label, the expected value and the actual one.
 func tc(label string, expected any, actual any) testCase {
 	return testCase{label, show(expected), show(actual)}
+}
+
+// solutionCode is solution.go as the attempt wrote it, with every comment
+// blanked to spaces (newlines kept, so the layout is unchanged): the text a
+// refactoring drill's `uses` and `avoids` match against. The attempt runs
+// from its own directory on the server and in verify, so the file is there.
+func solutionCode() string {
+	src, err := os.ReadFile("solution.go")
+	if err != nil {
+		return ""
+	}
+	fset := token.NewFileSet()
+	file := fset.AddFile("solution.go", -1, len(src))
+	var s scanner.Scanner
+	s.Init(file, src, nil, scanner.ScanComments)
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+		if tok == token.COMMENT {
+			start := file.Offset(pos)
+			for i := start; i < start+len(lit) && i < len(src); i++ {
+				if src[i] != '\n' {
+					src[i] = ' '
+				}
+			}
+		}
+	}
+	return string(src)
+}
+
+// uses and avoids are a refactoring drill's style checks: a case labelled
+// "style: ..." that passes when the pattern does (or does not) match the
+// solution's code, comments aside.
+func uses(pattern, what string) testCase {
+	return tc("style: uses "+what, "yes", yesNo(regexp.MustCompile(pattern).MatchString(solutionCode())))
+}
+
+func avoids(pattern, what string) testCase {
+	return tc("style: no "+what, "yes", yesNo(!regexp.MustCompile(pattern).MatchString(solutionCode())))
+}
+
+func yesNo(ok bool) string {
+	if ok {
+		return "yes"
+	}
+	return "no"
 }
 
 // What of the attempt's own printing the report carries.

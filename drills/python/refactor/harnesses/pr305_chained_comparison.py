@@ -1,0 +1,8 @@
+need("is_valid_time")
+tc("is_valid_time(13, 45)", True, is_valid_time(13, 45))
+tc("is_valid_time(0, 0) -- midnight", True, is_valid_time(0, 0))
+tc("is_valid_time(24, 0)", False, is_valid_time(24, 0))
+tc("is_valid_time(9, 60)", False, is_valid_time(9, 60))
+tc("is_valid_time(-1, 30)", False, is_valid_time(-1, 30))
+uses(r"\S+\s*<=?\s*\w+\s*<=?\s*\S+", "a chained comparison")
+avoids(r"\b(\w+)\s*>=?\s*\S+\s+and\s+\1\s*<", "the same variable compared twice with and")

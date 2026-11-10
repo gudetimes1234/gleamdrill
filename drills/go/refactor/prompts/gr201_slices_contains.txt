@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Contains, not a search loop
+Rewrite isAdmin(roles) with the slices package: no loop, no found flag.

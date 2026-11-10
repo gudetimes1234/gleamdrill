@@ -1,0 +1,2 @@
+Walking two lists by a shared index is what zip does: it yields the pairs directly. dict() accepts an iterable of pairs, so dict(zip(keys, values)) builds the mapping with no index variable to get wrong.
+Source: the Python docs, Built-in Functions: zip and dict, and the Python tutorial, Data Structures: Looping Techniques.

@@ -1,0 +1,2 @@
+removeprefix does the check and the slice together, and leaves the string alone when the prefix is missing. Unlike lstrip it removes that exact text once, not a set of characters.
+Source: PEP 616 (string methods to remove prefixes and suffixes).

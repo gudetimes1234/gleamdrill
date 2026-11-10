@@ -1,0 +1,3 @@
+section: Errors
+title: errors.Is, not == on errors
+statusCode compares err == ErrNotFound and err == ErrForbidden, which stops matching as soon as a caller wraps the error with %w. Use errors.Is for each check (a tagless switch reads well).

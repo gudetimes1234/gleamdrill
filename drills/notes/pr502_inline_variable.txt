@@ -1,0 +1,2 @@
+Inline Variable: a variable whose name says no more than the expression it holds is one more thing to read and track. Returning the comparison directly is just as clear and shorter.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Inline Variable.

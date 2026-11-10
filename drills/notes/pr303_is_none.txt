@@ -1,0 +1,2 @@
+None is a singleton, so identity is the right question. `== None` asks the object's __eq__, which a class can override to say anything; `is None` can't be fooled and reads as the intent.
+Source: PEP 8, Programming Recommendations: comparisons to singletons like None should use is or is not.

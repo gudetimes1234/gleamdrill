@@ -1,0 +1,2 @@
+An else-if chain that compares one value against constants is a switch written the long way. Go's switch has no fallthrough by default, so each case is one line of intent and default names the leftover case.
+Source: Effective Go, "Switch".

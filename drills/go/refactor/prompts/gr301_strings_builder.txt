@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Builder, not += in a loop
+countdown(n) builds its string with += in a loop, copying the whole string every time. Build it with a strings.Builder instead.

@@ -1,0 +1,2 @@
+The if statement's init clause scopes v and ok to the branch that uses them, so they can't leak into the code below and get reused for something else. One line says look it up and use it if it's there.
+Source: Effective Go, "If".

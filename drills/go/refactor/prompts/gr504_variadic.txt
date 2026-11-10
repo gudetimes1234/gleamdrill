@@ -1,0 +1,3 @@
+section: Functions
+title: Variadic parameters, not slice literals
+Every caller of joinPath has to wrap its parts in []string{...}. Make joinPath variadic so callers just list the parts.

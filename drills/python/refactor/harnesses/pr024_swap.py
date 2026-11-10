@@ -1,0 +1,7 @@
+need("fib")
+tc("fib(0) -- the first number", 0, fib(0))
+tc("fib(1)", 1, fib(1))
+tc("fib(2)", 1, fib(2))
+tc("fib(10)", 55, fib(10))
+uses(r"^\s*\w+\s*,\s*\w+\s*=\s*\w+\s*,", "tuple assignment")
+avoids(r"\b(temp|tmp)\b", "a temp variable")

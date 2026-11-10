@@ -1,0 +1,2 @@
+sum() names the reduction, and a generator expression feeds it values one at a time without building a list. The accumulator variable and its starting value go away.
+Source: Python docs, Built-in Functions: sum(), and PEP 289 (generator expressions).

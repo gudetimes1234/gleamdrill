@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: append(a, b...), not a loop of appends
+Rewrite allTags(base, extra) to append whole slices with the ... spread: no loops.

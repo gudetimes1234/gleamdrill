@@ -1,0 +1,3 @@
+section: Types & Methods
+title: Embedding, not forwarding methods
+Service forwards Log to its logger field by hand. Embed Logger in Service instead, so Log is promoted and the forwarding method can go.

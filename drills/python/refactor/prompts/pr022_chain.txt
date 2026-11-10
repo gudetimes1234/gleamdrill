@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: itertools.chain, not two loops
+Rewrite open_tickets(today, backlog) to walk both lists as one with itertools.chain: no second copy of the loop.

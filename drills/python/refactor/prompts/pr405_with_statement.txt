@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: with, not try/finally around a lock
+apply_all calls acquire, then release in a finally. Lock is already a context manager: use a with block instead of try/finally.

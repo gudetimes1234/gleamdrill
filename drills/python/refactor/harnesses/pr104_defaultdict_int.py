@@ -1,0 +1,8 @@
+need("degrees")
+tc("degrees([('a', 'b'), ('b', 'c')])", {"a": 1, "b": 2, "c": 1}, degrees([("a", "b"), ("b", "c")]))
+tc("degrees([('x', 'y'), ('y', 'x'), ('x', 'z')])", {"x": 3, "y": 2, "z": 1}, degrees([("x", "y"), ("y", "x"), ("x", "z")]))
+tc("degrees([('a', 'a')]) -- a loop counts twice", {"a": 2}, degrees([("a", "a")]))
+tc("degrees([])", {}, degrees([]))
+tc("type(degrees([('a', 'b')])) is dict -- still a plain dict", True, type(degrees([("a", "b")])) is dict)
+uses(r"defaultdict\(\s*int\s*\)|Counter\(", "defaultdict(int)")
+avoids(r"\belse\b", "an if/else per key")

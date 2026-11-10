@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Fields, not Split and skip empties
+countWords splits on single spaces and then skips the empty strings that runs of spaces leave behind. Use strings.Fields, which splits on any run of whitespace.

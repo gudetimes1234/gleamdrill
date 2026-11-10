@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: Merge with |, not a copy loop
+Rewrite with_overrides(defaults, overrides) as one merge expression, `defaults | overrides` or `{**defaults, **overrides}`: no loops copying keys, and neither input changes.

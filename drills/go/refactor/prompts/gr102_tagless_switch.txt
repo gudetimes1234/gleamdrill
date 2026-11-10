@@ -1,0 +1,3 @@
+section: Control Flow
+title: A bare switch for ranges
+Rewrite grade(score) as a switch with no tag, one case per score band: no else-if chain.

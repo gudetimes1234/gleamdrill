@@ -1,0 +1,2 @@
+next() on a generator takes the first item that matches and stops, and its second argument is the answer when nothing does. The search and the fallback sit in one expression.
+Source: Python docs, Built-in Functions: next() (the default argument).

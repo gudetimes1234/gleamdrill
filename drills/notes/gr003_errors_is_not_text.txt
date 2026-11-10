@@ -1,0 +1,2 @@
+An error's message is for people and can change at any time; the sentinel value is the contract. errors.Is compares against that value and also looks through any %w wrapping on the way.
+Source: the Go blog, "Working with Errors in Go 1.13", and the errors package docs (errors.Is).

@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Sort, not a hand-rolled sort
+Rewrite sortScores(scores) to sort in place with the slices package: no nested swap loops.

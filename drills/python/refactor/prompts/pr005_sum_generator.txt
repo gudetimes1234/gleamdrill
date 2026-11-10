@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: sum over a generator, not +=
+Rewrite cart_total(lines) as sum() over a generator expression: no running total.

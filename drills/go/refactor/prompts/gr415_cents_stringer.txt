@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A Cents type with String(), not formatCents
+Prices are bare ints that only look like money after a trip through formatCents. Declare type Cents int with a String() method, take a Cents in receiptLine, and print it with %v.

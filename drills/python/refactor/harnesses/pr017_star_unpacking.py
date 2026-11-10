@@ -1,0 +1,7 @@
+need("parse_row")
+tc("parse_row('ada,90,85')", ("ada", [90, 85]), parse_row("ada,90,85"))
+tc("parse_row('bo,7')", ("bo", [7]), parse_row("bo,7"))
+tc("parse_row('cy') -- a name and no scores", ("cy", []), parse_row("cy"))
+tc("parse_row('di,1,2,3,4')", ("di", [1, 2, 3, 4]), parse_row("di,1,2,3,4"))
+uses(r"^\s*\w+\s*,\s*\*\w+\s*=[^=]", "star unpacking")
+avoids(r"\[\s*0\s*\]|\[\s*1\s*:\s*\]", "[0] and [1:]")

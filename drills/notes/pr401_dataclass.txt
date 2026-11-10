@@ -1,0 +1,2 @@
+__init__ that copies arguments to fields, a __repr__ listing them and an __eq__ comparing them are the same boilerplate in every record class. @dataclass writes all three from the field list, so the class shows only its fields and the behaviour that is its own.
+Source: PEP 557 (data classes) and the Python docs, dataclasses.

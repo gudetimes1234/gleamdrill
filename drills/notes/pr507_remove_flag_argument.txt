@@ -1,0 +1,2 @@
+Remove Flag Argument: a boolean that picks which code runs hides two functions behind one name, and a call like delivery_days(order, True) doesn't say what True means. Separate functions name each behaviour, and callers can use them directly.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Remove Flag Argument.

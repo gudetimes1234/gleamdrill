@@ -1,0 +1,3 @@
+section: Strings
+title: partition, not find and slice
+Rewrite split_header(line) with str.partition (or split with maxsplit=1): no find() and index arithmetic.

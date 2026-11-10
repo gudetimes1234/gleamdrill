@@ -1,0 +1,2 @@
+find() returns a position, and comparing it to -1 turns a yes/no question into a sentinel check. in asks the question directly; the docs say to use find() only when you need the position.
+Source: Python docs, Built-in Types: str.find() (the note recommending the in operator).

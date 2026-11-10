@@ -1,0 +1,2 @@
+Replace Loop with Pipeline: comprehensions describe the data flow (skip the header, split, keep India, pick fields) as stages, instead of flags, continue and appends the reader has to simulate in their head.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Loop with Pipeline.

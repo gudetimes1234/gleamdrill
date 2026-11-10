@@ -1,0 +1,7 @@
+need("item_count")
+tc("item_count(1)", "1 item", item_count(1))
+tc("item_count(3)", "3 items", item_count(3))
+tc("item_count(0) -- zero is plural", "0 items", item_count(0))
+tc("item_count(-1)", "-1 items", item_count(-1))
+uses(r"\bif\b.+\belse\b", "a conditional expression")
+avoids(r"^\s*else\s*:", "an else block")

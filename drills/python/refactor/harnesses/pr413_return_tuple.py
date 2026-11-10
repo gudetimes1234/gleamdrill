@@ -1,0 +1,7 @@
+need("min_max", "spread")
+tc("spread([3, 9, 1])", 8, spread([3, 9, 1]))
+tc("spread([5]) -- one value", 0, spread([5]))
+tc("spread([-4, 4])", 8, spread([-4, 4]))
+tc("spread([2.5, 1.0])", 1.5, spread([2.5, 1.0]))
+uses(r"^\s*\w+\s*,\s*\w+\s*=\s*min_max\(", "unpacking the returned tuple")
+avoids(r"\.append\(", "appending to an out-parameter")

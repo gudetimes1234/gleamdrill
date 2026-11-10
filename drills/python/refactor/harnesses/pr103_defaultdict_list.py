@@ -1,0 +1,7 @@
+need("orders_by_customer")
+tc("orders_by_customer([('ann', 5), ('bo', 3), ('ann', 2)])", {"ann": [5, 2], "bo": [3]}, orders_by_customer([("ann", 5), ("bo", 3), ("ann", 2)]))
+tc("orders_by_customer([('cy', 9)])", {"cy": [9]}, orders_by_customer([("cy", 9)]))
+tc("orders_by_customer([]) -- no orders, no groups", {}, orders_by_customer([]))
+tc("type(orders_by_customer([('ann', 1)])) is dict -- still a plain dict", True, type(orders_by_customer([("ann", 1)])) is dict)
+uses(r"defaultdict\(\s*list\s*\)|\.setdefault\(", "defaultdict(list)")
+avoids(r"\bnot\s+in\b", "a `not in` check before the append")

@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A struct, not map[string]any
+A user is passed around as a map[string]any, so every read needs a type assertion that can panic. Declare a User struct with named fields and use it in newUser and describe.

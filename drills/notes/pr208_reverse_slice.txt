@@ -1,0 +1,2 @@
+A slice with a step of -1 walks the string backwards in one expression. Prepending characters in a loop builds a new string every pass.
+Source: Python docs, Built-in Types: common sequence operations (slicing with a step, s[i:j:k]).

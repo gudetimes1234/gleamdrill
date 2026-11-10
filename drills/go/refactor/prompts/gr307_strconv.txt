@@ -1,0 +1,3 @@
+section: Strings
+title: strconv, not Sscanf and Sprintf("%d")
+nextTicket parses the id with fmt.Sscanf and formats the result with fmt.Sprintf("%d"). Use strconv.Atoi and strconv.Itoa for plain int conversions.

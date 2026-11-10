@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: dict(zip(...)), not an index loop
+Rewrite row_to_record(header, row) as `dict(zip(header, row))`: no range(len(...)) loop pairing them by index.

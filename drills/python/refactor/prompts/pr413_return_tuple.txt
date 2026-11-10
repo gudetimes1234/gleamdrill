@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: Return a tuple, not an out-parameter list
+min_max fills a list the caller passes in, and spread reads it back by index. Make min_max return (low, high) and unpack it in spread.

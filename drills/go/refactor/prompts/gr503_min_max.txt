@@ -1,0 +1,3 @@
+section: Functions
+title: min and max, not if-chains
+largest and clamp pick values with chains of ifs. Since Go 1.21 min and max are builtins: use them and drop the ifs.

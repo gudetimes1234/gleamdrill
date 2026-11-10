@@ -1,0 +1,3 @@
+section: Errors
+title: Comma-ok type assertion, not %T checks
+portFrom checks fmt.Sprintf("%T", v) != "int" before asserting v.(int). Use the comma-ok assertion (port, ok := v.(int)) and return the error when ok is false.

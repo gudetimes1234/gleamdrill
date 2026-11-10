@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Chained comparisons for ranges
+Rewrite is_valid_time(hour, minute) so each range check is one chained comparison like `0 <= x < n`: don't compare the same variable twice joined by `and`.

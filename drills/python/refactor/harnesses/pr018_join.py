@@ -1,0 +1,7 @@
+need("hashtags")
+tc("hashtags(['python', 'tips'])", "#python #tips", hashtags(["python", "tips"]))
+tc("hashtags(['solo'])", "#solo", hashtags(["solo"]))
+tc("hashtags(['a', 'b', 'c'])", "#a #b #c", hashtags(["a", "b", "c"]))
+tc("hashtags([]) -- no tags, empty string", "", hashtags([]))
+uses(r"\.join\(", "str.join()")
+avoids(r"\+=", "building the string with +=")

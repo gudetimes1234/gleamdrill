@@ -1,0 +1,8 @@
+need("Order")
+tc("Order(10, 200).price()", 1900.0, Order(10, 200).price())
+tc("Order(10, 100).price() -- exactly 1000", 980.0, Order(10, 100).price())
+tc("Order(5, 10).price()", 49.0, Order(5, 10).price())
+tc("Order(0, 10).price() -- zero", 0.0, Order(0, 10).price())
+uses(r"def base_price\b", "a base_price method")
+uses(r"def discount_factor\b", "a discount_factor method")
+avoids(r"^\s*(base_price|discount_factor)\s*=", "base_price or discount_factor as a temp")

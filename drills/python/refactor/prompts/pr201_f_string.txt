@@ -1,0 +1,3 @@
+section: Strings
+title: An f-string, not concatenation
+Rewrite receipt_line(name, quantity, price) with one f-string: no +, no str().

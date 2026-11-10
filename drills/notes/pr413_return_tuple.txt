@@ -1,0 +1,2 @@
+A Python function can return several values as a tuple, and the caller unpacks them into names. Passing a list for the function to fill is a C habit: the result's shape is hidden in append order, and the caller has to build the list first.
+Source: Python tutorial, Data Structures: Tuples and Sequences (sequence unpacking).

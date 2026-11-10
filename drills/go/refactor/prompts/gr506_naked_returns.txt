@@ -1,0 +1,3 @@
+section: Functions
+title: Explicit returns, not naked returns
+parseKV ends each path with a bare return, so you have to trace three named results back up the function to see what it gives. Make every return list its values (keeping the named results as documentation is fine).

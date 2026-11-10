@@ -1,0 +1,2 @@
+errors.Join keeps each problem as its own error, so callers can still test any one of them with errors.Is or errors.As, and its message is the parts joined by newlines. It also returns nil for an empty list, so the len check goes away.
+Source: the errors package docs (errors.Join, added in Go 1.20).

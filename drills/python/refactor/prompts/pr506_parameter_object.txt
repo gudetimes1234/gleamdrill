@@ -1,0 +1,3 @@
+section: Refactorings
+title: Introduce Parameter Object · reading bounds
+low and high travel together through outside and clamped. Introduce a small class (a dataclass or NamedTuple) for the range and pass that instead; report keeps its signature and builds it.

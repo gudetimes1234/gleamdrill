@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: A slice, not an index loop
+Rewrite top_three(scores) to take the first three of the sorted list with a slice: no index loop or length check.

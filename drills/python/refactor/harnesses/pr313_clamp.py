@@ -1,0 +1,8 @@
+need("clamp_volume")
+tc("clamp_volume(55)", 55, clamp_volume(55))
+tc("clamp_volume(-3)", 0, clamp_volume(-3))
+tc("clamp_volume(150)", 100, clamp_volume(150))
+tc("clamp_volume(100) -- the edge stays", 100, clamp_volume(100))
+tc("clamp_volume(12.5)", 12.5, clamp_volume(12.5))
+uses(r"\bmax\(.*\bmin\(|\bmin\(.*\bmax\(", "min and max together")
+avoids(r"\bif\b", "if statements")

@@ -1,0 +1,2 @@
+The min and max builtins take any number of ordered arguments, so the intent fits in one expression. clamp becomes min(max(v, lo), hi), which reads as the definition.
+Source: The Go Programming Language Specification, "Min and max", and the Go 1.21 release notes.

@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A method, not a function taking the struct
+rectArea(r Rect) is a free function whose only job is to work on a Rect. Make it a method on Rect and call it as r.Area() from totalArea.

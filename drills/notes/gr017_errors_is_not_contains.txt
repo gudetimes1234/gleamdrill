@@ -1,0 +1,2 @@
+Substring checks on a message match by accident ("no timeout configured") and break when the text changes. errors.Is tests for the actual sentinel value, unwrapping as it goes, and handles nil for free.
+Source: the errors package docs (errors.Is) and the Go blog, "Working with Errors in Go 1.13".

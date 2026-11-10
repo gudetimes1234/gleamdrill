@@ -1,0 +1,8 @@
+need("parse_version", "is_breaking")
+tc("tuple(parse_version('1.2.3'))", (1, 2, 3), tuple(parse_version("1.2.3")))
+tc("parse_version('1.10.0') > parse_version('1.9.9') -- compares like a tuple", True, parse_version("1.10.0") > parse_version("1.9.9"))
+tc("is_breaking('1.4.2', '2.0.0')", True, is_breaking("1.4.2", "2.0.0"))
+tc("is_breaking('1.4.2', '1.5.0')", False, is_breaking("1.4.2", "1.5.0"))
+tc("is_breaking('0.0.0', '0.0.0') -- same version", False, is_breaking("0.0.0", "0.0.0"))
+uses(r"namedtuple\(|\bNamedTuple\b", "a namedtuple")
+avoids(r"\)\s*\[\s*\d+\s*\]|\b\w+\[\s*[0-2]\s*\]", "indexing a field by position")

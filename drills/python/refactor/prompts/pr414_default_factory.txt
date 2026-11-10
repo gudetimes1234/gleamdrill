@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: default_factory, not None and __post_init__
+Playlist defaults songs to None and swaps in a fresh list in __post_init__. Use field(default_factory=list) and drop __post_init__.

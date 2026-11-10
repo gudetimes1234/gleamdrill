@@ -1,0 +1,2 @@
+defer runs the unlock however the function exits, including a panic, and puts it right next to the Lock it pairs with. Each extra return path is then safe by construction.
+Source: Effective Go, "Defer".

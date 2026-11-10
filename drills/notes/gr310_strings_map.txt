@@ -1,0 +1,2 @@
+strings.Map is the per-rune transform with the loop and the building done for you, in one allocation; the function you pass holds only the rule.
+Source: the Go standard library docs, strings.Map.

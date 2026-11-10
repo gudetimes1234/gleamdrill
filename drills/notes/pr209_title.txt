@@ -1,0 +1,2 @@
+title() upper-cases the first letter of each word and lower-cases the rest, the exact job of the slice-and-case loop. Beware it treats apostrophes as word breaks ("o'neil" becomes "O'Neil").
+Source: Python docs, Built-in Types: str.title().

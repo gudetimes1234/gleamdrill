@@ -1,0 +1,3 @@
+section: Refactorings
+title: Extract function · statement total
+statement mixes building the text with adding up the amounts. Extract the totalling loop into its own function that takes the amounts and returns the total, and call it from statement.

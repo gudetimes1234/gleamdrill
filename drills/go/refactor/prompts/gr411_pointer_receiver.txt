@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A pointer receiver, not a returned copy
+Deposit takes a copy of the Account, changes the copy and hands it back, so every caller must remember to reassign. Give Deposit a pointer receiver that changes the account in place.

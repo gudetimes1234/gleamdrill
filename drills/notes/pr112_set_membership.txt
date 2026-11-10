@@ -1,0 +1,2 @@
+`x in some_list` walks the whole list, so checking each item against everything seen so far is quadratic. A set answers `in` by hashing in constant average time, and it states that only membership matters, not order.
+Source: the Python docs, Built-in Types: Set Types, and the Python wiki page TimeComplexity (x in s for list vs set).

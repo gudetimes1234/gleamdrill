@@ -1,0 +1,7 @@
+need("receipt_line")
+tc("receipt_line('tea', 2, 1.5)", "tea x2: $3.0", receipt_line("tea", 2, 1.5))
+tc("receipt_line('mug', 1, 7.25)", "mug x1: $7.25", receipt_line("mug", 1, 7.25))
+tc("receipt_line('pen', 3, 0.1)", "pen x3: $0.3", receipt_line("pen", 3, 0.1))
+uses(r"\bf\"|\bf'", "an f-string")
+avoids(r"\bstr\(", "str() conversions")
+avoids(r"\"\s*\+|\+\s*\"", "string concatenation with +")

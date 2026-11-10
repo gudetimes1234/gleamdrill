@@ -1,0 +1,2 @@
+Code repeated at the end of every branch isn't conditional at all. Moving it after the if/else makes the branches show only what actually differs, and the shared step can't be changed in one branch and forgotten in the other.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Slide Statements (formerly Consolidate Duplicate Conditional Fragments).

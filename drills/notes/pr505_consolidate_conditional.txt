@@ -1,0 +1,2 @@
+Consolidate Conditional Expression: several checks that all lead to the same result are really one condition. Joining them with or, ideally inside a named function, says it is a single eligibility rule rather than three unrelated ones.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Consolidate Conditional Expression.

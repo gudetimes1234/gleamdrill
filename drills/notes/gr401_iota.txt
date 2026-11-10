@@ -1,0 +1,2 @@
+Hand-numbered constants invite gaps and duplicates the moment someone inserts a day. iota counts up within the const block, so each name repeats the type and value of the first line with the next number.
+Source: Effective Go, "Constants" (iota).

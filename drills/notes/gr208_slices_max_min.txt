@@ -1,0 +1,2 @@
+Tracking lo and hi by hand means seeding them correctly and updating both on every pass. slices.Max and slices.Min say the intent directly; they panic on an empty slice, so the length guard stays.
+Source: the Go standard library docs, package slices.

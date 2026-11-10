@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: @contextmanager, not __enter__ and __exit__
+override is a class whose only job is to remember the old value between __enter__ and __exit__. Rewrite it as a generator function decorated with contextlib.contextmanager, restoring the value even if the block raises.

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: in a tuple, not an or-chain of ==
+Rewrite is_image(ext) as one membership test against a tuple (or set) of extensions: no chain of `==` joined by `or`.

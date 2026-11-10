@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A NewServer constructor, not repeated literals
+Every function spells out Port: 8080 and Timeout: 30 again. Add a NewServer(host) constructor that fills in the defaults, and build every Server through it.

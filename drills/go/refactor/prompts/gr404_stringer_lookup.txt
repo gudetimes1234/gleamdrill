@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A String() lookup table, not a switch
+statusName switches over every Status to find its name. Give Status a String() method that indexes a slice of names (keep "unknown" for out-of-range values), and drop the switch.

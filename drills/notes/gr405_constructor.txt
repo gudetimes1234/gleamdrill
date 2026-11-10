@@ -1,0 +1,2 @@
+A constructor names the defaults once, so changing the port is a one-line edit instead of a hunt through every literal. NewX is the Go convention for a function that returns a ready-to-use X.
+Source: Effective Go, "Constructors and composite literals".

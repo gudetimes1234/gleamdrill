@@ -1,0 +1,2 @@
+max() over a generator computes each total and keeps the largest in one expression. Its default= covers the empty case that the hand loop handled with a starting value.
+Source: Python docs, Built-in Functions: max() (the default argument), and PEP 289 (generator expressions).

@@ -1,0 +1,2 @@
+A switch with no expression switches on true and runs the first case that holds, so a ladder of range checks reads as a table of bands. Each case is one condition and default names the leftover band.
+Source: Effective Go, "Switch".

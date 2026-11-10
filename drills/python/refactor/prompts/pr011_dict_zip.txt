@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: dict(zip()), not paired indexes
+Rewrite make_record(headers, values) by zipping the two lists into a dict: no index loop.

@@ -1,0 +1,2 @@
+A String() string method makes the type a fmt.Stringer, so every fmt verb that prints a value (%v, %s, Println) uses it automatically. A describeX helper only works where someone remembers to call it.
+Source: the fmt package docs ("Stringer") and Effective Go, "Printing".

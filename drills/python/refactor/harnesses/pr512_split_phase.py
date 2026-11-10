@@ -1,0 +1,7 @@
+need("order_total")
+tc('order_total("widget: 2\\ngadget: 1")', 18, order_total("widget: 2\ngadget: 1"))
+tc('order_total("gadget:3")', 30, order_total("gadget:3"))
+tc('order_total(" widget : 5")', 20, order_total(" widget : 5"))
+tc('order_total("") -- empty order', 0, order_total(""))
+uses(r"^def (?!order_total\b)\w+\(", "a separate parsing function")
+avoids(r"(?ms)^def order_total\((?:(?!^def ).)*\.split", "parsing inside order_total")

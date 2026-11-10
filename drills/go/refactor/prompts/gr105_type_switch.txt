@@ -1,0 +1,3 @@
+section: Control Flow
+title: A type switch, not chained assertions
+Rewrite describe(v) as a type switch: no chain of v.(T) assertions with ok checks.

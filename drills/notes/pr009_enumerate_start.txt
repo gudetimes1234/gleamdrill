@@ -1,0 +1,2 @@
+A counter that starts at 1 and goes up each pass is exactly enumerate with start=1. Letting enumerate count removes a variable you could forget to bump.
+Source: Python docs, Built-in Functions: enumerate() (the start parameter).

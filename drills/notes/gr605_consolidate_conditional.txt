@@ -1,0 +1,2 @@
+Separate checks with the same result read as unrelated rules. Combining them with || shows they are one rule, and pulling that rule into a named function makes it something you can read and test on its own.
+Source: Martin Fowler's refactoring catalog, Consolidate Conditional Expression (refactoring.com/catalog/consolidateConditionalExpression.html).

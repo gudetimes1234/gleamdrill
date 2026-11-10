@@ -1,0 +1,7 @@
+need("runs")
+tc("runs('aaabcc')", [("a", 3), ("b", 1), ("c", 2)], runs("aaabcc"))
+tc("runs('abab') -- runs only join when adjacent", [("a", 1), ("b", 1), ("a", 1), ("b", 1)], runs("abab"))
+tc("runs('zzzz')", [("z", 4)], runs("zzzz"))
+tc("runs('') -- empty text", [], runs(""))
+uses(r"\bgroupby\b", "itertools.groupby")
+avoids(r"\[\s*-1\s*\]", "peeking at the last entry")

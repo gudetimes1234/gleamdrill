@@ -1,0 +1,2 @@
+functools.cache wraps a function with a memo keyed by its arguments, so the body only says how to compute the answer. A hand-rolled dict mixes caching into the logic and leaves a module global anyone can change.
+Source: Python docs, functools.cache and functools.lru_cache.

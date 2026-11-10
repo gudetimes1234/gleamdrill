@@ -1,0 +1,2 @@
+Parsing and pricing change for different reasons. With an intermediate struct between them, the pricing rules work on typed fields and never see a string, and either phase can be replaced or tested alone.
+Source: Martin Fowler's refactoring catalog, Split Phase (refactoring.com/catalog/splitPhase.html).

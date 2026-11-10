@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: itemgetter, not a cmp function
+roster sorts with a hand-written compare function and cmp_to_key. Sort with key=operator.itemgetter on team then name instead.

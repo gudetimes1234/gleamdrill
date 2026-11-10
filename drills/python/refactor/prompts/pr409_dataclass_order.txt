@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: dataclass(order=True), not hand-written __lt__
+Version writes its own __init__, __eq__, __lt__ and __repr__. Make it a dataclass with order=True so the comparisons come from the fields.

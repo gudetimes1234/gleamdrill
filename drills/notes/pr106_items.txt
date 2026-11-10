@@ -1,0 +1,2 @@
+Looping over keys and then indexing back into the dict does a second lookup per key and hides that the loop wants both halves. items() hands you each key with its value, unpacked into two named variables.
+Source: the Python tutorial, Data Structures: Looping Techniques (dict.items()).

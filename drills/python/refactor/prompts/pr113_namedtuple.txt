@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: A namedtuple, not a positional tuple
+Make parse_version return a collections.namedtuple (or typing.NamedTuple) with major, minor and patch fields, and read `.major` instead of `[0]`. It must still compare like the plain tuple.

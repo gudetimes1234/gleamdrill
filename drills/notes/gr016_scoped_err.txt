@@ -1,0 +1,2 @@
+Declaring err in the if statement limits it to that check, so one call's error can never be tested by mistake further down, and each call reads as a single line of intent.
+Source: Effective Go, "If" (the if err := ...; err != nil form).

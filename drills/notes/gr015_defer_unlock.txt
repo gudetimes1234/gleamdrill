@@ -1,0 +1,2 @@
+defer runs the cleanup on every way out of the function, including error returns and panics, and puts it right beside the call that needs undoing. Adding another early return can no longer leak the lock.
+Source: Effective Go, "Defer", and the Uber Go Style Guide, "Defer to Clean Up".

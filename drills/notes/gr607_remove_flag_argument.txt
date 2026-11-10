@@ -1,0 +1,2 @@
+A bare true or false at a call site says nothing about what it switches. Separate functions name each behaviour, and callers that always pass a constant were choosing a function all along.
+Source: Martin Fowler's refactoring catalog, Remove Flag Argument (refactoring.com/catalog/removeFlagArgument.html).

@@ -1,0 +1,2 @@
+An Enum makes the set of values a type: each member knows its .name and .value, compares only with members of its own enum, and prints readably. A parallel dict from numbers to names has to be kept in sync by hand.
+Source: Python docs, enum, and PEP 435 (adding an Enum type).

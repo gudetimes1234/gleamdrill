@@ -1,0 +1,2 @@
+The right side of a tuple assignment is evaluated in full before anything is assigned, so both names update from the old values at once. No temp is needed to hold one aside.
+Source: Python tutorial, First Steps Towards Programming (the Fibonacci example with a, b = b, a+b).

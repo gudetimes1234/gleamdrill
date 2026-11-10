@@ -1,0 +1,3 @@
+section: Strings
+title: in for a substring, not find() != -1
+Rewrite has_keyword(text, keyword) with the in operator: no find() compared to -1.

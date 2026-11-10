@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Index, not an index loop
+Rewrite position(names, target) with the slices package: no loop.

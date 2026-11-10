@@ -1,0 +1,3 @@
+section: Refactorings
+title: Inline variable · large orders
+basePrice names an expression that is already as clear as its name, and is used once. Inline it into the return.

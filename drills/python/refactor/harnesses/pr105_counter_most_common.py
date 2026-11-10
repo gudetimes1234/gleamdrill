@@ -1,0 +1,7 @@
+need("top_words")
+tc("top_words(['a', 'b', 'a', 'c', 'a', 'b'], 2)", [("a", 3), ("b", 2)], top_words(["a", "b", "a", "c", "a", "b"], 2))
+tc("top_words(['x', 'y', 'z'], 2) -- ties keep first-seen order", [("x", 1), ("y", 1)], top_words(["x", "y", "z"], 2))
+tc("top_words(['b', 'a', 'a', 'b', 'c'], 3)", [("b", 2), ("a", 2), ("c", 1)], top_words(["b", "a", "a", "b", "c"], 3))
+tc("top_words([], 3)", [], top_words([], 3))
+uses(r"\.most_common\(", "Counter.most_common")
+avoids(r"\bsorted\(|\.sort\(", "sorting the counts by hand")

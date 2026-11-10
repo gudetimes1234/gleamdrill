@@ -1,0 +1,2 @@
+slices.Index is the find-first loop with its -1 convention already written and named. The call says what is being asked instead of how to walk the slice.
+Source: the Go standard library docs, package slices.

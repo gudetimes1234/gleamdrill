@@ -1,0 +1,2 @@
+Panics are for broken invariants, not for input that is merely wrong. Returning the error is plain control flow the caller can see in the signature, with no hidden unwinding or deferred rescue.
+Source: Go Code Review Comments, "Don't Panic" (go.dev/wiki/CodeReviewComments), and Effective Go, "Panic".

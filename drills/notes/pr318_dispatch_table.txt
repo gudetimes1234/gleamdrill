@@ -1,0 +1,2 @@
+When each branch of an if/elif only picks which function to call, the branches are a lookup table. A dict from name to function holds that table as data, so dispatch is one lookup and adding an operation is one line.
+Source: the Python Design and History FAQ: Why isn't there a switch or case statement in Python? (dispatch through a dictionary of functions).

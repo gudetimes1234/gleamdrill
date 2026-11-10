@@ -1,0 +1,3 @@
+section: Errors
+title: Return early, not else after return
+parsePort nests the happy path inside if err == nil and else branches. Handle each failure first with an early return so the success path runs down the left edge, with no else.

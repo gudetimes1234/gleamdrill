@@ -1,0 +1,7 @@
+need("in_stock")
+tc("in_stock({'apple': 3, 'pear': 0, 'fig': 7})", {"apple": 3, "fig": 7}, in_stock({"apple": 3, "pear": 0, "fig": 7}))
+tc("in_stock({'kiwi': -1}) -- negative is out of stock", {}, in_stock({"kiwi": -1}))
+tc("in_stock({'plum': 1})", {"plum": 1}, in_stock({"plum": 1}))
+tc("in_stock({})", {}, in_stock({}))
+uses(r"\{.+:.+\bfor\b.+\bin\b.+\bif\b.+\}", "a dict comprehension with an if clause")
+avoids(r"^\s*\w+\[.+\]\s*=", "assigning keys one by one")

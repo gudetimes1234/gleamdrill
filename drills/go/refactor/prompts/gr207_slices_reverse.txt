@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Reverse, not a swap loop
+Rewrite reverseSteps(steps) to reverse in place with the slices package: no swap loop.

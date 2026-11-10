@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Guard clauses, not nested if/else
+Flatten pay_amount(employee): each special case returns at once, and the normal case is the last line. No else, no result variable.

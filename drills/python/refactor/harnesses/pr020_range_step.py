@@ -1,0 +1,7 @@
+need("chunks")
+tc("chunks([1, 2, 3, 4, 5], 2)", [[1, 2], [3, 4], [5]], chunks([1, 2, 3, 4, 5], 2))
+tc("chunks([1, 2, 3], 3) -- one full chunk", [[1, 2, 3]], chunks([1, 2, 3], 3))
+tc("chunks(['a', 'b'], 5) -- shorter than one chunk", [["a", "b"]], chunks(["a", "b"], 5))
+tc("chunks([], 2) -- nothing to split", [], chunks([], 2))
+uses(r"\brange\([^,()]*,[^,]*,[^,()]*\)", "range() with a step")
+avoids(r"\.append\(", "a bucket filled with append")

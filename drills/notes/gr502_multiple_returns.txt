@@ -1,0 +1,2 @@
+Go functions can return several values, so there is no need to pass pointers in for the answers. The call site m, s := splitSeconds(total) shows plainly what comes back, and nothing is shared or mutated.
+Source: Effective Go, "Multiple return values".

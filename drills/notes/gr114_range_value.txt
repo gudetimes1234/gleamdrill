@@ -1,0 +1,2 @@
+When the index is only used to fetch the element, range hands you the element and drops the bounds arithmetic. Fewer moving parts means no off-by-one to get wrong.
+Source: Effective Go, "For".

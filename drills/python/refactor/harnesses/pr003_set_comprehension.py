@@ -1,0 +1,7 @@
+need("domains")
+tc("domains(['ada@x.org', 'bob@y.com', 'cy@x.org'])", ["x.org", "y.com"], domains(["ada@x.org", "bob@y.com", "cy@x.org"]))
+tc("domains(['me@solo.io'])", ["solo.io"], domains(["me@solo.io"]))
+tc("domains(['a@b.c', 'a@b.c']) -- duplicates collapse", ["b.c"], domains(["a@b.c", "a@b.c"]))
+tc("domains([]) -- no emails", [], domains([]))
+uses(r"\{[^{}:]*\bfor\b[^{}]*\bin\b[^{}]*\}|\bset\([^()]*(\([^()]*\)[^()]*)*\bfor\b", "a set comprehension")
+avoids(r"\.add\(", "adding to a set in a loop")

@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Compact for sorted duplicates
+Rewrite dedupeSorted(ids) with slices.Compact: no write-index loop.

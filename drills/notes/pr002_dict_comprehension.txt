@@ -1,0 +1,2 @@
+Building a dict key by key spreads one mapping over four lines and an empty-dict placeholder. The comprehension states the key and value for each item in one expression.
+Source: PEP 274 (dict comprehensions) and the Python tutorial, Data Structures: dictionaries.

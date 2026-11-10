@@ -1,0 +1,7 @@
+need("make_record")
+tc("make_record(['name', 'age'], ['Ada', '36'])", {"name": "Ada", "age": "36"}, make_record(["name", "age"], ["Ada", "36"]))
+tc("make_record(['id'], [7])", {"id": 7}, make_record(["id"], [7]))
+tc("make_record(['a', 'b', 'c'], [1, 2, 3])", {"a": 1, "b": 2, "c": 3}, make_record(["a", "b", "c"], [1, 2, 3]))
+tc("make_record([], []) -- no columns", {}, make_record([], []))
+uses(r"\bzip\(", "zip()")
+avoids(r"\brange\(\s*len\(", "range(len(...))")

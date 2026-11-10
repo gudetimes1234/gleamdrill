@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: dict.get with a default
+Rewrite stock_level(stock, item) so a missing item reads as 0 in one lookup: no `in` check, no if/else.

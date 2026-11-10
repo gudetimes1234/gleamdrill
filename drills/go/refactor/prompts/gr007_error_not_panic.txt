@@ -1,0 +1,3 @@
+section: Errors
+title: Return an error, not panic and recover
+parseAge panics on bad input and turns the panic back into an error with a deferred recover. Bad input is expected, so return the error directly and drop the panic and recover.

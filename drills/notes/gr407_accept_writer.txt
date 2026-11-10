@@ -1,0 +1,2 @@
+Accept the smallest interface that covers what the function does. writeReport only calls Write (through fmt.Fprintf), so io.Writer is enough, and a *bytes.Buffer still fits because it has a Write method.
+Source: Go Code Review Comments, "Interfaces", and the io.Writer docs.

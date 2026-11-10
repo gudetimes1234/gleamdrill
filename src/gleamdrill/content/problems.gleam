@@ -2,6 +2,7 @@ import gleam/list
 import gleam/option.{type Option, None}
 import gleam/string
 import gleamdrill/content/problem.{type Category, type Problem, type ProblemRef}
+import gleamdrill/content/problems/go_refactoring
 import gleamdrill/content/problems/neetcode_elixir
 import gleamdrill/content/problems/neetcode_gleam
 import gleamdrill/content/problems/neetcode_go
@@ -9,6 +10,7 @@ import gleamdrill/content/problems/neetcode_haskell
 import gleamdrill/content/problems/neetcode_python
 import gleamdrill/content/problems/neetcode_ruby
 import gleamdrill/content/problems/neetcode_ts
+import gleamdrill/content/problems/python_refactoring
 import gleamdrill/content/problems/ruby_refactoring
 import gleamdrill/content/problems/system_design
 import gleamdrill/content/problems/system_design_board
@@ -36,6 +38,8 @@ fn build() -> List(Category) {
     neetcode_haskell.category(),
     neetcode_ruby.category(),
     ruby_refactoring.category(),
+    python_refactoring.category(),
+    go_refactoring.category(),
     system_design.category(),
     system_design_board.category(),
   ]

@@ -1,0 +1,3 @@
+section: Refactorings
+title: Split Phase · order total
+order_total parses each line and prices it in the same loop. Split it into a parsing phase (text to name and quantity pairs) and a pricing phase that order_total runs on the parsed result.

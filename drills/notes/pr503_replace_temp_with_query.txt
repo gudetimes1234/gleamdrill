@@ -1,0 +1,2 @@
+Replace Temp with Query: a temporary visible only inside one method becomes a method every other method can use, and price stops being a list of steps. Each query is small enough to read at a glance.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Temp with Query.

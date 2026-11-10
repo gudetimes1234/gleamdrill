@@ -1,0 +1,2 @@
+A format string shows the shape of the whole line at once, and the verbs do the conversions, so there are no strconv calls or quote-plus-quote chains to read through.
+Source: the Go standard library docs, package fmt.

@@ -1,0 +1,7 @@
+need("status_text")
+tc("status_text(200)", "OK", status_text(200))
+tc("status_text(404)", "Not Found", status_text(404))
+tc("status_text(500)", "Server Error", status_text(500))
+tc("status_text(418) -- unlisted code", "Unknown", status_text(418))
+uses(r"\{\s*\d+\s*:", "a dict from code to text")
+avoids(r"\belif\b", "an if/elif chain")

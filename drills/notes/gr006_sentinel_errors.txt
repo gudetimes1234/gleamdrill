@@ -1,0 +1,2 @@
+A sentinel is one value callers can test with errors.Is; two errors.New calls with the same text are two different errors that only look alike. Naming it once also keeps the message from drifting between call sites.
+Source: the Go blog, "Working with Errors in Go 1.13" (sentinel errors), and the Uber Go Style Guide, "Error Types".

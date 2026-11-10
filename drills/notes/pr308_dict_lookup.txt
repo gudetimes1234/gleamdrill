@@ -1,0 +1,2 @@
+An if/elif chain whose every branch maps one value to another is a table written as control flow. A dict holds the table as data: each pair is one line, adding one can't break the logic, and .get supplies the default.
+Source: the Python Design and History FAQ: Why isn't there a switch or case statement in Python? (use a dictionary).

@@ -1,0 +1,2 @@
+A query method can be used by every other method on Order, not just the one that computed the temp, and it removes a local that longer functions would have to keep in mind. Extracting further pieces of Price gets easier once its temps are gone.
+Source: Martin Fowler's refactoring catalog, Replace Temp with Query (refactoring.com/catalog/replaceTempWithQuery.html).

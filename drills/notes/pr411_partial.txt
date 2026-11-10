@@ -1,0 +1,2 @@
+functools.partial fixes some arguments of an existing function and returns a new callable, so a specialised function is one line that names what is fixed. Wrapper defs that only pass a constant through are boilerplate.
+Source: Python docs, functools.partial.

@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace conditional with polymorphism · pay
+pay switches on a Kind string, and Extra means a bonus for one kind and sales for another. Make Employee an interface with a Pay() method, give each kind its own struct, and keep engineer, manager and salesperson as the constructors.

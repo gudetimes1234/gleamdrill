@@ -1,0 +1,2 @@
+"Which items are in both" is set intersection. Comparing every pair is quadratic and needs its own de-dup check; set(a) & set(b) hashes each side once, removes duplicates for free and says what it computes.
+Source: the Python docs, Built-in Types: Set Types (intersection, &).

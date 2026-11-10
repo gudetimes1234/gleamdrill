@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace nested conditional with guard clauses · pay
+payAmount nests if/else two deep and threads a result variable through it. Return early for the separated and retired cases so the normal case is the last line.

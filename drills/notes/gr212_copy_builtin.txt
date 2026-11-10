@@ -1,0 +1,2 @@
+copy is the built-in for moving elements between slices: it copies min(len(dst), len(src)) elements and handles overlap. Writing it as a loop restates the built-in and invites index mistakes.
+Source: The Go blog, "Go Slices: usage and internals".

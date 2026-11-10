@@ -1,0 +1,2 @@
+Filtering on a computed value and then keeping that same value forces the call twice. An assignment expression binds the result where it is first computed, so the condition and the output share it.
+Source: PEP 572 (assignment expressions).

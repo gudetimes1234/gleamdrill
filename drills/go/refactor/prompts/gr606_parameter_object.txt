@@ -1,0 +1,3 @@
+section: Refactorings
+title: Introduce parameter object · normal range
+low and high always travel together. Introduce a Range struct, pass it to countInRange and sumInRange instead of the pair, and keep normalSummary's signature as it is.

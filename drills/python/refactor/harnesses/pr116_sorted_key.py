@@ -1,0 +1,7 @@
+need("ranking")
+tc("ranking({'ann': 7, 'bo': 9, 'cy': 4})", ["bo", "ann", "cy"], ranking({"ann": 7, "bo": 9, "cy": 4}))
+tc("ranking({'zed': 5, 'amy': 5, 'kim': 8}) -- ties by name", ["kim", "amy", "zed"], ranking({"zed": 5, "amy": 5, "kim": 8}))
+tc("ranking({'solo': 0})", ["solo"], ranking({"solo": 0}))
+tc("ranking({})", [], ranking({}))
+uses(r"\bsorted\([\s\S]*\bkey\s*=", "sorted with a key")
+avoids(r"\.append\(|\.sort\(", "building and sorting pairs by hand")

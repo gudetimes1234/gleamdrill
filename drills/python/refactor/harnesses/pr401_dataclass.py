@@ -1,0 +1,7 @@
+need("Point")
+tc("repr(Point(1, 2))", "Point(x=1, y=2)", repr(Point(1, 2)))
+tc("Point(1, 2) == Point(1, 2)", True, Point(1, 2) == Point(1, 2))
+tc("Point(1, 2) == Point(2, 1)", False, Point(1, 2) == Point(2, 1))
+tc("Point(3, 4).distance_from_origin()", 5.0, Point(3, 4).distance_from_origin())
+uses(r"@dataclass", "@dataclass")
+avoids(r"def __(init|repr|eq)__", "hand-written __init__, __repr__ or __eq__")

@@ -1,0 +1,2 @@
+When the final length is known, make with that capacity allocates once. Appending to a nil slice reallocates and copies every time it outgrows its backing array.
+Source: Uber Go Style Guide, "Prefer Specifying Container Capacity".

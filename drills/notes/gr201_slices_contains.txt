@@ -1,0 +1,2 @@
+A flag, a loop and a comparison is a membership test spelled out by hand, and this one keeps looping after it has its answer. slices.Contains (Go 1.21) says what's being asked and stops at the first match.
+Source: the Go standard library docs, package slices.

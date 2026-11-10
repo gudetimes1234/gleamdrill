@@ -1,0 +1,2 @@
+Checking for a key and creating it on the miss looks the key up twice and spends two lines on bookkeeping. setdefault(key, default) returns the existing value or inserts and returns the default, so fetch-or-create is one expression you can index straight into.
+Source: the Python docs, Built-in Types: dict.setdefault.

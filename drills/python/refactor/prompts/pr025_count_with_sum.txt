@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: sum(1 for ...), not a counter
+Rewrite count_long(words, n) as sum(1 for ...) over the matching words: no counter bumped in a loop.

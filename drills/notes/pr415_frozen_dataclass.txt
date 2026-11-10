@@ -1,0 +1,2 @@
+A frozen dataclass compares by its fields and, because it can't change, hashes by them too, so instances work as set members and dict keys. Hand-written __eq__ and __hash__ have to stay in sync, and a mutable object with a field-based hash breaks any set it is in once it changes.
+Source: Python docs, dataclasses (frozen instances and __hash__).

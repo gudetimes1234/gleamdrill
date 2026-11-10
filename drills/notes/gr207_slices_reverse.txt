@@ -1,0 +1,2 @@
+The two-pointer swap is a classic place for an off-by-one at the midpoint. slices.Reverse does exactly that swap, generic over element type, under a name that needs no comment.
+Source: the Go standard library docs, package slices.

@@ -1,0 +1,2 @@
+operator.itemgetter with several keys returns a tuple, and tuples already compare field by field, so the sort key says what to sort by instead of how to compare. Comparator functions with cmp_to_key are a Python 2 habit.
+Source: Python docs, Sorting Techniques (Operator Module Functions) and operator.itemgetter.

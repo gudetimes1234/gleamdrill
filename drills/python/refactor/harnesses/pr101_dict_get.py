@@ -1,0 +1,6 @@
+need("stock_level")
+tc("stock_level({'apple': 3}, 'apple')", 3, stock_level({"apple": 3}, "apple"))
+tc("stock_level({'apple': 3}, 'pear') -- missing is 0", 0, stock_level({"apple": 3}, "pear"))
+tc("stock_level({'apple': 0}, 'apple')", 0, stock_level({"apple": 0}, "apple"))
+uses(r"\.get\(", "dict.get with a default")
+avoids(r"\bin\s+stock\b", "an `in` check before the lookup")

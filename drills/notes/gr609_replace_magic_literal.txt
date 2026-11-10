@@ -1,0 +1,2 @@
+A named constant says what a number means and keeps every use of it in step; a bare 3 could be the grace period or anything else. The rule then reads as words: days past the grace period times the daily fee.
+Source: Martin Fowler's refactoring catalog, Replace Magic Literal (refactoring.com/catalog/replaceMagicLiteral.html).

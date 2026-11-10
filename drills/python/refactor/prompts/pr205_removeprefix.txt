@@ -1,0 +1,3 @@
+section: Strings
+title: removeprefix, not startswith and slice
+Rewrite ticket_number(ref) with str.removeprefix: no startswith() check and no slice by the prefix length. Note lstrip() strips characters, not a prefix.

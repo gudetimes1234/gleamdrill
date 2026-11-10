@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: min with key=, not a cheapest-so-far loop
+Rewrite cheapest(offers) with min(..., key=...): no running best and no loop.

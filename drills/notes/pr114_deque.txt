@@ -1,0 +1,2 @@
+list.pop(0) shifts every remaining element down one slot, so a queue built on a list is O(n) per take. A deque is designed for both ends: append and popleft are O(1), and the type itself tells the reader this is a queue.
+Source: the Python tutorial, Data Structures: Using Lists as Queues, and the Python docs, collections: deque.

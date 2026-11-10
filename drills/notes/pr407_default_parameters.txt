@@ -1,0 +1,2 @@
+Default parameter values turn variations into arguments, so the logic lives in one function and each variant is a single call. Copy-paste variants drift apart the first time one of them gets fixed.
+Source: Python tutorial, More on Defining Functions: Default Argument Values and Keyword Arguments.

@@ -1,0 +1,2 @@
+sort.Slice's less function takes indexes and reaches back into the slice, which is easy to point at the wrong slice. slices.SortFunc hands the comparison the two elements, and cmp.Compare gives the three-way result so a tiebreak is just the next compare.
+Source: the Go standard library docs, packages slices and cmp.

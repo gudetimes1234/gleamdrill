@@ -1,0 +1,2 @@
+Slices can't be compared with ==, which is why the loop exists. slices.Equal does the length check and element walk in one call and treats nil and empty as equal.
+Source: the Go standard library docs, package slices.

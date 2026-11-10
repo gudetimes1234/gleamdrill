@@ -1,0 +1,3 @@
+section: Functions
+title: A closure, not a package-level counter
+numbered keeps its count in a package-level variable and has to reset it on every call. Keep the count in a closure made inside numbered instead, and drop the global.

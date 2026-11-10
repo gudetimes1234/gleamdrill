@@ -1,0 +1,2 @@
+When the match is a condition rather than a value, IndexFunc takes the condition as a function and keeps the search itself out of sight. The predicate is the only part that's specific to this code.
+Source: the Go standard library docs, package slices.

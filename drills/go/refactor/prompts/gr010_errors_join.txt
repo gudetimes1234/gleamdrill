@@ -1,0 +1,3 @@
+section: Errors
+title: errors.Join, not joined strings
+validateSignup collects problems as strings and joins them into one errors.New. Collect them as errors and return errors.Join(...) instead, which gives the same message and returns nil when nothing went wrong.

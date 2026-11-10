@@ -1,0 +1,7 @@
+need("can_vote")
+tc("can_vote(30, True)", True, can_vote(30, True))
+tc("can_vote(18, True) -- exactly 18 counts", True, can_vote(18, True))
+tc("can_vote(17, True)", False, can_vote(17, True))
+tc("can_vote(40, False)", False, can_vote(40, False))
+avoids(r"return\s+(True|False)\b", "returning True or False literally")
+avoids(r"\bif\b", "an if statement")

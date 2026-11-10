@@ -1,0 +1,7 @@
+need("parse_settings")
+tc("parse_settings(['db.host=local', 'db.port=5432'])", {"db": {"host": "local", "port": "5432"}}, parse_settings(["db.host=local", "db.port=5432"]))
+tc("parse_settings(['db.host=a', 'log.level=info', 'db.user=me'])", {"db": {"host": "a", "user": "me"}, "log": {"level": "info"}}, parse_settings(["db.host=a", "log.level=info", "db.user=me"]))
+tc("parse_settings(['ui.theme=dark', 'ui.theme=light']) -- last wins", {"ui": {"theme": "light"}}, parse_settings(["ui.theme=dark", "ui.theme=light"]))
+tc("parse_settings([])", {}, parse_settings([]))
+uses(r"\.setdefault\(", "dict.setdefault")
+avoids(r"\bnot\s+in\b", "a `not in` check before creating the section")

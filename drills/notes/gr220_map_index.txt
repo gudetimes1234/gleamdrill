@@ -1,0 +1,2 @@
+Searching users once per order costs users times orders. Building a map[int] index first makes each lookup constant time, and the comma-ok lookup states the missing-user case plainly.
+Source: The Go blog, "Go maps in action".

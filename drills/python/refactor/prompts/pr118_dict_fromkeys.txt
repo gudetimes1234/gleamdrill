@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: dict.fromkeys to de-dup in order
+Rewrite unique_in_order(items) with dict.fromkeys, which keeps the first occurrence of each item in order: no result list and no `not in` scan.

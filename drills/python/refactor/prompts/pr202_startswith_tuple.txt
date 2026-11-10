@@ -1,0 +1,3 @@
+section: Strings
+title: startswith with a tuple, not or
+Rewrite is_comment(line) with one startswith() call given a tuple of prefixes: no chain of or.

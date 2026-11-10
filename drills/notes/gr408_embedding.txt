@@ -1,0 +1,2 @@
+An embedded field's methods are promoted to the outer type, so Service gets Log for free and keeps getting any method Logger gains later. Hand-written forwarders are boilerplate that drifts out of date.
+Source: Effective Go, "Embedding".

@@ -1,0 +1,7 @@
+need("checkout")
+tc("checkout([{'qty': 2}, {'qty': 1}])", "2 lines", checkout([{"qty": 2}, {"qty": 1}]))
+tc("checkout([{'qty': 2}, {'qty': 0}])", "invalid cart", checkout([{"qty": 2}, {"qty": 0}]))
+tc("checkout([{'qty': -1}])", "invalid cart", checkout([{"qty": -1}]))
+tc("checkout([]) -- an empty cart is valid", "0 lines", checkout([]))
+uses(r"\bany\(", "any()")
+avoids(r"=\s*(True|False)\b", "a True/False flag variable")

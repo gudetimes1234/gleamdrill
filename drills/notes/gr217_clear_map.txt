@@ -1,0 +1,2 @@
+Go 1.21's clear built-in empties a map in place, so everyone holding the map sees it empty. It names the operation the loop spells out, and it's a no-op on nil.
+Source: The Go Programming Language Specification, "Clear".

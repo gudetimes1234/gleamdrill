@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: A dict comprehension to invert a dict
+Rewrite by_code(countries) as a single dict comprehension that swaps keys and values: no empty dict filled in a loop.

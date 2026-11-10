@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Map, not a rune loop
+maskDigits walks the runes and rebuilds the string with += one rune at a time. Use strings.Map with a function that turns each digit into '*' and leaves other runes alone.

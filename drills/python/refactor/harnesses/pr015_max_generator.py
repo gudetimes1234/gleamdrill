@@ -1,0 +1,7 @@
+need("biggest_order")
+tc("biggest_order([{'price': 3, 'qty': 2}, {'price': 10, 'qty': 1}, {'price': 2, 'qty': 4}])", 10, biggest_order([{"price": 3, "qty": 2}, {"price": 10, "qty": 1}, {"price": 2, "qty": 4}]))
+tc("biggest_order([{'price': 5, 'qty': 5}])", 25, biggest_order([{"price": 5, "qty": 5}]))
+tc("biggest_order([{'price': 7, 'qty': 0}]) -- a zero total", 0, biggest_order([{"price": 7, "qty": 0}]))
+tc("biggest_order([]) -- no orders", 0, biggest_order([]))
+uses(r"\bmax\(", "max()")
+avoids(r"^\s*for\b.*:\s*$", "a for loop")

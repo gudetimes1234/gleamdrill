@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: zip, not indexing two lists
+Rewrite line_totals(prices, quantities) with zip(): walk both lists together instead of by index.

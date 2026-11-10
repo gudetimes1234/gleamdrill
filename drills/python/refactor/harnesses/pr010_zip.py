@@ -1,0 +1,7 @@
+need("line_totals")
+tc("line_totals([3, 5], [2, 1])", [6, 5], line_totals([3, 5], [2, 1]))
+tc("line_totals([1.5], [4])", [6.0], line_totals([1.5], [4]))
+tc("line_totals([2, 2, 2], [0, 1, 2])", [0, 2, 4], line_totals([2, 2, 2], [0, 1, 2]))
+tc("line_totals([], []) -- empty order", [], line_totals([], []))
+uses(r"\bzip\(", "zip()")
+avoids(r"\brange\(\s*len\(", "range(len(...))")

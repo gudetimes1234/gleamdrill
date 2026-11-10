@@ -1,0 +1,2 @@
+A new dict built from another by a loop of `d[k] = v` is what a dict comprehension expresses directly. {v: k for k, v in d.items()} reads as the inversion itself, with no accumulator to set up and return.
+Source: PEP 274 (dict comprehensions) and the Python tutorial, Data Structures: Dictionaries.

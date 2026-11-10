@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: Tuple assignment, not a temp variable
+Rewrite fib(n) so a and b update together with one tuple assignment: no temp variable.

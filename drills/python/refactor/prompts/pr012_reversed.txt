@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: reversed(), not a countdown range
+Rewrite undo_steps(actions) to walk the list with reversed() (or a [::-1] slice): no range counting down.

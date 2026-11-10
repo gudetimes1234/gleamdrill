@@ -1,0 +1,6 @@
+need("can_comment")
+tc("can_comment(verified, not banned)", True, can_comment({"banned": False, "verified": True}))
+tc("can_comment(verified, banned)", False, can_comment({"banned": True, "verified": True}))
+tc("can_comment(not verified)", False, can_comment({"banned": False, "verified": False}))
+tc("can_comment(banned, not verified)", False, can_comment({"banned": True, "verified": False}))
+avoids(r"\bnot\s*\(", "not applied to a parenthesised group")

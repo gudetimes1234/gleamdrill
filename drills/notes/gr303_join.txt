@@ -1,0 +1,2 @@
+strings.Join is the separator-between-items loop already written, sized in one allocation, and it handles the empty and single-item cases without an index check.
+Source: the Go standard library docs, strings.Join.

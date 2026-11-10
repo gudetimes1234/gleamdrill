@@ -1,0 +1,2 @@
+defaultdict(int) starts every missing key at int() == 0, so a count is always just `+= 1`. The two copies of the four-line if/else collapse to one line each and the loop body says what is counted, not how missing keys are handled.
+Source: the Python docs, collections: defaultdict (the defaultdict(int) counting example).

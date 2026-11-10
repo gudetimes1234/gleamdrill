@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: setdefault, not check-then-create
+Rewrite parse_settings(lines) so each section's inner dict is fetched or created in one call with setdefault: no `not in` check before the assignment.

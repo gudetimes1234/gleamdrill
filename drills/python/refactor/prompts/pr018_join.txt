@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: str.join, not += in a loop
+Rewrite hashtags(tags) with " ".join() over a generator: no string built up with +=.

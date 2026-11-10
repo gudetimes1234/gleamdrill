@@ -1,0 +1,2 @@
+A counter that starts at 0 and goes up once per item is what enumerate yields alongside each item. Using it removes two lines that can drift out of sync with the loop, and the comprehension makes the name-to-index mapping the whole function.
+Source: the Python docs, Built-in Functions: enumerate (and PEP 279).

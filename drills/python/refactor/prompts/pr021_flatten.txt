@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: A nested comprehension, not nested loops
+Rewrite all_items(orders) as one comprehension with two for clauses: no nested loops, no append.

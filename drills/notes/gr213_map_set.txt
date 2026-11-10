@@ -1,0 +1,2 @@
+Go has no set type; a map[T]bool or map[T]struct{} is the idiom, and a lookup is constant time. The nested scan makes the whole function quadratic and needs a flag to carry its answer out.
+Source: Effective Go, "Maps".

@@ -1,0 +1,2 @@
+strings.Repeat makes the whole run in one allocation and reads as what it is, n copies of a string, instead of two counting loops that each copy the growing string.
+Source: the Go standard library docs, strings.Repeat.

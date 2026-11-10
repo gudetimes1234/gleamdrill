@@ -1,0 +1,2 @@
+dict() takes key-value pairs, and zip makes pairs from two lists. Together they turn a header row and a data row into a record with no bookkeeping.
+Source: Python docs, Built-in Functions: zip() and dict(); the tutorial, Data Structures: dictionaries.

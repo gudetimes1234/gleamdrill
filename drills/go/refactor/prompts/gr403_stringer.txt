@@ -1,0 +1,3 @@
+section: Types & Methods
+title: String(), not a describe helper
+describePoint is a helper every caller has to remember. Give Point a String() string method instead, so label can format it with %v like any other value.

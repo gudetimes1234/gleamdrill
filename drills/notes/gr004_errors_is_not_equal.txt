@@ -1,0 +1,2 @@
+== only matches the exact value, so one layer of fmt.Errorf("...: %w", err) breaks it. errors.Is walks the wrap chain, so the mapping keeps working however much context callers add.
+Source: the Go blog, "Working with Errors in Go 1.13", and the errors package docs (errors.Is).

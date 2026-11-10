@@ -1,0 +1,3 @@
+section: Errors
+title: errors.Is, not matching err.Error()
+priceOrZero spots a missing price by comparing err.Error() to the text "no price". Ask errors.Is(err, ErrNoPrice) instead, so a reworded message or a wrapped error still matches.

@@ -1,0 +1,7 @@
+need("power", "square", "cube")
+tc("square(4)", 16, square(4))
+tc("cube(2)", 8, cube(2))
+tc("square(0) -- zero", 0, square(0))
+tc("list(map(square, [1, 2, 3]))", [1, 4, 9], list(map(square, [1, 2, 3])))
+uses(r"partial\(", "functools.partial")
+avoids(r"def (square|cube)\b", "a def for square or cube")

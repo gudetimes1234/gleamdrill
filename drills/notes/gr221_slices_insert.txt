@@ -1,0 +1,2 @@
+The nested append trick is hard to read and allocates a throwaway slice. slices.Insert names the operation, shifts the tail itself, and grows the slice only when it has to.
+Source: the Go standard library docs, package slices.

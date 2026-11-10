@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: max over a generator, not a biggest-so-far
+Rewrite biggest_order(orders) as max() over a generator expression, with default=0 for no orders.

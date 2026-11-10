@@ -1,0 +1,3 @@
+section: Refactorings
+title: Inline Variable · free shipping
+qualifies holds a comparison only to be returned on the next line. Inline it and return the expression directly.

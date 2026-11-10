@@ -1,0 +1,2 @@
+Repeating `ext ==` for each option buries the list of allowed values in noise. `ext in (...)` names the variable once and puts the values together, where adding one is a single edit.
+Source: the Python language reference, Expressions: Membership test operations.

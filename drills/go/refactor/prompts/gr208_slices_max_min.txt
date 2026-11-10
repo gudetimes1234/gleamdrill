@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Max and slices.Min, not a running pair
+Rewrite spread(readings) with slices.Max and slices.Min: keep the empty check, drop the loop.

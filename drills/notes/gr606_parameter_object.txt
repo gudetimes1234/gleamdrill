@@ -1,0 +1,2 @@
+A pair of values that always travel together is a concept missing a name. Once it is a struct, the range check can become one of its methods, and every function that takes it gets shorter and harder to call with the bounds swapped.
+Source: Martin Fowler's refactoring catalog, Introduce Parameter Object (refactoring.com/catalog/introduceParameterObject.html).

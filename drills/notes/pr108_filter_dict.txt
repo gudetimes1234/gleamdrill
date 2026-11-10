@@ -1,0 +1,2 @@
+Filtering a dict by building a new one in a loop is three lines of plumbing around one condition. A comprehension's `if` clause puts the condition right next to the pair it keeps.
+Source: PEP 274 (dict comprehensions).

@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: defaultdict(int) for degree counts
+Count each node's edges with a collections.defaultdict(int) so both ends are a plain `+= 1`, and return a plain dict: no if/else per end.

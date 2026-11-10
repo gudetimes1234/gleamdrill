@@ -1,0 +1,3 @@
+section: Strings
+title: Format specs, not rjust and format()
+Rewrite report_line(label, total, average) as one f-string with format specs (:>8, :, and :.2f): no rjust, no format(), no %.

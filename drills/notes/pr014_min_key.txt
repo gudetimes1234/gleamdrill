@@ -1,0 +1,2 @@
+A best-so-far loop re-implements min. With key= you say what to compare and get the whole winning item back, ties going to the first one just like the loop.
+Source: Python docs, Built-in Functions: min() (the key argument).

@@ -1,0 +1,2 @@
+Star unpacking splits off the first item and collects the rest in one assignment, and the names say which part is which. It also handles a row with nothing after the name.
+Source: PEP 3132 (extended iterable unpacking).

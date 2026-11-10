@@ -1,0 +1,3 @@
+section: Strings
+title: fmt.Sprintf, not + with conversions
+receiptLine glues the line together with + and a strconv call for every number. Write it as one fmt.Sprintf with %s, %d and %.2f verbs.

@@ -1,0 +1,7 @@
+need("positions")
+tc("positions('banana', 'a')", [1, 3, 5], positions("banana", "a"))
+tc("positions('banana', 'z') -- never there", [], positions("banana", "z"))
+tc("positions(['x', 'y', 'x'], 'x')", [0, 2], positions(["x", "y", "x"], "x"))
+tc("positions('', 'a') -- empty input", [], positions("", "a"))
+uses(r"\benumerate\(", "enumerate()")
+avoids(r"\brange\(\s*len\(", "range(len(...))")

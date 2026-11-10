@@ -1,0 +1,2 @@
+Map iteration order is deliberately random, so stable output means collecting the keys and sorting them. slices.Sort orders the key slice directly, with no less function indexing back into it.
+Source: The Go blog, "Go maps in action" (Iteration order).

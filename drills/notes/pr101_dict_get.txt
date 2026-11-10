@@ -1,0 +1,2 @@
+Checking `in` and then indexing looks the key up twice and spends four lines on "use 0 when it's missing". dict.get(key, default) says exactly that in one call.
+Source: the Python docs, Built-in Types: dict.get.

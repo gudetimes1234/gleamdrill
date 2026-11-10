@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: sorted with key=, not decorate and undecorate
+Rewrite by_age(people) with sorted(..., key=...): no list of swapped tuples to sort and unpack.

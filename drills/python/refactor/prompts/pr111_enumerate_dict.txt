@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: enumerate into a dict, not a manual counter
+Rewrite positions(names) as a dict comprehension over enumerate(names): no counter variable bumped by hand.

@@ -1,0 +1,2 @@
+A slice takes a run of items in one step and quietly stops at the end of a short list, so the bounds check disappears with the loop.
+Source: Python docs, Built-in Types: common sequence operations (slicing s[i:j]).

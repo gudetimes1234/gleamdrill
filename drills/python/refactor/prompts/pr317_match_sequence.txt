@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: match on a command's shape, not len checks
+Rewrite run_command(text) with a match statement on text.split() using sequence patterns like `case ["go", direction]:`: no len() checks or indexing into the parts.

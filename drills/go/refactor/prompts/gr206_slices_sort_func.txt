@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.SortFunc, not sort.Slice
+Rewrite rank(players) with slices.SortFunc and a comparison that returns an int (cmp.Compare helps): highest score first, ties by name. No sort.Slice.

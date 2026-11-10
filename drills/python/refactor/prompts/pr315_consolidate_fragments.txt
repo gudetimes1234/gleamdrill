@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: Hoist the shared step out of both branches
+Both branches of price_with_shipping finish with the same tax line. Keep only what differs inside the if/else and apply the tax once, after it.

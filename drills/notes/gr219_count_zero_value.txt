@@ -1,0 +1,2 @@
+Reading a missing key gives the zero value, 0 for an int, so counts[w]++ on a new word starts it at 1. The if/else just re-implements the zero value.
+Source: Effective Go, "Maps".

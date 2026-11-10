@@ -1,0 +1,2 @@
+With one struct per kind, each value holds only the fields that make sense for it, and a type switch hands you the concrete value with its own fields. A Kind string can be misspelled or left out; a type cannot.
+Source: Effective Go, "Type switch", and the Go spec, "Type switches".

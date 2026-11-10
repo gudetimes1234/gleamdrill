@@ -1,0 +1,2 @@
+The two-value type assertion asks the runtime directly whether v holds an int and hands back the int in the same step, with no string formatting and no second assertion that could panic if the check drifts.
+Source: Effective Go, "Interface conversions and type assertions" (the comma ok form).

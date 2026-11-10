@@ -1,0 +1,7 @@
+need("first_overdue")
+tc("first_overdue([{'id': 'A', 'days': 5}, {'id': 'B', 'days': 31}, {'id': 'C', 'days': 90}])", "B", first_overdue([{"id": "A", "days": 5}, {"id": "B", "days": 31}, {"id": "C", "days": 90}]))
+tc("first_overdue([{'id': 'A', 'days': 30}]) -- 30 days is not overdue", None, first_overdue([{"id": "A", "days": 30}]))
+tc("first_overdue([{'id': 'Z', 'days': 45}])", "Z", first_overdue([{"id": "Z", "days": 45}]))
+tc("first_overdue([]) -- no invoices", None, first_overdue([]))
+uses(r"\bnext\(", "next()")
+avoids(r"^\s*for\b.*:\s*$", "a for loop")

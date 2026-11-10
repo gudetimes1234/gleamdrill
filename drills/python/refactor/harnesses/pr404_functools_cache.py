@@ -1,0 +1,7 @@
+need("ways_to_climb")
+tc("ways_to_climb(0)", 1, ways_to_climb(0))
+tc("ways_to_climb(1)", 1, ways_to_climb(1))
+tc("ways_to_climb(5)", 8, ways_to_climb(5))
+tc("ways_to_climb(60) -- needs the memo", 2504730781961, ways_to_climb(60))
+uses(r"@(functools\.)?(cache|lru_cache)\b", "@cache or @lru_cache")
+avoids(r"^\s*\w+\s*=\s*(\{\s*\}|dict\(\s*\))", "a hand-rolled memo dict")

@@ -1,0 +1,2 @@
+A misspelled constant name is a compile error; a misspelled string literal is a bug that compiles. Grouping related constants in one block also documents the full set of roles in one place.
+Source: Effective Go, "Constants", and the Go spec, "Constant declarations".

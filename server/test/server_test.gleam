@@ -274,7 +274,8 @@ fn exec_config() -> config.Config {
   )
 }
 
-const harness = "[
+const harness =
+  "[
   {\"contains_duplicate?([1, 2, 3, 1])\", inspect(true), inspect(Solution.contains_duplicate?([1, 2, 3, 1]))},
   {\"contains_duplicate?([1, 2, 3, 4])\", inspect(false), inspect(Solution.contains_duplicate?([1, 2, 3, 4]))}
 ]"
@@ -358,7 +359,8 @@ end
 // one drills/go/harnesses/nc01_contains_duplicate.go carries; the prelude it
 // calls into is staged from server/priv/go by exec itself.
 
-const go_harness = "package main
+const go_harness =
+  "package main
 
 func main() {
 	run(func() []testCase {
@@ -396,6 +398,71 @@ func containsDuplicate(nums []int) bool {
     wire.CaseResult("containsDuplicate([1, 2, 3, 1])", "true", "true", True),
     wire.CaseResult("containsDuplicate([1, 2, 3, 4])", "false", "false", True),
   ])
+}
+
+// A refactoring drill's style checks read solution.go from the attempt's
+// directory, comments blanked: the comment mentioning `switch` must not
+// count, the real one must.
+const go_style_harness =
+  "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"cost(\\\"local\\\")\", 5, cost(\"local\")),
+			uses(`\\bswitch\\b`, \"a switch\"),
+			avoids(`else if`, \"an else-if chain\"),
+		}
+	})
+}
+"
+
+pub fn go_style_checks_read_the_attempts_source_test() {
+  let before =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+// TODO: use a switch here
+func cost(zone string) int {
+	if zone == \"local\" {
+		return 5
+	} else if zone == \"far\" {
+		return 9
+	}
+	return 0
+}
+",
+      go_style_harness,
+    )
+  before.error |> should.equal(None)
+  before.cases
+  |> list.map(fn(c) { #(c.label, c.passed) })
+  |> should.equal([
+    #("cost(\"local\")", True),
+    #("style: uses a switch", False),
+    #("style: no an else-if chain", False),
+  ])
+
+  let after =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+func cost(zone string) int {
+	switch zone {
+	case \"local\":
+		return 5
+	case \"far\":
+		return 9
+	}
+	return 0
+}
+",
+      go_style_harness,
+    )
+  after.error |> should.equal(None)
+  after.cases |> list.all(fn(c) { c.passed }) |> should.be_true
 }
 
 pub fn a_failing_go_attempt_keeps_its_output_test() {
@@ -484,7 +551,8 @@ func containsDuplicate(nums []int) bool {
 // the one drills/haskell/harnesses/nc01_contains_duplicate.hs carries; the
 // Drill prelude it imports is staged from server/priv/haskell by exec itself.
 
-const haskell_harness = "module Main where
+const haskell_harness =
+  "module Main where
 
 import Drill
 import Solution
@@ -600,7 +668,8 @@ containsDuplicate nums = containsDuplicate nums
 // the one drills/ruby/harnesses/nc01_contains_duplicate.rb carries; the
 // runner it is loaded by is staged from server/priv/ruby by exec itself.
 
-const ruby_harness = "need :contains_duplicate
+const ruby_harness =
+  "need :contains_duplicate
 
 tc \"contains_duplicate([1, 2, 3, 1])\", true, contains_duplicate([1, 2, 3, 1])
 tc \"contains_duplicate([1, 2, 3, 4])\", false, contains_duplicate([1, 2, 3, 4])

@@ -1,0 +1,2 @@
+Go cases take a comma-separated list, and there is no fallthrough to lean on, so values that share an outcome belong in one case. Adding an extension then touches one line, not a copied body.
+Source: Effective Go, "Switch".

@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: Size the slice up front
+Rewrite squares(nums) so the result slice is made with room for len(nums) elements before the loop: no growing from nil.

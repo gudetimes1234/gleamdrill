@@ -1,0 +1,2 @@
+range(len(x) - 1, -1, -1) is easy to get off by one and hides the intent. reversed() says backwards and gives you the items, not their positions.
+Source: Python docs, Built-in Functions: reversed(), and PEP 322 (reverse iteration).

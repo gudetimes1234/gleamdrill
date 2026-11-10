@@ -1,0 +1,3 @@
+section: Strings
+title: str.title, not capitalising each word by hand
+Rewrite display_name(raw) with str.title() (or str.capitalize per word): no upper() on the first letter plus lower() on the rest.

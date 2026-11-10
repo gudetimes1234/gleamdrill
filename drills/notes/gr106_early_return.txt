@@ -1,0 +1,2 @@
+Guard clauses handle each special case and leave, so the happy path ends up at the bottom with no indentation. Nested ifs make the reader match each else to its condition from far away.
+Source: Fowler's refactoring catalog, Replace Nested Conditional with Guard Clauses (refactoring.com/catalog/replaceNestedConditionalWithGuardClauses.html).

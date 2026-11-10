@@ -1,0 +1,2 @@
+A loop body is a small function, and continue is its early return: filter out what you skip first, then do the real work at one indent level. The reader no longer has to hold every enclosing condition in mind.
+Source: Uber Go Style Guide, "Reduce Nesting".

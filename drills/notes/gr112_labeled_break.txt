@@ -1,0 +1,2 @@
+Inside a switch a plain break only leaves the switch, which is why the flag crept in. A label on the loop says exactly which statement to break out of, and the flag and its check disappear.
+Source: Effective Go, "Switch".

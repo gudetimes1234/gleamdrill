@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: A seen set, not a seen list
+Track the items you've already met in a set, so each `in` check is a hash lookup instead of a scan: no list being appended to.

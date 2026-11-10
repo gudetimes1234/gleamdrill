@@ -61,6 +61,8 @@ open http://localhost:8080
 | NeetCode 150 — Elixir, Go, Ruby | 150 each, 2+ solutions per problem | server sandbox |
 | NeetCode 150 — Haskell | 150, one solution per problem | server sandbox |
 | Ruby Refactoring | 194 before/after rewrites: 182 idioms (each 2-3 times) and 12 of Fowler's refactorings | server sandbox |
+| Python Refactoring | ~100 before/after rewrites: Python idioms and 12 of Fowler's refactorings | browser |
+| Go Refactoring | ~100 before/after rewrites: Go idioms (errors, slices, types) and 12 of Fowler's refactorings | server sandbox |
 | Gleam Language Tour | 63 lessons | browser, not scheduled |
 | System Design | 20 multiple-choice + exam mode | self-graded |
 | System Design Board | 6 component-selection boards, 36-piece palette | auto-graded |

@@ -1,0 +1,2 @@
+strconv is the direct tool for one number to or from a string: no format string to parse, no reflection, and Atoi rejects trailing junk instead of quietly stopping at it.
+Source: the Go standard library docs, strconv.Atoi and strconv.Itoa.

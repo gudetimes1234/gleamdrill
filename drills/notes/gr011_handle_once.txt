@@ -1,0 +1,2 @@
+Logging and returning handles one error twice: the log fills with duplicates written before anyone knows whether the failure matters. Each error should be handled once, and returning it with context is a complete way to do that.
+Source: the Uber Go Style Guide, "Handle Errors Once".

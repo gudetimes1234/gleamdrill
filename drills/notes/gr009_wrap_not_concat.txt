@@ -1,0 +1,2 @@
+Concatenating err.Error() keeps the words but loses the value, so callers can no longer use errors.Is(err, strconv.ErrSyntax). %w produces the identical message and leaves the cause reachable through Unwrap.
+Source: the fmt.Errorf docs and the Go blog, "Working with Errors in Go 1.13".

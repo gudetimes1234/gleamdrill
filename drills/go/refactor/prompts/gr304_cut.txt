@@ -1,0 +1,3 @@
+section: Strings
+title: strings.Cut, not Index and slicing
+splitSetting finds the = with strings.Index and slices around it by hand. strings.Cut returns the part before, the part after and whether the separator was found, exactly this function's results.

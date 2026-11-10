@@ -1,0 +1,3 @@
+section: Refactorings
+title: Extract Function · invoice lines
+Pull the banner and the outstanding total out of invoice_lines into their own functions, so invoice_lines reads as steps.

@@ -1,0 +1,2 @@
+A loop doing two jobs has to be understood, and changed, as one tangle. Two loops each do one obvious thing and can each be extracted into a function; the extra pass costs almost nothing.
+Source: Martin Fowler's refactoring catalog, Split Loop (refactoring.com/catalog/splitLoop.html).

@@ -1,0 +1,7 @@
+need("all_items")
+tc("all_items([['tea', 'mug'], ['pen']])", ["tea", "mug", "pen"], all_items([["tea", "mug"], ["pen"]]))
+tc("all_items([[], ['cup']]) -- an empty order", ["cup"], all_items([[], ["cup"]]))
+tc("all_items([['a'], ['b'], ['c', 'd']])", ["a", "b", "c", "d"], all_items([["a"], ["b"], ["c", "d"]]))
+tc("all_items([]) -- no orders", [], all_items([]))
+uses(r"\[[^\[\]]*\bfor\b[^\[\]]*\bfor\b[^\[\]]*\]|\bchain\b", "a comprehension with two for clauses")
+avoids(r"\.append\(", "appending to an accumulator")

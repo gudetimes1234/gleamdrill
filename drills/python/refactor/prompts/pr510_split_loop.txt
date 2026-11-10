@@ -1,0 +1,3 @@
+section: Refactorings
+title: Split Loop · youngest and payroll
+One loop finds the youngest age and totals the salaries at the same time. Split it so each job has its own loop (min and sum are fine too).

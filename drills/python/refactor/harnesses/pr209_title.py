@@ -1,0 +1,7 @@
+need("display_name")
+tc("display_name('ada LOVELACE')", "Ada Lovelace", display_name("ada LOVELACE"))
+tc("display_name('grace hopper')", "Grace Hopper", display_name("grace hopper"))
+tc("display_name('ALAN')", "Alan", display_name("ALAN"))
+tc("display_name('GRACE') -- one word", "Grace", display_name("GRACE"))
+uses(r"\.title\(|\.capitalize\(", "title() or capitalize()")
+avoids(r"\.upper\(", "upper() on the first letter")

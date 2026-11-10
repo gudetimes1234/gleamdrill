@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: @property, not a total kept by hand
+Cart stores total and patches it in add and remove. Make total a @property computed from items, so nothing updates it by hand; callers still read cart.total.

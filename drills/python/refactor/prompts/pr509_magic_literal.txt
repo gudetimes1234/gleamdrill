@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace Magic Literal · gravity
+9.81 appears in two formulas with no name. Replace it with a module-level constant and use that in both.

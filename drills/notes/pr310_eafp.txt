@@ -1,0 +1,2 @@
+Look-before-you-leap repeats the path once per level and then again to read it. Easier to ask forgiveness than permission: do the lookup you want and handle KeyError if any level is missing, which states the happy path once and the fallback once.
+Source: the Python glossary: EAFP.

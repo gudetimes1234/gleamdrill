@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.Insert, not append surgery
+Rewrite insertAt(queue, i, name) with slices.Insert: no nested append slicing.

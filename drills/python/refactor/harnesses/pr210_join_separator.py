@@ -1,0 +1,7 @@
+need("breadcrumb")
+tc("breadcrumb(['Home', 'Shop', 'Tea'])", "Home > Shop > Tea", breadcrumb(["Home", "Shop", "Tea"]))
+tc("breadcrumb(['Home']) -- one part, no separator", "Home", breadcrumb(["Home"]))
+tc("breadcrumb(['A', 'B'])", "A > B", breadcrumb(["A", "B"]))
+tc("breadcrumb([]) -- no parts", "", breadcrumb([]))
+uses(r"\.join\(", "str.join()")
+avoids(r"\+", "concatenation with +")

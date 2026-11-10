@@ -1,0 +1,3 @@
+section: Control Flow
+title: Scope the lookup to the if
+Rewrite the cache hit in cachedSquare(cache, n) as if v, ok := cache[n]; ok so the lookup's variables live only inside the if.

@@ -1,0 +1,2 @@
+The if/else exists only to say "a missing total counts as 0". get(key, 0) supplies that default inline, so accumulating is a single read-add-write line and the first entry is no longer a special case.
+Source: the Python docs, Built-in Types: dict.get.

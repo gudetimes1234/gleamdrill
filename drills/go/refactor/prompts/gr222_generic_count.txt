@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: One generic func, not two copies
+Replace countInts and countStrings with one generic count function that tally(rolls, tags) calls for both: no duplicated loop.

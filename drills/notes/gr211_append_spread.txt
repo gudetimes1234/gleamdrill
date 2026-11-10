@@ -1,0 +1,2 @@
+append is variadic, and s... passes a whole slice as its arguments, so joining slices is one call. It also lets append grow the backing array once instead of element by element.
+Source: Effective Go, "Append".

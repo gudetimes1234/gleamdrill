@@ -1,0 +1,2 @@
+Replace Magic Literal: a named constant says what 9.81 means and keeps every use in step. When the value changes, or a reader wonders where it came from, there is one place to look.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Magic Literal.

@@ -1,0 +1,8 @@
+need("active_emails")
+tc("active_emails([{'active': True, 'email': 'Ann@x.com'}])", ["ann@x.com"], active_emails([{"active": True, "email": "Ann@x.com"}]))
+tc("active_emails(inactive user)", [], active_emails([{"active": False, "email": "bo@x.com"}]))
+tc("active_emails(blank email)", [], active_emails([{"active": True, "email": ""}]))
+tc("active_emails(test address)", [], active_emails([{"active": True, "email": "qa@test.com"}]))
+tc("active_emails([])", [], active_emails([]))
+uses(r"\bcontinue\b", "continue")
+avoids(r"^( *)if\b.*:\s*\n\1 +if\b", "an if nested inside another if")

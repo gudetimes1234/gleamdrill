@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: continue early, not nested ifs in a loop
+Flatten active_emails(users): skip each user who doesn't qualify with `continue`, so the append sits at the loop's top level. No if nested directly inside another if.

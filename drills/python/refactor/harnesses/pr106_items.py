@@ -1,0 +1,6 @@
+need("price_lines")
+tc("price_lines({'tea': 1.5, 'cake': 3})", ["tea: 1.50", "cake: 3.00"], price_lines({"tea": 1.5, "cake": 3}))
+tc("price_lines({'pen': 0.1})", ["pen: 0.10"], price_lines({"pen": 0.1}))
+tc("price_lines({})", [], price_lines({}))
+uses(r"\.items\(\)", "dict.items()")
+avoids(r"\bprices\[", "indexing prices by key inside the loop")

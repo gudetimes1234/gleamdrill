@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: Star unpacking, not [0] and [1:]
+Rewrite parse_row(row) to split the name from the scores with star unpacking (name, *rest = ...): no [0] or [1:].

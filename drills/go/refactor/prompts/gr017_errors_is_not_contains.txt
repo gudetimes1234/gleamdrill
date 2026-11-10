@@ -1,0 +1,3 @@
+section: Errors
+title: errors.Is, not strings.Contains on the message
+shouldRetry looks for the word "timeout" inside err.Error(). Ask errors.Is(err, ErrTimeout) instead; it finds the sentinel through any amount of wrapping.

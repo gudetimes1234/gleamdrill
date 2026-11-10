@@ -1,0 +1,7 @@
+need("price_with_shipping")
+tc("price_with_shipping(100, True)", 124.2, price_with_shipping(100, True))
+tc("price_with_shipping(100, False)", 113.4, price_with_shipping(100, False))
+tc("price_with_shipping(0, False) -- shipping still taxed", 5.4, price_with_shipping(0, False))
+tc("price_with_shipping(9.99, True)", 26.99, price_with_shipping(9.99, True))
+avoids(r"1\.08[\s\S]*1\.08", "the tax step written twice")
+uses(r"1\.08", "the tax step")

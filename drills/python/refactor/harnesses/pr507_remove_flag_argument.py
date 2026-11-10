@@ -1,0 +1,6 @@
+need("delivery_days")
+tc('delivery_days({"region": "local"}, True)', 1, delivery_days({"region": "local"}, True))
+tc('delivery_days({"region": "north"}, True)', 2, delivery_days({"region": "north"}, True))
+tc('delivery_days({"region": "local"}, False)', 3, delivery_days({"region": "local"}, False))
+tc('delivery_days({"region": ""}, False) -- empty region', 5, delivery_days({"region": ""}, False))
+uses(r"(?s)^def (?!delivery_days\b)\w+\(\s*\w+\s*\).*^def (?!delivery_days\b)\w+\(\s*\w+\s*\)", "two one-argument functions, one per behaviour")

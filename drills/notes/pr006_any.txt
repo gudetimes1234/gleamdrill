@@ -1,0 +1,2 @@
+A flag, a loop and a break is any() written out by hand. any() stops at the first match too, and the name says what the question is.
+Source: Python docs, Built-in Functions: any().

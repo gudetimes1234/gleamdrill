@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: functools.cache, not a memo dict
+ways_to_climb keeps its own memo dict. Decorate it with functools.cache (or lru_cache) and drop the dict, leaving only the recurrence.

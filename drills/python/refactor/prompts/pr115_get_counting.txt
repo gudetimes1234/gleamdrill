@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: Sum with dict.get, not if/else
+Rewrite totals(expenses) so each category's total is read with .get(category, 0) and written back in one line: no if/else for the first time a category shows up.

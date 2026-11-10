@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: A dict comprehension, not key assignment
+Rewrite price_index(items) as one dict comprehension: no empty dict filled in a loop.

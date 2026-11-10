@@ -1,0 +1,7 @@
+need("report")
+tc("report([1, 5, 12], 2, 10)", ([1, 12], [2, 5, 10]), report([1, 5, 12], 2, 10))
+tc("report([2, 10], 2, 10) -- on the bounds", ([], [2, 10]), report([2, 10], 2, 10))
+tc("report([], 0, 1) -- empty", ([], []), report([], 0, 1))
+tc("report([-3, 3], 0, 0)", ([-3, 3], [0, 0]), report([-3, 3], 0, 0))
+uses(r"^class \w+|NamedTuple|namedtuple\(", "a class for the range")
+avoids(r"def (?!report\b)\w+\([^)]*\blow\b", "low and high passed loose outside report")

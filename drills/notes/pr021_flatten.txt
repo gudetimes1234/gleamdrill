@@ -1,0 +1,2 @@
+A comprehension's for clauses nest in the same order as the loops they replace, so flattening reads left to right as "each item of each order".
+Source: Python tutorial, Data Structures: list comprehensions (multiple for clauses).

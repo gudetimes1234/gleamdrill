@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: copy, not an element loop
+Rewrite snapshot(src) to fill the new slice with the copy built-in (or slices.Clone): no element-by-element loop.

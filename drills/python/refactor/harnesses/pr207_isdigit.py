@@ -1,0 +1,8 @@
+need("is_pin")
+tc("is_pin('0420')", True, is_pin("0420"))
+tc("is_pin('12a4')", False, is_pin("12a4"))
+tc("is_pin('123') -- too short", False, is_pin("123"))
+tc("is_pin('-123') -- a sign is not a digit", False, is_pin("-123"))
+tc("is_pin('') -- empty", False, is_pin(""))
+uses(r"\.isdigit\(|\.isdecimal\(", "isdigit()")
+avoids(r"^\s*for\b.*:\s*$|0123456789", "checking characters by hand")

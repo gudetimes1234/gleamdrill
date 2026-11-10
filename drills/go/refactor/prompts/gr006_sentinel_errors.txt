@@ -1,0 +1,3 @@
+section: Errors
+title: Sentinel errors, not repeated errors.New
+withdraw and reserve each build their errors inline with errors.New, and "insufficient funds" is written twice. Declare package-level sentinels (var ErrInsufficientFunds = errors.New(...)) and return those.

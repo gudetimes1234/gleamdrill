@@ -1,0 +1,3 @@
+section: Control Flow
+title: Handle the error first
+Rewrite parsePort(s) so each error returns straight away and the success path is not indented: no err == nil branch, no else.

@@ -1,0 +1,6 @@
+need("shout", "greet")
+tc('greet("ada", "hi")', "HI, ADA!", greet("ada", "hi"))
+tc('greet(name="bo", greeting="yo")', "YO, BO!", greet(name="bo", greeting="yo"))
+tc('greet("", "hey") -- empty name', "HEY, !", greet("", "hey"))
+uses(r"def \w+\(\s*\*\w+\s*,\s*\*\*\w+\s*\)", "a wrapper taking *args, **kwargs")
+avoids(r"^\s+def \w+\(\s*name\s*,\s*greeting", "an inner function re-listing name and greeting")

@@ -1,0 +1,2 @@
+When every error branch returns, the else is noise: flipping the test and returning early keeps the normal path unindented and each failure next to its check.
+Source: Go Code Review Comments, "Indent Error Flow" (go.dev/wiki/CodeReviewComments).

@@ -1,0 +1,3 @@
+section: Refactorings
+title: Consolidate Conditional Expression · disability
+Three separate ifs all return 0. Combine them into one condition (ideally a named function) so there is a single return 0.

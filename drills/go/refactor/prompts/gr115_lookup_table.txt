@@ -1,0 +1,3 @@
+section: Control Flow
+title: A lookup table, not a switch of returns
+Rewrite statusText(code) with a map from code to text and one lookup: no switch whose every case just returns a constant.

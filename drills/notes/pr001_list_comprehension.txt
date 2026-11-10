@@ -1,0 +1,2 @@
+An empty list, a for loop, an append and a return is a list comprehension spelled out by hand. The comprehension says "one out for each one in" and the accumulator disappears.
+Source: PEP 202 (list comprehensions) and the Python tutorial, Data Structures: list comprehensions.

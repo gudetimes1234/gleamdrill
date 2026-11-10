@@ -1,0 +1,7 @@
+need("by_age")
+tc("by_age([('Ada', 36), ('Bo', 9), ('Cy', 70)])", ["Bo", "Ada", "Cy"], by_age([("Ada", 36), ("Bo", 9), ("Cy", 70)]))
+tc("by_age([('Solo', 20)])", ["Solo"], by_age([("Solo", 20)]))
+tc("by_age([('Old', 99), ('Young', 1)])", ["Young", "Old"], by_age([("Old", 99), ("Young", 1)]))
+tc("by_age([]) -- nobody", [], by_age([]))
+uses(r"\bkey\s*=", "a key= function")
+avoids(r"\.append\(", "building swapped tuples to sort")

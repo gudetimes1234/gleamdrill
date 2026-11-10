@@ -1,0 +1,2 @@
+Swapping fields into tuples so sort() compares the right one is the decorate-sort-undecorate dance. key= tells sorted what to compare and leaves the data alone.
+Source: Python Sorting HOWTO: Key Functions (docs.python.org/3/howto/sorting.html).

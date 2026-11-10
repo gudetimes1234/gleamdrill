@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace Temp with Query · order price
+price computes base_price and discount_factor as temps. Turn each into its own method and have price call them.

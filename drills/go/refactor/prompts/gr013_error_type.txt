@@ -1,0 +1,3 @@
+section: Errors
+title: An error type, not parsing the message
+shortfall gets the missing amount back by running Sscanf over err.Error(). Give charge a named error type (say ShortError with a Missing field and an Error() method) and have shortfall read the field with errors.As.

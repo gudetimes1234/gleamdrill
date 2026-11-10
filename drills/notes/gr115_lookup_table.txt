@@ -1,0 +1,2 @@
+When every case only returns a constant, the switch is data dressed up as code. A map literal states the pairs as data, and the default becomes one comma-ok fallback.
+Source: Effective Go, "Maps".

@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A type switch, not a Kind field
+Event carries a Kind string plus every field any kind might need. Make Event an interface with separate Login and Payment structs, and have describe use a type switch. Keep login and payment as the constructors.

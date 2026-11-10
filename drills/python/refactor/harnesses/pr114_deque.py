@@ -1,0 +1,7 @@
+need("finish_order")
+tc("finish_order([('a', 2), ('b', 1), ('c', 3)])", ["b", "a", "c"], finish_order([("a", 2), ("b", 1), ("c", 3)]))
+tc("finish_order([('x', 1), ('y', 1)])", ["x", "y"], finish_order([("x", 1), ("y", 1)]))
+tc("finish_order([('long', 4)])", ["long"], finish_order([("long", 4)]))
+tc("finish_order([]) -- nothing queued", [], finish_order([]))
+uses(r"\.popleft\(", "deque.popleft")
+avoids(r"\.pop\(\s*0\s*\)", "list.pop(0)")

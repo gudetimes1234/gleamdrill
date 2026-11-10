@@ -1,0 +1,2 @@
+With iota constants numbered 0, 1, 2 the names can live in a slice indexed by the value, so adding a status means adding one word in one place. That is the shape the stringer tool generates.
+Source: the stringer command docs (golang.org/x/tools/cmd/stringer) and Effective Go, "Constants".

@@ -1,0 +1,2 @@
+Counting matches is summing a 1 for each one. Putting the filter in the generator turns the counter, the test and the increment into one expression.
+Source: Python docs, Built-in Functions: sum(), and PEP 289 (generator expressions).

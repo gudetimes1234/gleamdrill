@@ -1,0 +1,3 @@
+section: Errors
+title: if err := f(); err != nil
+register assigns err on one line and tests it on the next, twice, so err leaks into the rest of the function. Use the scoped form if err := checkName(name); err != nil for each check.

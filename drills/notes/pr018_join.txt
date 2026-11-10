@@ -1,0 +1,2 @@
+join puts the separator between items, so there is no first-item special case. It also builds the result once instead of making a new string on every +=.
+Source: Python docs, Built-in Types: str.join(), and the Programming FAQ, "What is the most efficient way to concatenate many strings together?".

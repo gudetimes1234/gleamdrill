@@ -1,0 +1,7 @@
+need("undo_steps")
+tc("undo_steps(['type', 'bold', 'save'])", ["undo save", "undo bold", "undo type"], undo_steps(["type", "bold", "save"]))
+tc("undo_steps(['paste'])", ["undo paste"], undo_steps(["paste"]))
+tc("undo_steps(['a', 'b'])", ["undo b", "undo a"], undo_steps(["a", "b"]))
+tc("undo_steps([]) -- nothing to undo", [], undo_steps([]))
+uses(r"\breversed\(|\[\s*::\s*-1\s*\]", "reversed() or a [::-1] slice")
+avoids(r"\brange\(", "range() with indexes")

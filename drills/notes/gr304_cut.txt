@@ -1,0 +1,2 @@
+strings.Cut packages the find-then-slice dance into one call with no index arithmetic, so there is no i+1 to get wrong and no -1 to check.
+Source: the Go standard library docs, strings.Cut (added in Go 1.18).

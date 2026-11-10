@@ -1,0 +1,2 @@
+A struct's fields are checked at compile time: a misspelled field or a wrong type will not build, whereas a map[string]any defers both mistakes to a run-time panic. The struct also documents what a user holds.
+Source: Effective Go, "Composite literals", and the Go spec, "Struct types".

@@ -1,0 +1,2 @@
+trip[1] - trip[0] makes the reader remember which slot is which. Unpacking in the for gives both fields names, so the arithmetic reads as end minus start.
+Source: Python tutorial, Data Structures: tuples and sequences (sequence unpacking).

@@ -1,0 +1,2 @@
+`not (a or not b)` makes the reader distribute the negation in their head. De Morgan's law, not (a or b) == (not a) and (not b), lets you write it out once: not banned and verified, a double negative gone.
+Source: De Morgan's laws, applied as in Fowler's Decompose Conditional (refactoring.com/catalog): make the condition read as plain intent.

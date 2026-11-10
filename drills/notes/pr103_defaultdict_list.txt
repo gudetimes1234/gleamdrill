@@ -1,0 +1,2 @@
+A defaultdict calls its factory the first time a key is missing, so grouping is just d[key].append(x) with no first-time special case. Converting back with dict() at the end keeps the auto-create behaviour from leaking to callers.
+Source: the Python docs, collections: defaultdict (the defaultdict(list) grouping example).

@@ -1,0 +1,3 @@
+section: Strings
+title: strings.EqualFold, not ToLower on both sides
+hasTag lowercases both strings on every comparison just to compare them. Use strings.EqualFold, which compares case-insensitively without building new strings.

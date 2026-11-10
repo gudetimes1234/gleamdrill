@@ -1,0 +1,7 @@
+need("row_to_record")
+tc("row_to_record(['name', 'age'], ['ann', '31'])", {"name": "ann", "age": "31"}, row_to_record(["name", "age"], ["ann", "31"]))
+tc("row_to_record(['id'], [7])", {"id": 7}, row_to_record(["id"], [7]))
+tc("row_to_record(['a', 'a'], [1, 2]) -- a repeated column keeps the last", {"a": 2}, row_to_record(["a", "a"], [1, 2]))
+tc("row_to_record([], [])", {}, row_to_record([], []))
+uses(r"\bzip\(", "zip")
+avoids(r"\brange\(\s*len\(", "range(len(...))")

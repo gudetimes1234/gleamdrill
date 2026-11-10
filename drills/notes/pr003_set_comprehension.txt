@@ -1,0 +1,2 @@
+A set comprehension says "the distinct values of this expression" directly, so there is no mutable set to create and fill. Duplicates vanish as part of the expression.
+Source: Python tutorial, Data Structures: sets (set comprehensions), and the language reference, Displays for lists, sets and dictionaries.

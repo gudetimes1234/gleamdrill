@@ -1,0 +1,7 @@
+need("report_line")
+tc("report_line('north', 1234567, 3.14159)", "   north 1,234,567 3.14", report_line("north", 1234567, 3.14159))
+tc("report_line('south', 12, 2.5)", "   south 12 2.50", report_line("south", 12, 2.5))
+tc("report_line('far-north-east', 1000, 0) -- long labels are not cut", "far-north-east 1,000 0.00", report_line("far-north-east", 1000, 0))
+tc("report_line('', 0, 2.5)", "         0 2.50", report_line("", 0, 2.5))
+uses(r"\bf[\"'].*\{[^{}]*:[^{}]*\}", "an f-string with format specs")
+avoids(r"\.[rl]just\(|\bformat\(|%\.", "rjust, format() or % formatting")

@@ -1,0 +1,7 @@
+need("has_admin")
+tc("has_admin([{'role': 'guest'}, {'role': 'admin'}])", True, has_admin([{"role": "guest"}, {"role": "admin"}]))
+tc("has_admin([{'role': 'guest'}])", False, has_admin([{"role": "guest"}]))
+tc("has_admin([{'role': 'Admin'}]) -- case matters", False, has_admin([{"role": "Admin"}]))
+tc("has_admin([]) -- no users", False, has_admin([]))
+uses(r"\bany\(", "any()")
+avoids(r"^\s*for\b.*:\s*$", "a for loop")

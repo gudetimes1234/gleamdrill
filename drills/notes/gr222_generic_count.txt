@@ -1,0 +1,2 @@
+Two functions that differ only in element type are one function with a type parameter. A comparable constraint is all == needs, and a fix now lands in one place.
+Source: The Go blog, "An Introduction To Generics".

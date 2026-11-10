@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: functools.partial, not one-line wrappers
+square and cube are defs that only call power with a fixed exponent. Define them with functools.partial instead.

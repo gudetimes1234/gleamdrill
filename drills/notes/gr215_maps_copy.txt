@@ -1,0 +1,2 @@
+maps.Copy(dst, src) is the copy loop with a name: every key in src is set in dst, overwriting what's there. Defaults first, then Copy, reads as exactly the merge rule.
+Source: the Go standard library docs, package maps.

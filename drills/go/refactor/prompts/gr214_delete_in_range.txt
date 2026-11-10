@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: Delete while ranging, not in a second pass
+Rewrite expire(sessions, now) to delete stale entries inside the range loop: no slice of keys collected for a second pass.

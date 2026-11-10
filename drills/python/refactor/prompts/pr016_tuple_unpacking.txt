@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: Unpack in the for, not trip[0] and trip[1]
+Rewrite trip_lengths(trips) so the loop unpacks each (start, end) pair into names: no [0] or [1] indexing.

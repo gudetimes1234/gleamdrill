@@ -1,0 +1,3 @@
+section: Refactorings
+title: Split loop · staff summary
+One loop finds the youngest age and adds up the payroll at the same time. Split it into two loops, one per job (extracting each into its own function is a fine next step).

@@ -1,0 +1,2 @@
+Counting into a dict and then sorting its items by value is exactly what Counter does. Counter(iterable) builds the tally and most_common(n) returns the top n (count, then first-seen order on ties), so the function becomes one line that names its intent.
+Source: the Python docs, collections: Counter and Counter.most_common.

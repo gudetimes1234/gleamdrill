@@ -1,0 +1,3 @@
+section: Refactorings
+title: Decompose Conditional · summer rates
+charge tests the month range inline and computes each branch in place. Extract the condition and both branches into named functions, so charge reads as: if summer, summer charge, else regular charge.

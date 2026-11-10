@@ -1,0 +1,2 @@
+Split Loop: a loop doing two things makes both harder to understand and to change. Two loops each do one job, and each can then be extracted or replaced with min or sum; the extra pass rarely matters.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Split Loop.

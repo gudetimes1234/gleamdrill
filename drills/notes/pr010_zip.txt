@@ -1,0 +1,2 @@
+Indexing two lists with one i ties them together only by convention. zip pairs the items for you, so each pass names both values outright.
+Source: Python docs, Built-in Functions: zip().

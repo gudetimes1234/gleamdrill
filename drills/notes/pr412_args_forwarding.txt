@@ -1,0 +1,2 @@
+*args and **kwargs let a wrapper pass along whatever it was given, so it works with any signature and keeps working when the wrapped function gains a parameter. Re-listing the parameters ties the wrapper to one function.
+Source: Python tutorial, More on Defining Functions: Arbitrary Argument Lists and Unpacking Argument Lists.

@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: Counter.most_common, not count and sort
+Rewrite top_words(words, n) with collections.Counter and its most_common: no hand-built counts dict and no sorted call.

@@ -1,0 +1,3 @@
+section: Loops & Comprehensions
+title: any(), not a found flag
+Rewrite has_admin(users) with any() over a generator: no flag variable, no loop with break.

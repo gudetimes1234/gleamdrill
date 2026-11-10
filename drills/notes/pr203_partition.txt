@@ -1,0 +1,2 @@
+partition splits at the first separator and hands back the before, the separator and the after. The index arithmetic and its +1 go away.
+Source: Python docs, Built-in Types: str.partition().

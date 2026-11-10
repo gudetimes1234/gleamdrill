@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: slices.ContainsFunc, not a return-true loop
+Rewrite hasBlank(lines) with slices.ContainsFunc: no loop.

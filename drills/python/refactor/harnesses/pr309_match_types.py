@@ -1,0 +1,8 @@
+need("describe")
+tc("describe(True) -- bool before int", "flag", describe(True))
+tc("describe(42)", "number 42", describe(42))
+tc("describe('hey')", "text of 3", describe("hey"))
+tc("describe([])", "list of 0", describe([]))
+tc("describe(1.5)", "unknown", describe(1.5))
+uses(r"^\s*match\b.*:", "a match statement")
+avoids(r"\bisinstance\(", "isinstance checks")

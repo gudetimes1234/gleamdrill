@@ -1,0 +1,2 @@
+Building (sort_key, value) pairs, sorting them and unpacking again is the old decorate-sort-undecorate pattern. sorted(..., key=...) does all three: the key function computes the ordering and the original items come back out.
+Source: the Python Sorting HOWTO (docs.python.org/3/howto/sorting.html): Key Functions and Decorate-Sort-Undecorate.

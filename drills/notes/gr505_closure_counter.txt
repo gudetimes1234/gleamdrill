@@ -1,0 +1,2 @@
+A closure owns its state, so two callers (or two goroutines) can never trample each other's count, and there is no reset to forget. Package-level mutable variables are shared by everything in the program.
+Source: A Tour of Go, "Function closures".

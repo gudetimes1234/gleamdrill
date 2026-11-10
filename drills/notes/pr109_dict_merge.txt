@@ -1,0 +1,2 @@
+Copying one dict and overwriting from another is a merge, and since Python 3.9 dicts have an operator for it. `a | b` builds a new dict where b's values win, leaving both inputs untouched; `{**a, **b}` says the same on older versions.
+Source: PEP 584 (add union operators to dict).

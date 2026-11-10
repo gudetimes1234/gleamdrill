@@ -1,0 +1,7 @@
+need("top_three")
+tc("top_three([4, 9, 1, 7, 3])", [9, 7, 4], top_three([4, 9, 1, 7, 3]))
+tc("top_three([5, 2]) -- fewer than three", [5, 2], top_three([5, 2]))
+tc("top_three([8, 8, 8, 8])", [8, 8, 8], top_three([8, 8, 8, 8]))
+tc("top_three([]) -- no scores", [], top_three([]))
+uses(r"\[[^\[\]]*:[^\[\]]*\]|\bnlargest\(", "a slice")
+avoids(r"\brange\(", "an index loop")

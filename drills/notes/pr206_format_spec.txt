@@ -1,0 +1,2 @@
+The format mini-language puts padding, thousands separators and decimal places right next to the value in the template, so the finished line's shape is visible at a glance.
+Source: Python docs, string: Format Specification Mini-Language.

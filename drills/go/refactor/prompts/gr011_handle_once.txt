@@ -1,0 +1,3 @@
+section: Errors
+title: Return the error, don't log it too
+parseQty logs each failure and then returns it as well, so whoever handles the error logs it a second time. Just return the error and let the caller decide what to do with it.

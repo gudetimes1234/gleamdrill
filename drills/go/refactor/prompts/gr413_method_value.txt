@@ -1,0 +1,3 @@
+section: Types & Methods
+title: A method value, not a wrapper closure
+cleanAll wraps r.Replace in a closure that only forwards its argument. Pass the method value r.Replace to mapStrings directly.

@@ -1,0 +1,7 @@
+need("has_keyword")
+tc("has_keyword('I want a Refund now', 'refund')", True, has_keyword("I want a Refund now", "refund"))
+tc("has_keyword('Thanks!', 'refund')", False, has_keyword("Thanks!", "refund"))
+tc("has_keyword('refund', 'REFUND') -- case does not matter", True, has_keyword("refund", "REFUND"))
+tc("has_keyword('', 'x') -- empty text", False, has_keyword("", "x"))
+uses(r"\bin\b", "the in operator")
+avoids(r"\.find\(|\.index\(|\.count\(", "find(), index() or count()")

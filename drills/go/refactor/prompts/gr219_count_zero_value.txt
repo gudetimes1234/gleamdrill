@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: counts[w]++, no existence check
+Rewrite wordCounts(words) to rely on the zero value of a missing key: no checking whether the word is already in the map.

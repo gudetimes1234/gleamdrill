@@ -1,0 +1,2 @@
+A temporary earns its place when its name says more than the expression. o.Price * o.Qty > 1000 already reads as the rule, so the extra name is just one more thing to track.
+Source: Martin Fowler's refactoring catalog, Inline Variable (refactoring.com/catalog/inlineVariable.html).

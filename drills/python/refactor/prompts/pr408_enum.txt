@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: An Enum, not numbered constants
+Light is a class of plain ints with a NAMES dict beside it. Make Light an enum.Enum and get the label from the member's .name, dropping the dict.

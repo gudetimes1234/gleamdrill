@@ -1,0 +1,3 @@
+section: Refactorings
+title: Split phase · order line
+orderTotal parses the text and prices the order in one go. Split it into a parse phase that returns a small struct and a pricing phase that takes that struct, with orderTotal calling one then the other.

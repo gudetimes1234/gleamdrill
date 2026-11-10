@@ -1,0 +1,2 @@
+:= inside a block declares a new err that hides the outer one, so the outer variable never changes and reading it later is misleading at best. Returning a literal nil on the success path says exactly what happens.
+Source: Effective Go, "Redeclaration and reassignment", and the Go spec, "Declarations and scope".

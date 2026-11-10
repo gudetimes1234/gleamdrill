@@ -1,0 +1,2 @@
+Python chains comparisons the way maths writes them: `a <= x < b` means `a <= x and x < b` with x evaluated once. The range reads as a range, and the bounds sit on either side of the value instead of being split across an and.
+Source: the Python language reference, Expressions: Comparisons (chained comparisons).

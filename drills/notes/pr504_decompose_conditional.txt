@@ -1,0 +1,2 @@
+Decompose Conditional: give the condition and each branch a name, so the if says why it branches (is it summer?) instead of how it checks. The details move into small functions whose names explain them.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Decompose Conditional.

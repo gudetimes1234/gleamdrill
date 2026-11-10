@@ -1,0 +1,7 @@
+need("trip_lengths")
+tc("trip_lengths([(100, 142), (142, 160)])", [42, 18], trip_lengths([(100, 142), (142, 160)]))
+tc("trip_lengths([(5, 5)]) -- a trip that went nowhere", [0], trip_lengths([(5, 5)]))
+tc("trip_lengths([(0, 7), (7, 20), (20, 21)])", [7, 13, 1], trip_lengths([(0, 7), (7, 20), (20, 21)]))
+tc("trip_lengths([])", [], trip_lengths([]))
+uses(r"\bfor\s+\(?\s*\w+\s*,\s*\w+\s*\)?\s+in\b", "unpacking in the for")
+avoids(r"\w\[\s*[01]\s*\]", "indexing with [0] or [1]")

@@ -1,0 +1,7 @@
+need("shared_tags")
+tc("shared_tags(['py', 'go', 'rb'], ['rb', 'py', 'js'])", ["py", "rb"], shared_tags(["py", "go", "rb"], ["rb", "py", "js"]))
+tc("shared_tags(['x', 'x', 'y'], ['x']) -- each tag once", ["x"], shared_tags(["x", "x", "y"], ["x"]))
+tc("shared_tags(['a'], ['b'])", [], shared_tags(["a"], ["b"]))
+tc("shared_tags([], ['a'])", [], shared_tags([], ["a"]))
+uses(r"&|\.intersection\(", "a set intersection")
+avoids(r"\bfor\b", "loops comparing tags")

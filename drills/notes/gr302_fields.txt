@@ -1,0 +1,2 @@
+strings.Fields already treats any run of whitespace as one separator and drops leading and trailing space, so the empty-string filtering disappears and tabs and newlines work too.
+Source: the Go standard library docs, strings.Fields.

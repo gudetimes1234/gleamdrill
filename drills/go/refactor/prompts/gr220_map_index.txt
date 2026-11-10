@@ -1,0 +1,3 @@
+section: Slices & Maps
+title: Index by ID, not a nested search
+Rewrite totalsByName(users, orders) to build a map from user ID first and look each order's user up in it: no loop inside a loop.

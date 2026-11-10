@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: Loop over .items(), not keys then index
+Rewrite price_lines(prices) to loop over prices.items() so each name arrives with its price: no `prices[name]` lookup inside the loop.

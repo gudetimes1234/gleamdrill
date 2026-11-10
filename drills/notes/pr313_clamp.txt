@@ -1,0 +1,2 @@
+Clamping is "no lower than this, no higher than that", which is max with the floor and min with the ceiling. Nesting them gives one expression with both bounds in sight instead of two branches and a fallthrough.
+Source: the Python docs, Built-in Functions: min and max.

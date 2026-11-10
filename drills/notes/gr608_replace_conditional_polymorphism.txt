@@ -1,0 +1,2 @@
+Each kind's rule now lives on its own type, so adding a kind means adding a type, not editing a switch somewhere else. Fields get honest names (Bonus, Sales) instead of one Extra that means different things.
+Source: Martin Fowler's refactoring catalog, Replace Conditional with Polymorphism (refactoring.com/catalog/replaceConditionalWithPolymorphism.html).

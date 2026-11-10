@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: A dict of functions, not an elif dispatch
+Rewrite calculate(op, a, b) to look the operation up in a dict of functions (operator.add and friends, or lambdas). An unknown op still raises ValueError("unknown op: <op>"). No elif chain.

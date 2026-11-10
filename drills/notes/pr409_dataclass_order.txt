@@ -1,0 +1,2 @@
+dataclass(order=True) generates __eq__, __lt__, __le__, __gt__ and __ge__, comparing the fields as a tuple in declaration order. Hand-written comparisons are easy to get subtly wrong and usually cover only some of the operators.
+Source: Python docs, dataclasses (the order parameter).

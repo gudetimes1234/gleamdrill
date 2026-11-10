@@ -1,0 +1,2 @@
+contextlib.contextmanager turns a generator into a context manager: code before yield is setup, code after it (in a finally) is teardown, and local variables carry the state. One short function replaces a class that existed only to remember things between __enter__ and __exit__.
+Source: Python docs, contextlib.contextmanager.

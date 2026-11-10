@@ -1,0 +1,3 @@
+section: Types & Methods
+title: type Celsius, not bare float64
+Every temperature here is a bare float64, so nothing stops a Fahrenheit value going where a Celsius one belongs. Declare Celsius and Fahrenheit types and use them in both signatures.

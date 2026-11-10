@@ -1,0 +1,3 @@
+section: Functions & Classes
+title: @classmethod, not a staticmethod naming the class
+from_fahrenheit is a staticmethod that hard-codes Temperature(...). Make it a @classmethod that builds with cls(...), so it never names its own class.

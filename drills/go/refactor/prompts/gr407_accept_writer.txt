@@ -1,0 +1,3 @@
+section: Types & Methods
+title: Accept io.Writer, not *bytes.Buffer
+writeReport only ever writes to its buffer, yet it demands a *bytes.Buffer. Accept an io.Writer instead, so it can write to a file, a network connection or os.Stdout too.

@@ -1,0 +1,2 @@
+Replace Nested Conditional with Guard Clauses. Each unusual case leaves at once with its own return, and the normal case is the last line, unindented. The result variable and every else go away.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Replace Nested Conditional with Guard Clauses.

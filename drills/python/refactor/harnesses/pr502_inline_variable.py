@@ -1,0 +1,7 @@
+need("free_shipping")
+tc('free_shipping({"price": 50, "quantity": 2}) -- exactly 100', True, free_shipping({"price": 50, "quantity": 2}))
+tc('free_shipping({"price": 99, "quantity": 1})', False, free_shipping({"price": 99, "quantity": 1}))
+tc('free_shipping({"price": 25, "quantity": 5})', True, free_shipping({"price": 25, "quantity": 5}))
+tc('free_shipping({"price": 500, "quantity": 0}) -- zero', False, free_shipping({"price": 500, "quantity": 0}))
+avoids(r"^\s*\w+\s*=[^=\n]*[<>]=?", "a variable that only holds the comparison")
+avoids(r"^\s*return\s+\w+\s*$", "returning a bare variable")

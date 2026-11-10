@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: De Morgan, not a negated group
+Rewrite can_comment(user) without negating a parenthesised or: push the `not` inside with De Morgan's law so each condition reads on its own.

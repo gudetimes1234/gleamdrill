@@ -1,0 +1,2 @@
+A classmethod receives the class it was called on, so cls(...) builds the right type even when called on a subclass, and the alternative constructor never names its own class. A staticmethod that hard-codes Temperature(...) quietly returns the wrong type for subclasses.
+Source: Python docs, Built-in Functions: classmethod.

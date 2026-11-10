@@ -1,0 +1,2 @@
+A value receiver works on a copy, so a method that mutates has to return the copy and trust the caller to store it. A pointer receiver changes the caller's value directly, and Go takes the address for you when you call acct.Deposit on a variable.
+Source: the Go FAQ, "Should I define methods on values or pointers?", and Effective Go, "Pointers vs. Values".

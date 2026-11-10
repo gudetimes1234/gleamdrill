@@ -1,0 +1,2 @@
+Introduce Parameter Object: values that always travel together, like a low and a high bound, become one object. Signatures get shorter, and the object becomes the natural home for behaviour such as contains or clamp.
+Source: Martin Fowler's refactoring catalog (refactoring.com/catalog): Introduce Parameter Object.

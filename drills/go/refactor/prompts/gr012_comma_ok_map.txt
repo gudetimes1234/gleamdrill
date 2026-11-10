@@ -1,0 +1,3 @@
+section: Errors
+title: Comma-ok lookup, not a scan of the map
+stockOf loops over the whole map to find one key. Look it up directly with the comma-ok form (qty, ok := inv[item]) so a present zero is still told apart from a missing item.

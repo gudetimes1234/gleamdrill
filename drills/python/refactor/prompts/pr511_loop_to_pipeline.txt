@@ -1,0 +1,3 @@
+section: Refactorings
+title: Replace Loop with Pipeline · India offices
+india_offices walks the lines with a first-line flag, continue and append. Rewrite it as a pipeline of comprehensions: drop the header and blank lines, split, keep India, pick the fields.

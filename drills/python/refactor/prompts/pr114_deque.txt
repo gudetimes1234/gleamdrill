@@ -1,0 +1,3 @@
+section: Dicts & Collections
+title: deque.popleft, not list.pop(0)
+Use a collections.deque for the round-robin queue and take from the front with popleft(): no list.pop(0).

@@ -1,0 +1,3 @@
+section: Conditionals & Flow
+title: The walrus, not computing twice
+Rewrite tags(raw) so clean(t) runs once per tag: bind it with `:=` inside the comprehension's condition instead of calling it again for the value.

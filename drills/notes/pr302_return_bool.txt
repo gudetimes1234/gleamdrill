@@ -1,0 +1,2 @@
+A comparison or `and` of booleans already is True or False. Wrapping it in if/else just to return the same value again doubles the code and makes the reader check that the branches aren't swapped.
+Source: the Python docs, Built-in Types: Truth Value Testing and Boolean Operations.

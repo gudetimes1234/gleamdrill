@@ -1,0 +1,7 @@
+need("potential_energy", "fall_speed")
+tc("potential_energy(10, 2)", 196.2, round(potential_energy(10, 2), 6))
+tc("potential_energy(0, 5) -- zero mass", 0.0, round(potential_energy(0, 5), 6))
+tc("fall_speed(5)", 9.904544, round(fall_speed(5), 6))
+tc("fall_speed(0) -- zero height", 0.0, round(fall_speed(0), 6))
+uses(r"^[A-Z][A-Z0-9_]*\s*=\s*9\.81\b", "a named constant for 9.81")
+avoids(r"(?s)9\.81.*9\.81", "9.81 written more than once")

@@ -225,6 +225,7 @@ try:
         harness = f.read()
     with contextlib.redirect_stdout(out):
         exec(compile(solution, \"solution.py\", \"exec\"), ns)
+        ns[\"__source__\"] = solution
         exec(compile(harness, \"harness.py\", \"exec\"), ns)
     cases = [
         {\"label\": label, \"expected\": expected, \"actual\": actual, \"passed\": expected == actual}

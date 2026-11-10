@@ -1,0 +1,7 @@
+need("totals")
+tc("totals([('food', 12), ('rent', 800), ('food', 8)])", {"food": 20, "rent": 800}, totals([("food", 12), ("rent", 800), ("food", 8)]))
+tc("totals([('fun', 2.5), ('fun', 0.5)])", {"fun": 3.0}, totals([("fun", 2.5), ("fun", 0.5)]))
+tc("totals([('gift', 0)]) -- zero still makes an entry", {"gift": 0}, totals([("gift", 0)]))
+tc("totals([])", {}, totals([]))
+uses(r"\.get\(", "dict.get with a default")
+avoids(r"\belse\b", "an if/else for the first entry")

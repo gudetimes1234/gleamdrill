@@ -19,6 +19,7 @@ drills/go/.verify/
 drills/haskell/.verify/
 drills/ruby/.verify/
 drills/ruby/refactor/.verify/
+drills/go/refactor/.verify/
 
 # Local backend secrets. See server/.env.example.
 server/.env

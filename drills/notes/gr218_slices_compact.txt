@@ -1,0 +1,2 @@
+slices.Compact collapses runs of equal neighbours in place, which on sorted input is exactly deduplication. The write-index bookkeeping is the part people get wrong, and Compact owns it.
+Source: the Go standard library docs, package slices.

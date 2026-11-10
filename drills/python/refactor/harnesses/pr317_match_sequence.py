@@ -1,0 +1,8 @@
+need("run_command")
+tc("run_command('look')", "You look around.", run_command("look"))
+tc("run_command('go north')", "You go north.", run_command("go north"))
+tc("run_command('take lamp key')", "You take lamp and key.", run_command("take lamp key"))
+tc("run_command('take') -- nothing to take", "Huh?", run_command("take"))
+tc("run_command('') -- empty input", "Huh?", run_command(""))
+uses(r"^\s*match\b.*:", "a match statement")
+avoids(r"\blen\(", "len() checks")

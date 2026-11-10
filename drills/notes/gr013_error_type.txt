@@ -1,0 +1,2 @@
+Parsing a message couples callers to its exact wording. A named error type carries the data as typed fields and still formats the same message through its Error method, and errors.As finds it even when wrapped.
+Source: the Go blog, "Error handling and Go", and the Uber Go Style Guide, "Error Types".

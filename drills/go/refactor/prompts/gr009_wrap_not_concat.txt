@@ -1,0 +1,3 @@
+section: Errors
+title: fmt.Errorf with %w, not err.Error() glued on
+readTimeout adds context by gluing err.Error() onto a string and calling errors.New, which throws the original error away. Use fmt.Errorf with %w to add the same context and keep the cause.

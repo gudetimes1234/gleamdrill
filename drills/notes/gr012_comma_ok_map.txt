@@ -1,0 +1,2 @@
+Indexing a map is a constant-time lookup, and the second ok result says whether the key was there at all, which a zero value alone cannot. Ranging over the map to find one key throws both of those away.
+Source: Effective Go, "Maps" (the comma ok idiom).

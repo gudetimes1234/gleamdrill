@@ -1,0 +1,2 @@
+Empty containers are falsy and non-empty ones truthy, so `if items:` already means "has something in it". Spelling it as len(items) > 0 adds a call and a comparison that say the same thing less directly.
+Source: PEP 8, Programming Recommendations: for sequences, use the fact that empty sequences are false.

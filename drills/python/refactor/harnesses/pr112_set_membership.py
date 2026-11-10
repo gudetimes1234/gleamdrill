@@ -1,0 +1,7 @@
+need("first_repeat")
+tc("first_repeat([3, 1, 4, 1, 5, 3])", 1, first_repeat([3, 1, 4, 1, 5, 3]))
+tc("first_repeat(['a', 'b', 'a'])", "a", first_repeat(["a", "b", "a"]))
+tc("first_repeat([1, 2, 3]) -- no repeat", None, first_repeat([1, 2, 3]))
+tc("first_repeat([])", None, first_repeat([]))
+uses(r"\bset\(\)|\.add\(", "a set of seen items")
+avoids(r"\.append\(", "appending to a list")
