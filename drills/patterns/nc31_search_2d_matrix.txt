@@ -1,0 +1,77 @@
+== pattern binary-search
+complexity: O(log(m·n)) time · O(1) space
+nudge: The rows are sorted and do not overlap, so finding the one row the target could be in is itself a halving question. What do a row's first and last values tell you?
+-- step Find the row
+1 low, high = 0, last row index
+  hint: Which rows could hold the target at first?
+  why: All of them, both ends included.
+2 while low <= high:
+  hint: When do you stop looking for a row?
+  why: When no rows are left to consider.
+3     mid = (low + high) // 2
+  hint: Which row do you test?
+  why: The middle one of those left.
+4     if the row's last value < target: low = mid + 1
+  hint: What if even the row's largest value is too small?
+  why: The target can only be in a later row.
+5     elif the row's first value > target: high = mid - 1
+  hint: And if its smallest value is too big?
+  why: The target can only be in an earlier row.
+6     else: return contains(that row, target)
+  hint: What is left when the target is between the row's ends?
+  why: This is the only row it could be in, so search it and return that answer.
+7 return False
+  hint: What if no row fits?
+  why: The target falls between rows or outside the matrix.
+-- step Search the row
+8 low, high = 0, last index of row
+  hint: What range of the row could hold the target?
+  why: All of it.
+9 while low <= high:
+  hint: When do you stop?
+  why: When the range is empty.
+10     mid = (low + high) // 2
+  hint: Which entry do you test?
+  why: The middle of the range.
+11     if row[mid] == target: return True
+  hint: What if it is the target?
+  why: Found.
+12     if row[mid] < target: low = mid + 1
+  hint: What if it is too small?
+  why: Everything up to mid is too small as well, so look right.
+13     else: high = mid - 1
+  hint: And too big?
+  why: Everything from mid on is too big, so look left.
+14 return False
+  hint: What if the range empties?
+  why: The target is not in the row, so not in the matrix.
+== pattern two-pointers
+complexity: O(m+n) time · O(1) space
+nudge: Stand at the top-right corner: everything left of you is smaller, everything below is larger. If the value there is wrong, which whole row or column can you throw away?
+-- step Start at the top-right corner
+1 if the matrix or its first row is empty: return False
+  hint: When is there nothing to search?
+  why: An empty matrix, or rows with no columns, holds no values.
+2 row, column = 0, last column index
+  hint: Where do you start?
+  why: Top right, where one comparison rules out either a row or a column.
+-- step Step left or down
+3 while row < number of rows and column >= 0:
+  hint: When do you fall off the matrix?
+  why: When the row runs past the bottom or the column past the left edge.
+4     value = matrix[row][column]
+  hint: What do you look at?
+  why: The value under the two pointers.
+5     if value == target: return True
+  hint: What if it is the target?
+  why: Found.
+6     if value > target: column -= 1
+  hint: The value is too big. What can you drop?
+  why: The whole column: everything below it in that column is bigger still.
+7     else: row += 1
+  hint: And when it is too small?
+  why: The whole row: everything to its left is smaller still.
+-- step Not found
+8 return False
+  hint: What if you step off the matrix?
+  why: Every row and column that could hold the target has been dropped.

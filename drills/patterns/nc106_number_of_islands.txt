@@ -1,0 +1,89 @@
+== pattern dfs
+complexity: O(m·n) time · O(m·n) space
+nudge: An island is a connected component of land squares. Start a search from every square you have not reached yet; what does each search you have to start tell you?
+-- step Collect the land
+1 land = set of every (r, c) whose value is "1"
+  hint: Which squares are nodes of the graph?
+  why: Only the land. Holding it as a set makes "is this land?" one lookup and keeps the walk off the edges.
+-- step Count the searches you start
+2 seen = empty set
+  hint: What stops a square being counted twice?
+  why: The squares already reached by some search.
+3 count = 0
+  hint: What is the answer built from?
+  why: The number of islands found so far.
+4 for at in land:
+  hint: Where can an island start?
+  why: At any land square.
+5     if at in seen: continue
+  hint: When is this square no new island?
+  why: When an earlier search already reached it: it belongs to that island.
+6     count += 1
+  hint: What does an unreached square mean?
+  why: A new island, so count it before flooding it.
+-- step Flood the island
+7     stack = [at]
+  hint: What does the search start from?
+  why: This one square, on an explicit stack.
+8     while stack:
+  hint: How long does the flood run?
+  why: Until nothing is left to visit.
+9         r, c = stack.pop()
+  hint: What do you look at next?
+  why: The most recently pushed square, which makes the search depth-first.
+10         if (r, c) not in land or (r, c) in seen: continue
+  hint: Which squares are skipped?
+  why: Water or off the grid (neither is in land), and squares already marked.
+11         seen.add((r, c))
+  hint: What do you do with a fresh land square?
+  why: Mark it, so neither this search nor a later one counts it again.
+12         push the four neighbours onto the stack
+  hint: Where can the island continue?
+  why: Up, down, left and right; the check above filters out the ones that are not land.
+-- step Return the count
+13 return count
+  hint: What is the answer?
+  why: One for every search that had to be started.
+== pattern union-find
+complexity: O(m·n·α(m·n)) time · O(m·n) space
+nudge: Let every land square start as its own island and merge neighbours. If each merge joins two islands into one, what is left to count at the end?
+-- step Every square its own island
+1 land = set of every (r, c) whose value is "1"
+  hint: Which squares take part?
+  why: Only the land.
+2 parents = each land square mapped to itself
+  hint: How does each square start?
+  why: As the root of its own one-square island.
+-- step Find a square's root
+3 while parents[at] != at:
+  hint: How do you find which island a square is in?
+  why: Follow parents until you reach a square that is its own parent: the root.
+4     parents[at] = parents[parents[at]]
+  hint: How can the walk make later walks shorter?
+  why: Point the square at its grandparent as you pass. This path halving keeps the trees flat.
+5     at = parents[at]
+  hint: Then?
+  why: Step up to the parent.
+6 return at
+  hint: What do you return?
+  why: The root, which names the island.
+-- step Merge neighbouring land
+7 for r, c in land:
+  hint: Which squares do you join?
+  why: Every land square, with its land neighbours.
+8     for other in the squares below and to the right:
+  hint: Do you need all four neighbours?
+  why: No: below and right reach every adjacent pair exactly once.
+9         if other in land:
+  hint: When is there something to join?
+  why: When the neighbour is land too.
+10             a, b = find((r, c)), find(other)
+  hint: What do you compare?
+  why: The roots of the two squares.
+11             if a != b: parents[a] = b
+  hint: When do you merge, and how?
+  why: Only when they are in different islands; hang one root under the other.
+-- step Count the roots
+12 return number of distinct roots over land
+  hint: What is the answer?
+  why: Each island has exactly one root left.

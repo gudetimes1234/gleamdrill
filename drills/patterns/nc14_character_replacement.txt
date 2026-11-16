@@ -1,0 +1,43 @@
+== pattern sliding-window
+complexity: O(n) time · O(1) space
+nudge: A window can be made uniform with k changes when its size minus its most common letter's count is at most k. Grow the right edge; what do you do when that breaks?
+-- step Set up the window
+1 count = empty map from letter to count
+  hint: What do you need to know about the window's letters?
+  why: How many of each, to find the most common one.
+2 left = 0
+  hint: Where does the window start?
+  why: At the beginning of the string.
+3 max_count = 0
+  hint: What count decides how many changes the window needs?
+  why: The most common letter's count; everything else must be replaced.
+4 longest = 0
+  hint: What do you track?
+  why: The longest valid window seen.
+-- step Grow the right edge
+5 for right from 0 to last index:
+  hint: How does the window grow?
+  why: One letter at a time on the right.
+6     count[s[right]] += 1
+  hint: What changes when a letter joins?
+  why: Its count goes up by one.
+7     max_count = max(max_count, count[s[right]])
+  hint: Could the most common letter have changed?
+  why: Only the letter that just joined can have overtaken it.
+-- step Shrink while it needs too many changes
+8     while (right - left + 1) - max_count > k:
+  hint: When is the window invalid?
+  why: When the letters that are not the most common outnumber k.
+9         count[s[left]] -= 1
+  hint: What changes when the left letter leaves?
+  why: Its count goes down. max_count may now be stale, but a stale high value only ever keeps a window as long as one already seen.
+10         left += 1
+  hint: Then?
+  why: The window's start moves right.
+-- step Record the window
+11     longest = max(longest, right - left + 1)
+  hint: What do you measure?
+  why: The valid window's width; keep the longest.
+12 return longest
+  hint: What is the answer?
+  why: The longest window that k changes can make uniform.

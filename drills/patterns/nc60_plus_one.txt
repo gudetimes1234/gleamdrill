@@ -1,0 +1,30 @@
+== pattern math
+complexity: O(n) time · O(n) space
+nudge: Adding one is a carry that starts at 1 at the last digit. Where does it stop, and what happens if no digit ever absorbs it?
+-- step Start with a carry of one
+1 out = []
+  hint: What do you build?
+  why: The result's digits, lowest first, reversed at the end.
+2 carry = 1
+  hint: What are you adding to the number?
+  why: One, which is just a carry into the lowest digit.
+-- step Ripple the carry upward
+3 for digit in digits, from last to first:
+  hint: Which end do you start from?
+  why: The lowest digit, where the one is added.
+4     total = digit + carry
+  hint: What does this position hold now?
+  why: Its digit plus whatever carry arrived.
+5     append total % 10 to out
+  hint: Which digit stays here?
+  why: The last digit of the total.
+6     carry = total // 10
+  hint: What moves to the next position?
+  why: The tens of the total, one only when the digit was 9.
+-- step Grow a digit if needed
+7 if carry: append carry to out
+  hint: What if the carry survives every digit?
+  why: The number was all nines and grows a new leading 1.
+8 return out reversed
+  hint: What order is out in?
+  why: Lowest digit first, so reverse it to read most significant first.

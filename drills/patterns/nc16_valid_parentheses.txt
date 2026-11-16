@@ -1,0 +1,30 @@
+== pattern stack
+complexity: O(n) time · O(n) space
+nudge: The most recent unclosed opener is the one the next closer has to match. What structure hands you the most recent thing first?
+-- step Know each closer's opener
+1 pairs = map from each closer to its opener
+  hint: How do you know which opener a closer needs?
+  why: A small map from ')' to '(', ']' to '[' and '}' to '{'.
+2 stack = []
+  hint: Where do the unclosed openers wait?
+  why: On a stack: the last one opened must be the first one closed.
+-- step Push openers, match closers
+3 for char in s:
+  hint: How many passes?
+  why: One, character by character.
+4     if char is a closer:
+  hint: How do you tell a closer from an opener?
+  why: Closers are the map's keys.
+5         if stack is empty or stack.pop() != pairs[char]: return False
+  hint: When is a closer wrong?
+  why: When nothing is open, or the most recent opener is a different kind.
+6     else:
+  hint: And if it is an opener?
+  why: It waits for its closer.
+7         stack.append(char)
+  hint: Where does it wait?
+  why: On top of the stack, so it is matched before anything opened earlier.
+-- step Nothing left open
+8 return stack is empty
+  hint: Is never mismatching enough?
+  why: No: every opener must also have been closed, so the stack must end empty.

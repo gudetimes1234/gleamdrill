@@ -11,18 +11,18 @@ def kthSmallest(root, k):
     # instead of walking in order, and it is the version that adapts when the
     # tree stores its own subtree sizes, which turns the whole thing into
     # O(depth).
-    node = root
-    while node is not None:
-        onTheLeft = size(node.left)
-        if k <= onTheLeft:
-            node = node.left
-        elif k == onTheLeft + 1:
-            return node.val
-        else:
-            k -= onTheLeft + 1
-            node = node.right
-    return -1
+    node = root  # @1
+    while node is not None:  # @2
+        onTheLeft = size(node.left)  # @3
+        if k <= onTheLeft:  # @4
+            node = node.left  # @4
+        elif k == onTheLeft + 1:  # @5
+            return node.val  # @5
+        else:  # @6
+            k -= onTheLeft + 1  # @6
+            node = node.right  # @7
+    return -1  # @8
 
 
 def size(node):
-    return 0 if node is None else 1 + size(node.left) + size(node.right)
+    return 0 if node is None else 1 + size(node.left) + size(node.right)  # @9

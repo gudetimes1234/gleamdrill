@@ -10,15 +10,15 @@ def rightSideView(root):
     # when its depth is met for the first time. No frontier at all: being first
     # to reach a depth is the same thing as being rightmost on it, given that
     # order of visiting.
-    seen = []
-    look(root, 0, seen)
-    return seen
+    seen = []  # @1
+    look(root, 0, seen)  # @2
+    return seen  # @3
 
 
 def look(node, depth, seen):
-    if node is None:
-        return
-    if depth == len(seen):
-        seen.append(node.val)
-    look(node.right, depth + 1, seen)
-    look(node.left, depth + 1, seen)
+    if node is None:  # @4
+        return  # @4
+    if depth == len(seen):  # @5
+        seen.append(node.val)  # @5
+    look(node.right, depth + 1, seen)  # @6
+    look(node.left, depth + 1, seen)  # @7

@@ -1,0 +1,34 @@
+== pattern two-pointers
+complexity: O(n²) time · O(1) space
+nudge: Every palindrome has a centre, and there are only 2n of them: each character and each gap between two. What happens if you grow outwards from every one?
+-- step Track the best span
+1 best_start, best_length = 0, 0
+  hint: What do you need to remember about the best palindrome so far?
+  why: Where it starts and how long it is; slicing once at the end is cheaper than copying strings as you go.
+-- step Try every centre
+2 for each index i:
+  hint: How do you visit every centre?
+  why: Each index is the middle of an odd palindrome and the left side of an even one.
+3     for (left, right) in ((i, i), (i, i + 1)):
+  hint: Which two centres does each index give?
+  why: The character itself for odd lengths, and the gap after it for even lengths; without the gap every even palindrome is invisible.
+4         start, length = expand(s, left, right)
+  hint: What do you learn from a centre?
+  why: The widest palindrome around it, as a start and a length.
+5         if length > best_length: best_start, best_length = start, length
+  hint: When do you replace the best?
+  why: When this centre grew a longer palindrome than any before.
+-- step Return the best span
+6 return s[best_start : best_start + best_length]
+  hint: How do you turn the start and length back into text?
+  why: Slice it out once, at the end.
+-- step Expand from a centre
+7 while left >= 0 and right < len(s) and s[left] == s[right]:
+  hint: When can the window grow?
+  why: While both ends are inside the string and the characters at them match.
+8     left -= 1; right += 1
+  hint: How does the window grow?
+  why: One step outwards on each side.
+9 return left + 1, right - left - 1
+  hint: The loop stopped one step too far. Where does the palindrome really start, and how long is it?
+  why: It starts at left + 1, and its length is (right - 1) - (left + 1) + 1, which is right - left - 1.

@@ -1,0 +1,51 @@
+== pattern dp-1d
+complexity: O(n²) time · O(n) space
+nudge: Ask for the longest increasing subsequence that ends exactly at each position. Which earlier answers can that one extend?
+-- step Start with no endings
+1 endings = empty list of (value, longest length ending there)
+  hint: What do you record for each position as you go?
+  why: Its value and the longest increasing subsequence ending on it, so later numbers can extend it.
+2 best = 0
+  hint: What do you carry for the answer?
+  why: The longest seen at any position; the subsequence can end anywhere.
+-- step Extend the best smaller ending
+3 for each n in nums:
+  hint: How do you walk the array?
+  why: In order, so every earlier position is already answered.
+4     here = 1 + the longest length among endings with value < n, or 0 if none
+  hint: What is the longest subsequence that ends at n?
+  why: n on top of the longest one ending in a smaller value; strictly smaller, because the subsequence must strictly increase.
+5     append (n, here) to endings
+  hint: Then?
+  why: Record this position so later numbers can extend it.
+6     best = max(best, here)
+  hint: Has the answer improved?
+  why: The subsequence ending here may be the longest so far.
+-- step Return the length
+7 return best
+  hint: What is the answer?
+  why: The longest over every ending position.
+== pattern binary-search
+complexity: O(n log n) time · O(n) space
+nudge: Keep, for each length, the smallest value an increasing subsequence of that length can end with. That list is always sorted, so how do you find where a new number belongs?
+-- step Keep the smallest tails
+1 tails = empty list
+  hint: What does the list hold?
+  why: tails[i] is the smallest value any increasing subsequence of length i + 1 ends with. It is not the answer subsequence; only its length is.
+-- step Place each number
+2 for each n in nums:
+  hint: How do you walk the array?
+  why: Once, placing each number into tails.
+3     at = first index in tails whose value is >= n (binary search)
+  hint: Where does n belong in the sorted tails?
+  why: At the first tail not smaller than it; tails stays sorted, so a halving search finds it in O(log n).
+4     if at == len(tails): append n
+  hint: What if n is bigger than every tail?
+  why: It extends the longest subsequence by one.
+5     else: tails[at] = n
+  hint: Otherwise?
+  why: n is a smaller ending for a subsequence of that length, which leaves more room for later numbers.
+-- step Return the length
+6 return len(tails)
+  hint: What is the answer?
+  why: The number of lengths with a tail is the longest length reached.

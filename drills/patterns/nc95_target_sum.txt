@@ -1,0 +1,30 @@
+== pattern dp-1d
+complexity: O(n·S) time · O(S) space
+nudge: Only the running total matters, not which signs produced it. If you kept a count of the ways to reach each total, how would one more number change it?
+-- step Start from nothing
+1 totals = {0: 1}
+  hint: What is reachable before any number is signed?
+  why: A total of zero, in exactly one way.
+-- step Widen by each number, twice
+2 for n in nums:
+  hint: What does each step consume?
+  why: One number, which every way so far must either add or subtract.
+3     following = empty map
+  hint: Where do the new totals go?
+  why: A fresh map, so this number is applied exactly once to each old total.
+4     for total, count in totals:
+  hint: What does the number act on?
+  why: Every total reachable so far, with its count.
+5         following[total + n] += count
+  hint: What if this number gets a plus?
+  why: All count ways now reach total + n.
+6         following[total - n] += count
+  hint: And a minus?
+  why: The same ways reach total - n. Different sign choices that land on the same total merge here.
+7     totals = following
+  hint: Then?
+  why: The new map becomes the current one.
+-- step Read the target
+8 return totals[target], or 0
+  hint: Where is the answer?
+  why: The number of ways that land on target once every number is signed.

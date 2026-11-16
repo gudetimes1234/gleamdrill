@@ -11,14 +11,14 @@ def kthSmallest(root, k):
     # below the kth value is never touched, which is what separates this from
     # sorting everything. The explicit stack is what makes stopping possible --
     # a recursive walk would have to run to the end.
-    stack, node = [], root
-    while stack or node is not None:
-        while node is not None:
-            stack.append(node)
-            node = node.left
-        node = stack.pop()
-        k -= 1
-        if k == 0:
-            return node.val
-        node = node.right
-    return -1
+    stack, node = [], root  # @1
+    while stack or node is not None:  # @2
+        while node is not None:  # @3
+            stack.append(node)  # @4
+            node = node.left  # @5
+        node = stack.pop()  # @6
+        k -= 1  # @7
+        if k == 0:  # @8
+            return node.val  # @8
+        node = node.right  # @9
+    return -1  # @10

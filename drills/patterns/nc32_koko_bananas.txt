@@ -1,0 +1,27 @@
+== pattern binary-search
+complexity: O(n log m) time · O(1) space
+nudge: Search over the answer, not the input. If a speed finishes in time, so does every faster one, so where is the boundary between too slow and fast enough?
+-- step Bound the speeds
+1 low, high = 1, largest pile
+  hint: What is the slowest and the fastest speed worth trying?
+  why: One banana an hour at least; and the largest pile per hour already finishes every pile in an hour, so nothing faster helps.
+-- step Halve towards the slowest speed that works
+2 while low < high:
+  hint: When is the answer pinned down?
+  why: When the range has shrunk to a single speed.
+3     mid = (low + high) // 2
+  hint: Which speed do you try?
+  why: The middle of the range, rounded down so the range always shrinks.
+4     if hours(piles, mid) <= h: high = mid
+  hint: The speed finishes in time. What do you keep?
+  why: mid itself, since it may be the answer, and everything slower is still worth trying.
+5     else: low = mid + 1
+  hint: And when it is too slow?
+  why: mid and every slower speed are ruled out.
+6 return low
+  hint: What is the answer when the loop ends?
+  why: low == high, the slowest speed that finishes in time.
+-- step The feasibility check
+7 return the sum over piles of ceil(pile / speed)
+  hint: How many hours does a speed take?
+  why: Each pile takes ceil(pile / speed) hours, because the leftover hour is never shared with the next pile.

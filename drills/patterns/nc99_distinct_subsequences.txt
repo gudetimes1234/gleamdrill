@@ -1,0 +1,24 @@
+== pattern dp-2d
+complexity: O(m·n) time · O(n) space
+nudge: Let entry j count the ways to build the first j characters of t from the source seen so far. When a new source character arrives, which entries can it extend, and in which direction must you sweep?
+-- step One way to build nothing
+1 row = [1] followed by a zero for each character of t
+  hint: What are the counts before any source character?
+  why: The empty prefix of t is built one way, by choosing nothing; every longer prefix zero ways.
+-- step Feed in each source character
+2 for c in s:
+  hint: What drives the updates?
+  why: Each source character in order, which may extend what has been built so far.
+3     for j from len(t) down to 1:
+  hint: Which way do you sweep the row?
+  why: Right to left. Left to right, the update at j - 1 would feed into j and the same character would be used twice.
+4         if c == t[j - 1]:
+  hint: When can c extend a count?
+  why: Only when it is the character that prefix j ends with.
+5             row[j] += row[j - 1]
+  hint: How many new ways does it add?
+  why: Every way to build the prefix one shorter, now finished with c.
+-- step Read the whole target
+6 return row[len(t)]
+  hint: Where is the answer?
+  why: The ways to build all of t from all of s.

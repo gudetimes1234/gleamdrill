@@ -1,0 +1,24 @@
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: The question is "have I seen this value before?", asked once per element. What structure answers that in O(1)?
+-- step Remember what you have seen
+1 seen = empty set
+  hint: What do you keep as you walk the array?
+  why: Every value passed so far. A set answers "is this here?" in O(1), which turns compare-every-pair into one pass.
+-- step Check each number against it
+2 for num in nums:
+  hint: How many passes does this need?
+  why: One. The set remembers everything to the left, so each value is checked against the set rather than every earlier value.
+3     if num in seen:
+  hint: How do you know this value is a repeat?
+  why: An earlier copy would already be in the set.
+4         return True
+  hint: What do you do the moment you find one?
+  why: Stop. The question is whether any duplicate exists, not where or how many.
+5     seen.add(num)
+  hint: What happens when the value is new?
+  why: Record it so a later copy is caught. Adding after the check stops a value matching itself.
+-- step No repeat
+6 return False
+  hint: What if the loop ends?
+  why: Every value was new when you met it, so there is no duplicate.

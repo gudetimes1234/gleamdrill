@@ -1,0 +1,33 @@
+== pattern intervals
+complexity: O(n log n) time · O(n) space
+nudge: The rooms needed is the most meetings running at once, so only the meetings' edges matter. Walking the starts and ends in time order, what do you count, and how do you break a tie at the same moment?
+-- step Turn meetings into edges
+1 edges = empty list
+  hint: What do you record instead of meetings?
+  why: Their start and end times, each tagged with how it changes the number running.
+2 for start, end in intervals:
+  hint: How do you build the edges?
+  why: Two per meeting.
+3     add (start, +1) and (end, -1)
+  hint: What does each edge do?
+  why: A start needs one more room, an end frees one.
+4 sort edges
+  hint: What order, and which comes first at the same time?
+  why: By time, and at a tie -1 sorts before +1, so a room freed as another meeting starts is reused.
+-- step Sweep and watch the peak
+5 depth = 0; best = 0
+  hint: What do you carry along the sweep?
+  why: How many meetings are running now, and the most ever.
+6 for each delta in edges, in order:
+  hint: How do you sweep?
+  why: Through the edges in time order; their positions no longer matter.
+7     depth += delta
+  hint: What does the edge do to the count?
+  why: A start adds a running meeting, an end removes one.
+8     best = max(best, depth)
+  hint: When do you update the answer?
+  why: After every edge, keeping the highest count reached.
+-- step The peak is the answer
+9 return best
+  hint: What is the answer?
+  why: The most meetings ever running at once, which is the rooms needed.

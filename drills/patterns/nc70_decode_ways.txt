@@ -1,0 +1,27 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: The last character is decoded alone or together with the one before it. Which earlier counts does each of those two choices build on?
+-- step Guard the empty string
+1 if s is empty: return 0
+  hint: How many ways are there to decode nothing?
+  why: The problem counts none, so answer 0 before the rolling counts start.
+-- step Roll two counts along the string
+2 two_back, one_back = 1, 1
+  hint: What are the counts before the first character?
+  why: One way to decode the empty prefix, for both slots, so a first character that stands alone gives one way.
+3 for each index i and character c:
+  hint: How do you walk the digits?
+  why: Once, left to right, keeping the index so you can look at the pair ending here.
+4     alone = 0 if c is "0" else one_back
+  hint: Can this digit stand alone, and if so what does it build on?
+  why: Any digit but 0 is a letter on its own, extending every decoding of the prefix before it.
+5     paired = two_back if i > 0 and the two digits ending here read 10..26 else 0
+  hint: When can this digit join the one before it?
+  why: When the pair is a letter, 10 to 26; then it extends every decoding of the prefix two back.
+6     two_back, one_back = one_back, alone + paired
+  hint: How do the counts shift?
+  why: The two choices never overlap, so they add; the old one-back slides down to two-back.
+-- step Return the count
+7 return one_back
+  hint: Which count is the answer?
+  why: one_back now covers the whole string.

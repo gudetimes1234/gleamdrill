@@ -1,0 +1,51 @@
+== pattern bfs
+complexity: O(m·n log(m·n)) time · O(m·n) space
+nudge: Searching downhill from every square repeats the same routes. Turn the question round: which squares could each ocean reach if water flowed uphill?
+-- step Guard and measure
+1 if the grid is empty: return []
+  hint: What if there are no squares?
+  why: No square can reach either ocean.
+2 rows, columns = grid size
+  hint: What do the bounds checks need?
+  why: The number of rows and columns.
+-- step Search uphill from a set of starts
+3 reached = empty set
+  hint: What does one ocean's search collect?
+  why: Every square that ocean's water could have come from.
+4 frontier = queue of all the starts
+  hint: What does the search begin with?
+  why: Every square on that ocean's edge at once.
+5 while frontier:
+  hint: How long does it run?
+  why: Until no square is waiting.
+6     r, c = take from the front of frontier
+  hint: Which square comes next?
+  why: The oldest waiting, breadth-first.
+7     if (r, c) in reached: continue
+  hint: When is a square skipped?
+  why: When it has already been reached.
+8     reached.add((r, c))
+  hint: What do you do with a new square?
+  why: Record that this ocean can be reached from it.
+9     for each of the four neighbours (nr, nc):
+  hint: Where might water have come from?
+  why: Any adjacent square.
+10         if (nr, nc) is on the grid:
+  hint: Which neighbours exist?
+  why: Only those inside the bounds.
+11             if heights[nr][nc] >= heights[r][c]: add (nr, nc) to frontier
+  hint: Which way does the reversed search climb?
+  why: Uphill or level: water from that neighbour could flow down to here and on to the ocean.
+12 return reached
+  hint: What does the search hand back?
+  why: Every square that drains to this ocean.
+-- step Two searches, one overlap
+13 pacific = top row and left column
+  hint: Where does the Pacific touch the grid?
+  why: Along the top edge and the left edge.
+14 atlantic = bottom row and right column
+  hint: And the Atlantic?
+  why: Along the bottom edge and the right edge.
+15 return sorted(uphill(pacific) & uphill(atlantic))
+  hint: Which squares reach both oceans?
+  why: The ones in both reached sets.

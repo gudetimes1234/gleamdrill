@@ -1,0 +1,61 @@
+== pattern dp-1d
+complexity: O(n·t) time · O(t) space
+nudge: Count combinations, not orderings. If each coin is considered once and for all before the next, can 1 + 2 and 2 + 1 both be counted?
+-- step One way to make nothing
+1 ways = zeros, one per amount from 0 to amount
+  hint: What does the table count?
+  why: ways[x] is the number of combinations making x with the coins seen so far.
+2 ways[0] = 1
+  hint: How many ways make zero?
+  why: One, using no coins; every other count is built on it.
+-- step Add one coin at a time
+3 for coin in coins:
+  hint: Which loop goes outside?
+  why: The coins. Each coin is finished before the next starts, so every combination is counted in one order.
+4     if coin <= 0: continue
+  hint: Which coins can be ignored?
+  why: Ones that are not positive; they never reach an amount.
+5     for target from coin to amount:
+  hint: Which amounts can this coin help make?
+  why: Any at least as large as the coin, in increasing order so the coin can be used again.
+6         ways[target] += ways[target - coin]
+  hint: How many new combinations does the coin add?
+  why: Every way to make the rest, with this coin on top.
+-- step Read the amount
+7 return ways[amount]
+  hint: Where is the answer?
+  why: The count for the amount itself, with every coin considered.
+== pattern dp-2d
+complexity: O(n·t) time · O(n·t) space
+nudge: State the rule as a choice: use this coin again, or set it aside for good. What two numbers describe where you are in that choice?
+-- step Prepare
+1 usable = the positive coins
+  hint: Which coins can ever help?
+  why: Only positive ones; the others never reach an amount.
+2 memo = empty map from (index, remaining) to a count
+  hint: Where do you cache answers?
+  why: The state is which coin you are on and how much is left, so that pair is the key.
+-- step Stop when the amount is made or the coins run out
+3 if remaining == 0: return 1
+  hint: When have you made a combination?
+  why: When nothing is left to make; that is exactly one way.
+4 if index is past the last coin: return 0
+  hint: What if there is amount left but no coins?
+  why: No combination down this branch.
+-- step Use this coin again, or set it aside
+5 if (index, remaining) is not in memo:
+  hint: When do you compute?
+  why: Only the first time a state is reached.
+6     using = ways(index, remaining - coin) if coin <= remaining, else 0
+  hint: How many ways use this coin?
+  why: Stay on the same coin, since it can repeat, with less left to make.
+7     memo[(index, remaining)] = using + ways(index + 1, remaining)
+  hint: And the ways that never use it again?
+  why: Move to the next coin for good. Setting it aside permanently fixes one order per combination.
+8 return memo[(index, remaining)]
+  hint: What does the call return?
+  why: The cached count for this state.
+-- step Start with every coin and the full amount
+9 return ways(0, amount)
+  hint: Where does the search begin?
+  why: At the first coin, with the whole amount to make.

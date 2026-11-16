@@ -5,27 +5,27 @@ def minCostConnectPoints(points):
     # here against Prim's O(n^2) -- but Kruskal never needs the points
     # themselves, only the edge list, so it is the one that generalises to a
     # sparse graph.
-    edges = []
-    for i in range(len(points)):
-        for j in range(i + 1, len(points)):
-            edges.append((distance(points[i], points[j]), i, j))
-    edges.sort()
+    edges = []  # @1
+    for i in range(len(points)):  # @2
+        for j in range(i + 1, len(points)):  # @2
+            edges.append((distance(points[i], points[j]), i, j))  # @3
+    edges.sort()  # @4
 
-    parents = {}
+    parents = {}  # @5
 
     def find(node):
-        while parents.get(node, node) != node:
-            node = parents[node]
-        return node
+        while parents.get(node, node) != node:  # @6
+            node = parents[node]  # @6
+        return node  # @7
 
-    total = 0
-    for cost, i, j in edges:
-        rootI, rootJ = find(i), find(j)
-        if rootI != rootJ:
-            parents[rootI] = rootJ
-            total += cost
+    total = 0  # @8
+    for cost, i, j in edges:  # @9
+        rootI, rootJ = find(i), find(j)  # @10
+        if rootI != rootJ:  # @11
+            parents[rootI] = rootJ  # @12
+            total += cost  # @13
 
-    return total
+    return total  # @14
 
 
 def distance(a, b):

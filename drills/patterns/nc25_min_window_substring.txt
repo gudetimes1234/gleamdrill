@@ -1,0 +1,46 @@
+== pattern sliding-window
+complexity: O(n+m) time · O(1) space
+nudge: Grow a window to the right until it holds everything t needs, then shrink it from the left while it still does. Could one integer, how many characters are still missing, tell you when the window is valid?
+-- step Count what is needed
+1 if s or t is empty: return ""
+  hint: When is there no window at all?
+  why: An empty haystack contains nothing, and an empty needle has no sensible window.
+2 need = count of each character in t
+  hint: What does the window have to cover?
+  why: Every character of t, as many times as it appears there.
+3 missing = length of t
+  hint: How many characters are still uncovered before you start?
+  why: All of them; the window is empty.
+4 left = 0; best_start, best_length = 0, 0
+  hint: What else do you carry?
+  why: The window's left edge, and the best window so far, with length 0 meaning none yet.
+-- step Grow the window
+5 for right, c in enumerate(s):
+  hint: How does the window grow?
+  why: Its right edge takes in one character of s at a time.
+6     if need[c] > 0: missing -= 1
+  hint: When does taking in c bring the window closer to valid?
+  why: Only when c was still needed; a surplus character covers nothing new.
+7     need[c] -= 1
+  hint: What do you record about c either way?
+  why: The window now holds one more; a negative count means a surplus that shrinking can give back.
+-- step Shrink while valid
+8     while missing == 0:
+  hint: When is it worth shrinking?
+  why: While the window covers all of t, a shorter one ending here may still be valid.
+9         if no best yet or this window is shorter: best = (left, right - left + 1)
+  hint: What do you do with a valid window?
+  why: Keep it if it beats the best so far.
+10         need[s[left]] += 1
+  hint: What happens to the count of the character leaving on the left?
+  why: The window no longer holds it, so it is needed once more.
+11         if need[s[left]] > 0: missing += 1
+  hint: When does dropping it break the window?
+  why: When its count goes positive: it was a required character, not a surplus.
+12         left += 1
+  hint: Then?
+  why: Move the left edge past the character just given back.
+-- step Return the best window
+13 return s[best_start .. best_start + best_length)
+  hint: What is the answer?
+  why: The shortest valid window seen; length 0 gives the empty string when none existed.

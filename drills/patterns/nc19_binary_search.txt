@@ -1,0 +1,27 @@
+== pattern binary-search
+complexity: O(log n) time · O(1) space
+nudge: The array is sorted, so one comparison with the middle rules out half of what is left. Which half, and how do the bounds move?
+-- step Bound the whole array
+1 left, right = 0, last index
+  hint: Where can the target be at first?
+  why: Anywhere: both bounds are inclusive.
+-- step Halve the range
+2 while left <= right:
+  hint: When does the search give up?
+  why: When the range is empty, left has passed right.
+3     mid = left + (right - left) // 2
+  hint: Which element do you test?
+  why: The middle, written so it cannot overflow in languages with fixed-width integers.
+4     if nums[mid] == target: return mid
+  hint: What if the middle is the target?
+  why: Return its index.
+5     else if nums[mid] < target: left = mid + 1
+  hint: The middle is too small. Which half is left?
+  why: The right half; mid itself is ruled out, so step past it.
+6     else: right = mid - 1
+  hint: And when it is too large?
+  why: The left half, again excluding mid.
+-- step Not found
+7 return -1
+  hint: What if the range empties?
+  why: The target is not in the array.

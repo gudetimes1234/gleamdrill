@@ -1,0 +1,18 @@
+== pattern bit-manipulation
+complexity: O(n) time · O(1) space
+nudge: Which operation makes a value cancel itself out, whatever order the copies arrive in?
+-- step Start from the identity
+1 result = 0
+  hint: What value leaves anything unchanged under XOR?
+  why: Zero: x XOR 0 is x, so it is the right empty start.
+-- step Fold every number in
+2 for n in nums:
+  hint: How many passes do you need?
+  why: One, over every number.
+3     result ^= n
+  hint: What do you combine each number with?
+  why: XOR it into the result. A value XORed in twice cancels, and order does not matter, so the pairs vanish.
+-- step The survivor
+4 return result
+  hint: What is left after every pair cancels?
+  why: The one number that appeared only once.

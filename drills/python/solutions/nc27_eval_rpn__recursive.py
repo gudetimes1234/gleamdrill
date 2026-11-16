@@ -2,20 +2,20 @@ OPERATORS = "+-*/"
 
 
 def evalRPN(tokens):
-    value, _ = take(tokens, len(tokens) - 1)
-    return value
+    value, _ = take(tokens, len(tokens) - 1)  # @1
+    return value  # @1
 
 
 # Read right to left: the last token is the outermost operator, and each
 # operator takes its right operand first because that is what sits nearer the
 # end. Returns the value and the index still to be read.
 def take(tokens, i):
-    token = tokens[i]
-    if token not in OPERATORS:
-        return int(token), i - 1
-    right, i = take(tokens, i - 1)
-    left, i = take(tokens, i)
-    return apply(token, left, right), i
+    token = tokens[i]  # @2
+    if token not in OPERATORS:  # @3
+        return int(token), i - 1  # @3
+    right, i = take(tokens, i - 1)  # @4
+    left, i = take(tokens, i)  # @5
+    return apply(token, left, right), i  # @6
 
 
 def apply(operator, a, b):

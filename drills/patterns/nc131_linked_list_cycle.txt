@@ -1,0 +1,44 @@
+== pattern fast-slow-pointers
+complexity: O(n) time · O(1) space
+nudge: Send one walker at single steps and one at double. If there is a loop, what must eventually happen between them?
+-- step Start together
+1 slow = fast = head
+  hint: Where do the walkers start?
+  why: Both at the head.
+-- step Race
+2 while fast and fast.next are not None:
+  hint: When can the race end without a cycle?
+  why: When fast runs off the end; a list with a cycle has no end.
+3     slow, fast = slow.next, fast.next.next
+  hint: How far does each move?
+  why: One step and two, so inside a loop fast gains one place per step.
+4     if slow is fast: return True
+  hint: What proves a cycle?
+  why: Fast catching slow, which only a loop allows. Compare nodes, not values.
+-- step No cycle
+5 return False
+  hint: What if fast reached the end?
+  why: The list ends, so it has no cycle.
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: Remember every node you have walked past. What does seeing one again mean?
+-- step Remember the nodes
+1 seen = empty set
+  hint: What do you keep as you walk?
+  why: Every node visited so far.
+2 while head is not None:
+  hint: How long do you walk?
+  why: Until the list ends, or a node repeats.
+3     if head is in seen: return True
+  hint: What if this node was visited before?
+  why: You came back round to it: a cycle. It is the node, not its value, that repeats.
+4     add head to seen
+  hint: What do you record?
+  why: This node's identity.
+5     head = head.next
+  hint: Then?
+  why: Step on.
+-- step No cycle
+6 return False
+  hint: What if the walk ends?
+  why: The list has an end, so no cycle.

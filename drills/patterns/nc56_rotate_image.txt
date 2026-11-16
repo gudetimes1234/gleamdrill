@@ -1,0 +1,11 @@
+== pattern math
+complexity: O(n²) time · O(n²) space
+nudge: A quarter turn clockwise is two reflections you already know how to write. Which two, and in which order?
+-- step Reflect through the main diagonal
+1 columns = transpose of matrix (zip the rows together)
+  hint: What is the first reflection?
+  why: Through the main diagonal: zipping the rows makes each column into a row, which is the transpose.
+-- step Reflect left to right
+2 return each transposed row, reversed
+  hint: What turns the transpose into a clockwise turn?
+  why: Reversing each row mirrors it through the vertical centre line, and the two reflections together are a quarter turn clockwise.

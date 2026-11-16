@@ -1,0 +1,49 @@
+== pattern math
+complexity: O(m·n) time · O(m+n) space
+nudge: Digit i of one number times digit j of the other always lands at position i + j. What if you dropped every product into its slot and settled the carries only at the end?
+-- step Read the digits lowest first
+1 if either number is "0": return "0"
+  hint: Which inputs short-circuit?
+  why: Anything times zero is zero, and it saves stripping a string of zeros later.
+2 a = digits of num1, lowest first
+  hint: In what order do you want the digits?
+  why: Lowest first, so a digit's index is its power of ten.
+3 b = digits of num2, lowest first
+  hint: And the other number?
+  why: The same way, so positions add.
+-- step Drop every product into its slot
+4 slots = array of len(a) + len(b) zeros
+  hint: How many digits can the product have?
+  why: At most the two lengths added together.
+5 for i, x in enumerate(a):
+  hint: How do you pair up the digits?
+  why: Every digit of a, with its position i.
+6     for j, y in enumerate(b):
+  hint: Against what?
+  why: Every digit of b, with its position j, so each pair of digits meets once.
+7         slots[i + j] += x * y
+  hint: Where does this product land?
+  why: At position i + j, since 10^i times 10^j is 10^(i+j). Carries wait until later.
+-- step Settle the carries
+8 carry = 0
+  hint: What do you carry through the sweep?
+  why: The overflow from the slot below, none at first.
+9 digits = []
+  hint: What do you collect?
+  why: The final digits, lowest first.
+10 for slot in slots:
+  hint: In what order do you settle the slots?
+  why: Lowest first, so each carry moves upward.
+11     total = slot + carry
+  hint: What does this position hold now?
+  why: Its accumulated products plus the carry from below.
+12     append total % 10 to digits
+  hint: Which digit stays here?
+  why: The last digit of the total.
+13     carry = total // 10
+  hint: What moves up?
+  why: Everything above the last digit.
+-- step Write the answer
+14 return digits reversed as a string, leading zeros stripped (or "0")
+  hint: How do you turn the digits back into the answer?
+  why: Reverse to most significant first, join, and drop the leading zero an unused top slot leaves behind.

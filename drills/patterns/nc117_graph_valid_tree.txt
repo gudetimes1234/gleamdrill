@@ -1,0 +1,89 @@
+== pattern dfs
+complexity: O(n) time · O(n) space
+nudge: A tree is connected and acyclic, and with exactly n-1 edges either one implies the other. So count the edges, then check one thing: can a walk from node 0 reach everyone?
+-- step Rule out the easy failures
+1 if n <= 0: return whether there are no edges
+  hint: What is a graph with no nodes?
+  why: Vacuously a tree, but only if it has no edges either; the n-1 count would say otherwise, so it is stated on its own.
+2 if number of edges != n - 1: return False
+  hint: How many edges does a tree on n nodes have?
+  why: Exactly n-1. Any other count is a cycle or a disconnected piece, and with the right count connected alone proves a tree.
+-- step Build the adjacency
+3 adjacency = empty list for every node
+  hint: What do you need before you can walk the graph?
+  why: Each node's neighbours, with every node present even if it has none.
+4 for each edge (a, b):
+  hint: Where do the neighbours come from?
+  why: From the edge list, one edge at a time.
+5     add b to a's neighbours and a to b's
+  hint: Which way does an edge go?
+  why: Both ways: the graph is undirected.
+-- step Walk from node 0
+6 seen = empty set
+  hint: How do you avoid visiting a node twice?
+  why: Keep the set of nodes already reached; it is also what you count at the end.
+7 stack = [0]
+  hint: Where does the walk start?
+  why: Anywhere works in a connected graph; node 0 always exists.
+8 while stack is not empty:
+  hint: How long does the walk run?
+  why: Until there is nothing left to visit.
+9     node = pop from stack
+  hint: Which node comes next?
+  why: The most recently pushed one, which makes this a depth-first walk.
+10     if node in seen: continue
+  hint: What if this node was already reached another way?
+  why: Skip it: a node can be pushed more than once, but it only counts once.
+11     add node to seen
+  hint: What do you record about a new node?
+  why: That it has been reached.
+12     push all of node's neighbours
+  hint: What does reaching a node let you reach?
+  why: Every neighbour; the seen check handles the ones already visited.
+-- step Was everyone reached?
+13 return size of seen == n
+  hint: What decides the answer now?
+  why: With n-1 edges, reaching every node means connected, and connected means a tree.
+== pattern union-find
+complexity: O(n·α(n)) time · O(n) space
+nudge: An edge that joins two nodes already in the same piece closes a cycle. If no edge does, how many merges does it take to leave one piece?
+-- step The empty graph
+1 if n <= 0: return whether there are no edges
+  hint: What is a graph with no nodes?
+  why: Vacuously a tree, provided it has no edges either.
+-- step Find a node's root
+2 parents = empty map
+  hint: How do you record which piece a node belongs to?
+  why: Each node points at a parent; a node with no entry is its own root.
+3     while node's parent is not node:
+  hint: How does find reach the root?
+  why: Follow parent links until a node is its own parent.
+4         node = parent of node
+  hint: What is each step of the climb?
+  why: Move to the parent.
+5     return node
+  hint: What does find hand back?
+  why: The root, which names the whole piece.
+-- step Merge along every edge
+6 merges = 0
+  hint: What do you count as you go?
+  why: How many edges joined two different pieces.
+7 for each edge (a, b):
+  hint: What do you walk?
+  why: The edges, once each; no adjacency list is needed.
+8     rootA, rootB = find(a), find(b)
+  hint: What do you look up for each end?
+  why: The piece each endpoint is in.
+9     if rootA == rootB: return False
+  hint: What if both ends are already in the same piece?
+  why: They are already connected, so this edge closes a cycle.
+10     parent of rootA = rootB
+  hint: Otherwise, how do you join the pieces?
+  why: Hang one root under the other.
+11     merges += 1
+  hint: What changed in the count?
+  why: One fewer piece than before.
+-- step One piece left?
+12 return merges == n - 1
+  hint: How many merges make n nodes into one tree?
+  why: n-1. With no cycles found, that many merges means everything is connected.

@@ -1,0 +1,52 @@
+== pattern dp-2d
+complexity: O(m·n) time · O(n) space
+nudge: With only right and down moves, the ways into a square are the ways into the square above plus the square to its left. Filling rows top to bottom, how much of the grid do you actually need to keep?
+-- step Handle an empty grid
+1 if m <= 0 or n <= 0: return 0
+  hint: What if the grid has no squares?
+  why: There is nowhere to walk, so no paths.
+-- step Start with the top row
+2 row = n ones
+  hint: How many ways reach each square of the top row?
+  why: One each: the only way there is straight right along the edge.
+-- step Add each row below
+3 for each of the m - 1 rows below:
+  hint: How many more rows are there to fill?
+  why: Every row after the first, reusing the same list.
+4     for c from 1 to n - 1:
+  hint: Which squares in the row change?
+  why: All but the first column, which can only be reached straight down, so it stays 1.
+5         row[c] += row[c - 1]
+  hint: What does a square's count become?
+  why: row[c] still holds the square above; adding the square to its left, already updated, gives both ways in.
+-- step Read the corner
+6 return the last entry of row
+  hint: Where is the answer?
+  why: The bottom-right square, last in the final row.
+== pattern math
+complexity: O(min(m,n)) time · O(1) space
+nudge: Every path is exactly m - 1 downs and n - 1 rights in some order. How many ways are there to choose which moves are the downs?
+-- step Handle an empty grid
+1 if m <= 0 or n <= 0: return 0
+  hint: What if the grid has no squares?
+  why: There is nowhere to walk, so no paths.
+-- step Name the binomial
+2 downs = m - 1
+  hint: How many down moves does every path make?
+  why: One fewer than the number of rows.
+3 total = m + n - 2
+  hint: How many moves in all?
+  why: The downs plus the n - 1 rights.
+-- step Compute total choose downs
+4 result = 1
+  hint: What does the product start at?
+  why: One, the empty product.
+5 for i from 1 to downs:
+  hint: How many factors does the binomial need?
+  why: One per down move.
+6     result = result * (total - downs + i) // i
+  hint: How do you build it without fractions?
+  why: Multiply by the next numerator term, then divide by i. After step i the value is a binomial coefficient, so the division is always exact.
+7 return result
+  hint: What is the answer?
+  why: total choose downs: one path per choice of which moves go down.

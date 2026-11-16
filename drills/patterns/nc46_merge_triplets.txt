@@ -1,0 +1,21 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: Merging takes componentwise maxima, and a max never comes back down. Which triplets can never be used, and what is the harm in merging all the others?
+-- step Start from nothing
+1 best = [0, 0, 0]
+  hint: What does the merge of no triplets look like?
+  why: All zeros, which any merge can only raise.
+-- step Merge every safe triplet
+2 for triplet in triplets:
+  hint: How many triplets do you look at?
+  why: Each one once.
+3     if every component of triplet <= the matching target component:
+  hint: Which triplets are safe to merge?
+  why: Those with nothing above the target; any component above it would stay too high forever.
+4         best = componentwise max of best and triplet
+  hint: What does merging a safe triplet do?
+  why: Takes the maximum in each position. It can never overshoot, so merging every safe triplet only helps.
+-- step Compare with the target
+5 return best == target
+  hint: When is the target reachable?
+  why: When the merge of all safe triplets reaches it exactly in every position.

@@ -1,0 +1,34 @@
+== pattern dp-2d
+complexity: O(n³) time · O(n²) space
+nudge: Choosing the first balloon to burst leaves neighbours that depend on the other side. Which balloon in a span can you price without knowing anything else about it?
+-- step Pad the row
+1 balloons = 1, then nums, then 1
+  hint: How do you give every balloon a neighbour on both sides?
+  why: A 1 at each end never changes a product, and it removes every edge case.
+2 memo = empty map from (left, right) to best coins
+  hint: What do you remember between calls?
+  why: The best score for each open span, since many choices lead to the same span.
+-- step Spans too short to burst
+3 if right - left < 2: return 0
+  hint: When does a span between two boundaries hold no balloon?
+  why: When the boundaries are adjacent: nothing lies strictly between them.
+-- step Choose the last balloon
+4 if (left, right) not in memo:
+  hint: When do you need to compute the span at all?
+  why: Only the first time it is asked for; after that the memo answers.
+5     memo[(left, right)] = max, over every last strictly between left and right, of:
+  hint: What do you try for a span?
+  why: Every balloon as the one burst last, keeping the best.
+6         balloons[left] * balloons[last] * balloons[right]
+  hint: What does bursting the last balloon pay?
+  why: It is last, so its neighbours are the span's own boundaries, which are untouched by definition.
+7         + best(left, last) + best(last, right)
+  hint: What about the balloons on either side of it?
+  why: With last still standing until the end, the two sides never touch and are solved independently.
+8 return memo[(left, right)]
+  hint: What does the call hand back?
+  why: The stored best for this span.
+-- step Answer for the whole row
+9 return best(0, last index of balloons)
+  hint: Which span is the question?
+  why: The whole padded row, between the two added 1s.

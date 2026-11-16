@@ -9,10 +9,10 @@ def hasCycle(head):
     # and O(n) memory -- which is the whole cost the two-pointer version
     # removes. Note that it is the *nodes* that go in the set, not their values:
     # repeated values are ordinary, repeated nodes are the cycle.
-    seen = set()
-    while head is not None:
-        if id(head) in seen:
-            return True
-        seen.add(id(head))
-        head = head.next
-    return False
+    seen = set()  # @1
+    while head is not None:  # @2
+        if id(head) in seen:  # @3
+            return True  # @3
+        seen.add(id(head))  # @4
+        head = head.next  # @5
+    return False  # @6

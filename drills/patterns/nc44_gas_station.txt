@@ -1,0 +1,40 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: If the total gas falls short of the total cost, can any start work? And if the tank runs dry between a start and station i, could any station in between have started instead?
+-- step Handle the empty route
+1 if gas is empty: return -1
+  hint: What if there are no stations?
+  why: There is no start to return.
+-- step Carry two running sums and a candidate
+2 total = 0
+  hint: What decides whether any start works at all?
+  why: The surplus summed over the whole circle; track it as you go.
+3 tank = 0
+  hint: What tells you whether the current candidate is still alive?
+  why: The fuel left since the candidate start.
+4 start = 0
+  hint: Which start do you try first?
+  why: Station 0, until it is ruled out.
+-- step Drive once, skipping starts that cannot work
+5 for i in each station index:
+  hint: How many passes do you need?
+  why: One, around the stations in order.
+6     diff = gas[i] - cost[i]
+  hint: What does station i add to the tank?
+  why: Its gas minus the cost of leaving it, which may be negative.
+7     total += diff
+  hint: What happens to the grand total?
+  why: Every station's surplus counts toward it.
+8     tank += diff
+  hint: And the candidate's tank?
+  why: It accumulates the same surplus or deficit.
+9     if tank < 0:
+  hint: When is the candidate dead?
+  why: When the tank goes negative: it cannot reach the next station.
+10         start = i + 1; tank = 0
+  hint: Where is the next candidate, and why not one step after the old start?
+  why: Every station between would reach i with even less fuel, so jump to i + 1 and start the tank empty.
+-- step Answer
+11 return start if total >= 0 else -1
+  hint: When is the surviving candidate the answer?
+  why: A non-negative total guarantees some start works, and the last candidate standing is it; otherwise none does.

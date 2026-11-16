@@ -1,0 +1,72 @@
+== pattern backtracking
+complexity: O(n·2ⁿ) time · O(n·2ⁿ) space
+nudge: Every partition starts with some palindromic prefix. If the only choice is how long that prefix is, what do you do with the rest of the string?
+-- step Start the search
+1 return build(s)
+  hint: What does the main function do?
+  why: Partitions the whole string.
+-- step Stop at the empty string
+2 if remaining is empty: return [[]]
+  hint: How many ways are there to partition nothing?
+  why: One: no pieces at all, which every caller extends.
+-- step Cut a palindromic prefix, partition the rest
+3 return [[prefix] + rest
+  hint: What does each partition look like?
+  why: A first piece followed by a partition of what comes after it.
+4     for each size from 1 to len(remaining)
+  hint: How long can the first piece be?
+  why: Anything from one character to the whole string.
+5     with prefix = remaining's first size characters
+  hint: What is the candidate piece?
+  why: The first size characters.
+6     if prefix reads the same reversed
+  hint: Which prefixes are allowed?
+  why: Only palindromes; any other cut is abandoned before recursing.
+7     for each rest in build(remaining after size)]
+  hint: What can follow the piece?
+  why: Every partition of the remainder, each reached once, so nothing needs deduplicating.
+== pattern dp-2d
+complexity: O(n·2ⁿ) time · O(n·2ⁿ) space
+nudge: The search keeps asking whether the same spans are palindromes. Can you answer that for every span once, up front, from shorter spans inside it?
+-- step Build the palindrome table
+1 n = len(s)
+  hint: What size is the table?
+  why: One entry per span (i, j) of the string.
+2 table = empty map from (i, j) to whether s[i..j] is a palindrome
+  hint: Where do the answers go?
+  why: A table keyed by both ends of the span.
+3 for span from 0 to n - 1:
+  hint: In which order must spans be filled?
+  why: Shortest first, because each span depends on the one just inside it.
+4     for i from 0 to n - span - 1:
+  hint: Where can a span of this length start?
+  why: Anywhere it still fits in the string.
+5         j = i + span
+  hint: Where does it end?
+  why: span characters after i.
+6         inside = True if j - i < 2, else table[(i + 1, j - 1)]
+  hint: What must be true of the middle?
+  why: The span inside must be a palindrome; spans of length one or two have no middle to check.
+7         table[(i, j)] = s[i] == s[j] and inside
+  hint: When is the span a palindrome?
+  why: Its two ends match and its middle is a palindrome.
+-- step Search with lookups
+8 if start >= n: return [[]]
+  hint: When is a partition complete?
+  why: When the cut has reached the end of the string; one way, with no more pieces.
+9 return [[s[start..end]] + rest
+  hint: What does each partition from start look like?
+  why: The piece from start to end, then a partition of what follows.
+10     for each end from start to n - 1
+  hint: Where can the piece end?
+  why: Anywhere from start to the last character.
+11     if table[(start, end)]
+  hint: Which pieces are allowed?
+  why: Only palindromes, now a lookup instead of a scan.
+12     for each rest in build(end + 1)]
+  hint: What follows the piece?
+  why: Every partition of the rest of the string.
+-- step Start the search
+13 return build(0)
+  hint: Where does the search begin?
+  why: At the first character.

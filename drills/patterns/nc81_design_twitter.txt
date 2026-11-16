@@ -1,0 +1,84 @@
+== pattern hash-map
+complexity: O(all tweets) per feed · O(all tweets) space
+nudge: A counter that only ever goes up can stand in for time. With one timeline of every tweet and a map of who follows whom, how do you find one user's ten newest?
+-- step Keep a clock and two stores
+1 clock = 0
+  hint: How do you order tweets across every user?
+  why: A counter that only increases; a larger value means a newer tweet, with no real timestamps.
+2 tweets = empty list
+  hint: Where do the tweets live?
+  why: In one global timeline, oldest first, each with its time and author.
+3 following = empty map from user to set of followees
+  hint: How do you remember who follows whom?
+  why: A map from each user to the set of people they follow, so follow and unfollow are O(1).
+-- step Post, follow and unfollow
+4 append (clock, userId, tweetId) to tweets
+  hint: What do you record when a tweet is posted?
+  why: Its time, so feeds can be ordered, and its author, so feeds can be filtered.
+5 clock += 1
+  hint: What must happen to the clock after each post?
+  why: It ticks forward, so the next tweet is strictly newer.
+6 add followeeId to followerId's set, creating it if missing
+  hint: How does a follow change the map?
+  why: The followee joins the follower's set; a set makes following twice harmless.
+7 discard followeeId from followerId's set
+  hint: And an unfollow?
+  why: Remove it if it is there; discarding rather than removing means unfollowing a stranger is not an error.
+-- step Build the feed
+8 visible = userId's followees plus userId
+  hint: Whose tweets belong in the feed?
+  why: Everyone the user follows, and the user's own.
+9 return [tweetId
+  hint: What does the feed hold?
+  why: Only the tweet ids, not the times or authors.
+10     for each (clock, author, tweetId) in tweets, newest first
+  hint: In which order do you walk the timeline?
+  why: Backwards, so the newest tweets come out first.
+11     if author is visible]
+  hint: Which tweets do you keep?
+  why: Only those written by someone visible to this user.
+12 keeping only the first 10
+  hint: How many does the feed return?
+  why: The ten most recent; slicing the list cuts it there.
+== pattern heap
+complexity: O(followees) per feed · O(all tweets) space
+nudge: Store each author's tweets separately and the feed is a merge of a few timelines. Since only the ten newest are wanted, which structure picks the largest few from a pile of candidates?
+-- step Keep a clock and two stores
+1 clock = 0
+  hint: How do you order tweets across every user?
+  why: A counter that only increases stands in for time.
+2 tweets = empty map from author to list of tweets
+  hint: Where do the tweets live this time?
+  why: One list per author, newest last, so a feed only touches the people it follows.
+3 following = empty map from user to set of followees
+  hint: How do you remember who follows whom?
+  why: A map from each user to a set, so follow and unfollow are O(1).
+-- step Post, follow and unfollow
+4 append (clock, tweetId) to userId's list, creating it if missing
+  hint: What do you record when a tweet is posted?
+  why: Its time, so the merge can order it; the author is the key, so it need not be stored.
+5 clock += 1
+  hint: What must happen to the clock after each post?
+  why: It ticks forward, so the next tweet is strictly newer.
+6 add followeeId to followerId's set, creating it if missing
+  hint: How does a follow change the map?
+  why: The followee joins the follower's set; a set makes following twice harmless.
+7 discard followeeId from followerId's set
+  hint: And an unfollow?
+  why: Remove it if it is there, without failing when it is not.
+-- step Merge the newest ten
+8 visible = userId's followees plus userId
+  hint: Whose tweets belong in the feed?
+  why: Everyone the user follows, and the user's own.
+9 candidates = empty list
+  hint: What do you gather before choosing?
+  why: A pool of tweets that could make the feed.
+10 for each author in visible:
+  hint: Where do the candidates come from?
+  why: From each visible author's timeline in turn.
+11     add the last 10 of author's tweets to candidates
+  hint: How many of each author's tweets can matter?
+  why: At most their ten newest: anything older loses to those ten anyway.
+12 return the tweetIds of the 10 largest candidates, by clock
+  hint: How do you pick the feed from the pool?
+  why: A heap takes the ten with the largest clock, newest first, without sorting the whole pool.

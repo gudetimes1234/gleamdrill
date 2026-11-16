@@ -1,4 +1,5 @@
 @kind DP + Backtracking
 @big-o O(n·2ⁿ) time · O(n·2ⁿ) space
 @order 2
+@pattern dp-2d
 Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.

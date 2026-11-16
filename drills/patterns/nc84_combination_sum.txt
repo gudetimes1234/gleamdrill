@@ -1,0 +1,67 @@
+== pattern backtracking
+complexity: O(2ᵗ) time · O(t) space
+nudge: At each step you either take the current candidate again or drop it for good. Why does never going back to a dropped candidate keep every combination in one order?
+-- step Start the search
+1 return build(candidates, target)
+  hint: What does the main function do?
+  why: Hands the whole list and the full target to the recursion.
+-- step Stop when the target is met or nothing is left
+2 if target == 0: return [[]]
+  hint: What if the target is already reached?
+  why: One combination: the empty one, which the callers extend.
+3 if no candidates: return []
+  hint: What if there is target left but nothing to use?
+  why: No combination exists down this branch.
+-- step Skip what cannot be used
+4 first = candidates[0]
+  hint: Which candidate do you decide about?
+  why: The first one; the rest are decided further down.
+5 if first > target or first <= 0: return build(rest of candidates, target)
+  hint: When can the first candidate never be taken?
+  why: When it overshoots the target, or is not positive and could repeat forever; drop it and go on.
+-- step Take it again, or drop it
+6 with_first = [first] + each combination of build(candidates, target - first)
+  hint: What if you take the first candidate?
+  why: Keep the same list, because reuse is allowed, and aim for what is left of the target.
+7 return with_first + build(rest of candidates, target)
+  hint: And the combinations that never use it?
+  why: Drop it for good. Never returning to it is what keeps 2+3 and 3+2 from both appearing.
+== pattern dp-1d
+complexity: O(t·2ᵗ) time · O(t·2ᵗ) space
+nudge: The combinations making an amount are combinations making a smaller amount, with one more candidate added. How do you add without building the same combination in several orders?
+-- step Prepare the candidates and the table
+1 usable = the positive candidates, sorted
+  hint: Which candidates can ever help, and in what order?
+  why: Only positive ones; sorting lets the inner loop stop early.
+2 table = {0: [[]]}
+  hint: What makes an amount of zero?
+  why: Exactly one combination: the empty one, which everything else extends.
+-- step Fill every amount from 1 to target
+3 for amount from 1 to target:
+  hint: In which order do you fill the table?
+  why: Upward, so every smaller amount is ready before it is needed.
+4     found = empty list
+  hint: What do you collect for this amount?
+  why: Every combination that sums to it.
+5     for candidate in usable:
+  hint: What could be the candidate added last?
+  why: Any usable candidate.
+6         if candidate > amount: break
+  hint: When can you stop trying candidates?
+  why: Once one is larger than the amount; sorted order means all the rest are too.
+7         for combination in table[amount - candidate], or none:
+  hint: What can the candidate be added to?
+  why: Every combination making the rest of the amount.
+8             if combination is empty or candidate >= its largest (its first):
+  hint: How do you keep one order per combination?
+  why: Only add a candidate at least as large as everything already in it, so each combination is built largest first.
+9                 add [candidate] + combination to found
+  hint: What do you record?
+  why: The combination with the candidate at the front, keeping its largest value first.
+10     table[amount] = found
+  hint: Where does the result for this amount go?
+  why: Into the table, for larger amounts to build on.
+-- step Read off the target
+11 return table[target], or []
+  hint: What is the answer?
+  why: The combinations stored for the target itself.

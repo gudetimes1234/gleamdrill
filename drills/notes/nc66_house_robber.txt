@@ -1,4 +1,5 @@
 @kind Space-Saving DP
 @big-o O(n) time · O(1) space
 @order 2
+@pattern dp-1d
 At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.

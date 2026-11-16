@@ -1,0 +1,31 @@
+== pattern two-pointers
+complexity: O(n) time · O(1) space
+nudge: Compare from both ends inward, stepping over anything that is not a letter or a digit. What do you do the moment the two sides disagree?
+-- step Start at both ends
+1 left, right = first index, last index
+  hint: Where do the two pointers start?
+  why: At the two ends: a palindrome's first and last characters must match, then the next pair in, and so on.
+-- step Skip what does not count
+2 while left < right:
+  hint: When are you done comparing?
+  why: When the pointers meet or cross, every pair has been checked.
+3     while left < right and s[left] is not alphanumeric: left += 1
+  hint: What if the left character is punctuation or a space?
+  why: Step past it; only letters and digits take part. The left < right guard stops the pointers crossing.
+4     while left < right and s[right] is not alphanumeric: right -= 1
+  hint: And on the right?
+  why: The same skip, moving the right pointer down.
+-- step Compare and close in
+5     if lowercase s[left] != lowercase s[right]: return False
+  hint: How do you compare the two characters?
+  why: Ignoring case. One mismatched pair is enough to fail.
+6     left += 1
+  hint: The pair matched. What moves?
+  why: The left pointer steps inward.
+7     right -= 1
+  hint: And?
+  why: The right pointer steps inward too, onto the next pair.
+-- step Return
+8 return True
+  hint: What if the pointers meet without a mismatch?
+  why: Every pair matched, so the cleaned string reads the same both ways.

@@ -1,0 +1,33 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: Picture breadth-first search over indices: everything reachable in k jumps is a contiguous window. What two numbers describe the current window and the next, and when do you spend a jump?
+-- step Set up the windows
+1 jumps = 0
+  hint: What are you counting?
+  why: Jumps spent so far; you start at index 0 having spent none.
+2 window_end = 0
+  hint: Where does the window reachable with zero jumps end?
+  why: At index 0 itself.
+3 furthest = 0
+  hint: What do you track for the next window?
+  why: The furthest index reachable from anything seen so far, which is where the next window will end.
+-- step Sweep and spend jumps at window ends
+4 for i from 0 to second-to-last index:
+  hint: Why does the walk stop one short of the end?
+  why: Standing on the last index means you have arrived; charging a jump there would count one you never make.
+5     furthest = max(furthest, i + nums[i])
+  hint: How does index i extend the next window?
+  why: From i you can reach i + nums[i]; keep the furthest such index.
+6     if i == window_end:
+  hint: When must you spend another jump?
+  why: On reaching the end of the current window: going further needs one more jump.
+7         jumps += 1
+  hint: What changes in the count?
+  why: One more jump takes you into the next window.
+8         window_end = furthest
+  hint: Where does the next window end?
+  why: At the furthest index any position in the current window could reach.
+-- step Return the count
+9 return jumps
+  hint: What is the answer after the sweep?
+  why: The number of windows crossed, which is the BFS depth of the last index.

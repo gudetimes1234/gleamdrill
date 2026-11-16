@@ -1,0 +1,33 @@
+== pattern math
+complexity: O(log n) time · O(1) space
+nudge: Peel digits off the bottom of the input and push them onto the bottom of the result. When must the overflow test happen, before the multiply or after?
+-- step Separate the sign
+1 sign = -1 if x < 0 else 1
+  hint: What do you set aside before working with digits?
+  why: The sign, so the digit loop only ever sees a non-negative number.
+2 remaining = abs(x)
+  hint: What do you peel digits from?
+  why: The magnitude of x.
+3 result = 0
+  hint: What do you build into?
+  why: A result with no digits yet.
+-- step Move one digit per round
+4 while remaining is not zero:
+  hint: When are the digits used up?
+  why: When the remaining number reaches zero.
+5     if result > LARGEST // 10: return 0
+  hint: What must you check before multiplying by ten?
+  why: Whether the multiply would overflow. In 32 bits the value is lost at the multiply, so the test has to come first.
+6     result = result * 10 + remaining % 10
+  hint: How do you push the bottom digit onto the result?
+  why: Shift the result one decimal place left and add the last digit of what remains.
+7     remaining //= 10
+  hint: How do you drop that digit?
+  why: Integer-divide by ten.
+-- step Restore the sign and range-check
+8 result *= sign
+  hint: What did you set aside?
+  why: The sign goes back on.
+9 return 0 if result is outside the 32-bit range else result
+  hint: What is the last check?
+  why: The final value must still fit a signed 32-bit integer; otherwise the answer is 0.

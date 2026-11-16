@@ -1,15 +1,15 @@
 
 def encode(strs):
-    return "".join("%d#%s" % (len(s), s) for s in strs)
+    return "".join("%d#%s" % (len(s), s) for s in strs)  # @1
 
 
 def decode(s):
-    out = []
-    i = 0
-    while i < len(s):
-        hash_at = s.index("#", i)
-        length = int(s[i:hash_at])
-        start = hash_at + 1
-        out.append(s[start:start + length])
-        i = start + length
-    return out
+    out = []  # @2
+    i = 0  # @2
+    while i < len(s):  # @3
+        hash_at = s.index("#", i)  # @4
+        length = int(s[i:hash_at])  # @5
+        start = hash_at + 1  # @6
+        out.append(s[start:start + length])  # @6
+        i = start + length  # @7
+    return out  # @8

@@ -1,0 +1,57 @@
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: For each number you already know the partner it needs. Could you remember every number you have passed, so finding that partner is one lookup?
+-- step Remember what you have seen
+1 seen = empty map from number to index
+  hint: What do you keep as you walk the array?
+  why: Every number passed so far, with where it was, so a later number can find its partner in O(1).
+-- step Look for each number's partner
+2 for i, num in enumerate(nums):
+  hint: How do you walk the array?
+  why: Once, keeping the index, because the answer is made of indices.
+3     complement = target - num
+  hint: Which number would complete the pair?
+  why: The one that adds to num to make target.
+4     if complement in seen:
+  hint: How do you know the pair exists?
+  why: The partner, if it came earlier, is already in the map.
+5         return [seen[complement], i]
+  hint: What do you return when it is there?
+  why: The earlier index first, then this one.
+6     seen[num] = i
+  hint: What happens when it is not there yet?
+  why: Record this number, so a later partner can find it. Adding it after the check stops a number pairing with itself.
+-- step No pair
+7 return []
+  hint: What if the loop ends?
+  why: No two numbers add to target.
+== pattern two-pointers
+complexity: O(n log n) time · O(n) space
+nudge: In sorted order, the smallest plus the largest tells you which end to move. Sorting loses the indices, though, so carry them along.
+-- step Sort, keeping the indices
+1 ordered = (num, index) pairs, sorted by num
+  hint: How can you sort and still answer with the original positions?
+  why: Sort pairs of value and index, so each number carries where it came from.
+2 left, right = 0, last index
+  hint: Where do the pointers start?
+  why: At the smallest and the largest value.
+-- step Close in on the target
+3 while left < right:
+  hint: When do you stop looking?
+  why: When the pointers meet, every pair has been ruled out.
+4     total = value at left + value at right
+  hint: What do you compare against target?
+  why: The sum of the two values under the pointers.
+5     if total == target: return both original indices, sorted
+  hint: What do you return on a hit?
+  why: The carried indices, in ascending order.
+6     if total < target: left += 1
+  hint: The sum is too small. Which pointer moves?
+  why: The left one: only a larger value can raise the sum.
+7     else: right -= 1
+  hint: And when it is too large?
+  why: The right one moves down to shrink the sum.
+-- step No pair
+8 return []
+  hint: What if the pointers meet?
+  why: No pair adds to target.

@@ -5,12 +5,12 @@ def networkDelayTime(times, n, k):
     # Slower than Dijkstra at O(V*E), and the reason to know it is that it
     # survives negative edge weights, which Dijkstra's settle-and-never-revisit
     # does not.
-    settled = {k: 0}
-    for _ in range(max(n - 1, 0)):
-        for origin, destination, weight in times:
-            if origin in settled:
-                arrival = settled[origin] + weight
-                if destination not in settled or arrival < settled[destination]:
-                    settled[destination] = arrival
+    settled = {k: 0}  # @1
+    for _ in range(max(n - 1, 0)):  # @2
+        for origin, destination, weight in times:  # @3
+            if origin in settled:  # @4
+                arrival = settled[origin] + weight  # @5
+                if destination not in settled or arrival < settled[destination]:  # @6
+                    settled[destination] = arrival  # @6
 
-    return max(settled.values()) if len(settled) == n else -1
+    return max(settled.values()) if len(settled) == n else -1  # @7

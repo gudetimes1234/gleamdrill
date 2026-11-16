@@ -1,0 +1,30 @@
+== pattern monotonic-stack
+complexity: O(n) time · O(n) space
+nudge: Keep the days still waiting for something warmer on a stack. When a warm day arrives, which of the waiting days does it answer?
+-- step Set up
+1 result = zeros, one per day
+  hint: What is the answer for a day that never gets warmer?
+  why: Zero, so start every slot there.
+2 stack = [] of (index, temperature), temperatures decreasing
+  hint: Where do the unanswered days wait?
+  why: On a stack, coldest on top, with their index so you can measure the wait.
+-- step Each day answers the colder days below it
+3 for i, temp in enumerate(temperatures):
+  hint: How many passes?
+  why: One, day by day.
+4     while stack and temp > temperature on top:
+  hint: Which waiting days does today answer?
+  why: Every one on top that is colder; the first warmer day for them is today.
+5         prev_index = index popped from the top
+  hint: Which day is answered?
+  why: The one you pop.
+6         result[prev_index] = i - prev_index
+  hint: How long did it wait?
+  why: Today's index minus its own.
+7     push (i, temp)
+  hint: What about today?
+  why: It waits too. Everything below it is warmer or equal, so the stack stays decreasing.
+-- step Return
+8 return result
+  hint: What is the answer?
+  why: Each day is pushed and popped at most once, and days still on the stack keep zero.

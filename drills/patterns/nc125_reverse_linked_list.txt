@@ -1,0 +1,27 @@
+== pattern linked-list-pointers
+complexity: O(n) time · O(1) space
+nudge: Walk the list once, turning each link around as you pass it. What must you remember before you overwrite a node's next?
+-- step Start with nothing behind you
+1 previous = None
+  hint: What does the first node point at once it is reversed?
+  why: Nothing: the old head becomes the tail, so the node behind it starts as None.
+-- step Reverse each link
+2 while head is not None:
+  hint: How long do you keep walking?
+  why: Until you step off the end of the list.
+3     following = head.next
+  hint: What must you save before changing the link?
+  why: The next node. Once head.next is overwritten, the rest of the list is unreachable.
+4     head.next = previous
+  hint: Which way should this node point now?
+  why: Back at the node behind it. That one assignment is the reversal.
+5     previous = head
+  hint: What becomes the node behind you?
+  why: The node you just turned around.
+6     head = following
+  hint: Where do you step next?
+  why: To the node you saved before rewiring.
+-- step Return the new head
+7 return previous
+  hint: Which node is the new head?
+  why: head is None now, and previous is the last node you turned: the old tail.

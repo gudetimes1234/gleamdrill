@@ -1,0 +1,15 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: A mirror image swaps left and right at every depth, not just the top. Once one node is fixed, what is left on each side, and does it look like the problem you started with?
+-- step Stop at the empty tree
+1 if root is None: return None
+  hint: What is the mirror image of an empty tree?
+  why: Itself. Returning None is the base case every branch of the recursion ends on.
+-- step Swap the inverted children
+2 root.left, root.right = invert(root.right), invert(root.left)
+  hint: What does inverting do at a single node, and who handles the subtrees?
+  why: The children trade places, and each one is inverted by the same function. Doing both in one assignment needs no temporary.
+-- step Hand the tree back
+3 return root
+  hint: What does the caller need from this call?
+  why: The root of the inverted subtree, so a parent can hang it on the opposite side.

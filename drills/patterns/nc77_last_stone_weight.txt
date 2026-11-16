@@ -1,0 +1,27 @@
+== pattern heap
+complexity: O(n log n) time · O(n) space
+nudge: Every round needs the two heaviest stones, over and over. Which structure gives up its maximum cheaply, and how do you get one from a min-heap?
+-- step Build a max-heap
+1 heap = every stone, negated
+  hint: The heap module only gives a min-heap. How do you make it hand out the heaviest?
+  why: Negate the weights, so the heaviest stone becomes the smallest value.
+2 heapify(heap)
+  hint: What makes the list a heap?
+  why: Heapify arranges it in O(n), cheaper than pushing one at a time.
+-- step Smash the two heaviest
+3 while the heap holds more than one stone:
+  hint: When does the smashing stop?
+  why: When at most one stone is left.
+4     heaviest = -pop(heap)
+  hint: Which stone do you take first?
+  why: The heaviest, negated back to its real weight.
+5     following = -pop(heap)
+  hint: And the second?
+  why: The next heaviest, also negated back.
+6     if heaviest != following: push -(heaviest - following)
+  hint: What survives the smash?
+  why: Equal stones destroy each other; otherwise the difference goes back in, negated again.
+-- step What is left
+7 return -heap[0] if the heap is not empty else 0
+  hint: What if no stone remains?
+  why: Answer 0; otherwise the last stone's weight, negated back.

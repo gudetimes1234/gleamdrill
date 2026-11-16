@@ -1,0 +1,47 @@
+== pattern backtracking
+complexity: O(4ⁿ/√n) time · O(n) space
+nudge: Build the string one bracket at a time and never place one that could not lead to a valid answer. What does each counter of brackets left allow, and when is a closer legal?
+-- step Collect the answers
+1 out = empty list
+  hint: Where do finished strings go?
+  why: Into a list the recursion appends to; the function returns it at the end.
+-- step A complete string is an answer
+2     if open_left == 0 and close_left == 0:
+  hint: When is the string being built finished?
+  why: When every opener and every closer has been placed.
+3         append the joined string to out; return
+  hint: What do you do with a finished string?
+  why: Record it and stop: nothing more can be added. It is valid by construction.
+-- step Try an opener
+4     if open_left > 0:
+  hint: When may you place "("?
+  why: While any openers are left to place.
+5         append "(" to current
+  hint: What is the choice?
+  why: Place the opener at the end of the string so far.
+6         build(open_left - 1, close_left, current)
+  hint: How do you explore everything that follows it?
+  why: Recurse with one opener fewer left.
+7         pop it off current
+  hint: What must you do before trying the other bracket?
+  why: Undo the choice, so the next branch starts from the same prefix.
+-- step Try a closer
+8     if close_left > open_left:
+  hint: When may you place ")"?
+  why: Only while more closers than openers are left, meaning some opener is still unmatched.
+9         append ")" to current
+  hint: What is the choice?
+  why: Close the most recent unmatched opener.
+10         build(open_left, close_left - 1, current)
+  hint: Then?
+  why: Recurse with one closer fewer left.
+11         pop it off current
+  hint: And after the recursion returns?
+  why: Undo it, leaving current as the caller had it.
+-- step Start the search
+12 build(n, n, [])
+  hint: What does the first call look like?
+  why: n of each bracket left to place, and an empty string so far.
+13 return out
+  hint: What is the answer?
+  why: Every string the recursion completed.

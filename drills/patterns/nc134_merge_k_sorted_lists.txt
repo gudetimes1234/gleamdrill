@@ -1,0 +1,87 @@
+== pattern linked-list-pointers
+complexity: O(n log k) time · O(k) space
+nudge: Merging lists in one at a time re-walks the growing result again and again. What if you merged them in pairs, halving the count each round?
+-- step Drop empty lists
+1 lists = the lists that are not empty
+  hint: Which lists matter?
+  why: Only non-empty ones; empties merge to nothing.
+2 if no lists: return None
+  hint: What if nothing is left?
+  why: The merge of nothing is an empty list.
+-- step Merge in pairs, round by round
+3 while more than one list remains:
+  hint: When are you done?
+  why: When a single list holds everything.
+4     merged = []
+  hint: What does a round produce?
+  why: The next, half-sized set of lists.
+5     for i from 0 in steps of 2:
+  hint: How do you pair the lists?
+  why: Neighbours: 0 with 1, 2 with 3, and so on.
+6         if i + 1 exists: append merge(lists[i], lists[i + 1])
+  hint: What if the pair is complete?
+  why: Merge the two.
+7         else: append lists[i]
+  hint: What about an odd one out?
+  why: It goes through to the next round unchanged.
+8     lists = merged
+  hint: Then?
+  why: The next round works on the merged lists.
+9 return lists[0]
+  hint: What is the answer?
+  why: The one list left.
+-- step Merge two sorted lists
+10 dummy = new node; tail = dummy
+  hint: What do you attach the first node to?
+  why: A dummy head, removing the first-node special case.
+11 while first and second are both not None:
+  hint: How long do you compare?
+  why: While both lists have nodes.
+12     if first.val <= second.val: tail.next = first; first = first.next
+  hint: Which head goes next?
+  why: The smaller one, spliced onto tail.
+13     else: tail.next = second; second = second.next
+  hint: And otherwise?
+  why: Take second's head instead.
+14     tail = tail.next
+  hint: Then?
+  why: Move tail onto the node just attached.
+15 tail.next = whichever list is not None
+  hint: What about the leftovers?
+  why: Already sorted and linked, so attach them whole.
+16 return dummy.next
+  hint: Where does the merged list start?
+  why: After the dummy.
+== pattern heap
+complexity: O(n log k) time · O(k) space
+nudge: The next node of the answer is always the smallest of the k current heads. What makes "smallest of k" cheap to find again and again?
+-- step Load the heads
+1 frontier = (value, index, node) for each non-empty list's head
+  hint: What goes in the heap?
+  why: Each list's head, keyed by value, with the list index as a tie-break so nodes are never compared.
+2 heapify frontier
+  hint: How do you make it a heap?
+  why: Heapify in place, O(k).
+-- step Take the smallest, refill from its list
+3 dummy = new node; tail = dummy
+  hint: What do you attach the first node to?
+  why: A dummy head.
+4 while frontier is not empty:
+  hint: When are you done?
+  why: When every node has been taken.
+5     value, i, node = pop smallest from frontier
+  hint: Which node comes next in the answer?
+  why: The smallest current head.
+6     tail.next = node; tail = node
+  hint: What do you do with it?
+  why: Splice it onto the result and move tail.
+7     if node.next is not None: push (node.next.val, i, node.next)
+  hint: What replaces it in the heap?
+  why: The next node from the same list, which is now that list's head.
+-- step Finish the list
+8 tail.next = None
+  hint: What must the last node point at?
+  why: Nothing; it may still link into an old list.
+9 return dummy.next
+  hint: Where does the merged list start?
+  why: After the dummy.

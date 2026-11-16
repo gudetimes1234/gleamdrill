@@ -1,0 +1,40 @@
+== pattern bfs
+complexity: O(m·n) time · O(m·n) space
+nudge: Do not search from each room for a gate. If every gate starts a search at the same time, how far has the wave travelled when it first reaches a room?
+-- step Copy the grid
+1 if the grid is empty: return rooms
+  hint: What if there are no rooms?
+  why: Nothing to fill in.
+2 board = copy of every row
+  hint: What do you write the distances into?
+  why: A copy, so the input is left as it was given.
+3 rows, columns = board size
+  hint: What do the bounds checks need?
+  why: The number of rows and columns.
+-- step Start from every gate
+4 frontier = queue of every square holding 0
+  hint: Where does the search start?
+  why: At every gate at once, all at distance zero.
+-- step Spread outward
+5 while frontier:
+  hint: How long does the wave run?
+  why: Until no square is waiting.
+6     r, c = take from the front of frontier
+  hint: Which square comes next?
+  why: The oldest waiting, so squares come off in order of distance.
+7     for each of the four neighbours (nr, nc):
+  hint: Where does the wave move?
+  why: To each adjacent square.
+8         if (nr, nc) is on the grid and still INFINITY:
+  hint: Which neighbours get a distance?
+  why: Empty rooms not yet reached. Walls and gates are never INFINITY, and a room reached once is already final.
+9             board[nr][nc] = board[r][c] + 1
+  hint: What distance does it get?
+  why: One more than this square's. The first arrival is from the nearest gate, because the wave goes in distance order.
+10             add (nr, nc) to frontier
+  hint: Then?
+  why: It spreads in its turn.
+-- step Return the grid
+11 return board
+  hint: What is the answer?
+  why: The copy with every reachable room filled in; unreachable rooms keep INFINITY.

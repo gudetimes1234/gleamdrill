@@ -10,14 +10,14 @@ def maxDepth(root):
     # frontier, replace it with all its children, and add one. No recursion and
     # no stack -- which is what makes this the version that survives a tree deep
     # enough to overflow one.
-    depth = 0
-    frontier = [root] if root is not None else []
-    while frontier:
-        depth += 1
-        frontier = [
-            child
-            for node in frontier
-            for child in (node.left, node.right)
-            if child is not None
+    depth = 0  # @1
+    frontier = [root] if root is not None else []  # @2
+    while frontier:  # @3
+        depth += 1  # @4
+        frontier = [  # @5
+            child  # @5
+            for node in frontier  # @6
+            for child in (node.left, node.right)  # @6
+            if child is not None  # @7
         ]
-    return depth
+    return depth  # @8

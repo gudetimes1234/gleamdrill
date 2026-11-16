@@ -1,0 +1,34 @@
+== pattern dp-2d
+complexity: O(m·n) time · O(m·n) space
+nudge: A star belongs to the character before it, so read the pattern two symbols at a time. Given x*, what are the only two things it can do?
+-- step Remember each position pair
+1 memo = empty map from (i, j) to whether s[i:] matches p[j:]
+  hint: What do you cache?
+  why: The answer for each text position and pattern position, since many splits reach the same pair.
+-- step The end of the pattern
+2 if j >= len(p): return i >= len(s)
+  hint: What happens when the pattern is used up?
+  why: It matches only if the text is used up too.
+-- step Match one symbol or one starred pair
+3 if (i, j) not in memo:
+  hint: When do you need to work the pair out?
+  why: Only the first time; the memo answers after that.
+4     here = text is left and p[j] is s[i] or "."
+  hint: Does the current pattern symbol match the current character?
+  why: It must be the same character or a dot, and there must be a character left to match.
+5     if the next pattern symbol is "*":
+  hint: How do you know you are looking at a starred pair?
+  why: The symbol after this one is a star, so this pair is x*.
+6         memo = works(i, j + 2) or (here and works(i + 1, j))
+  hint: What are the two choices for x*?
+  why: Zero copies skips the pair entirely; one more copy consumes a character and stays on the same pair.
+7     else: memo = here and works(i + 1, j + 1)
+  hint: And a plain symbol?
+  why: It must match here, and then both strings move on by one.
+8 return memo[(i, j)]
+  hint: What does the call return?
+  why: The stored answer for this pair.
+-- step Start at the beginning
+9 return works(0, 0)
+  hint: Which pair is the question?
+  why: The whole text against the whole pattern.

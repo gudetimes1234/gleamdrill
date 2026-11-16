@@ -1,0 +1,24 @@
+== pattern dfs
+complexity: O(n·m) time · O(n+m) space
+nudge: Two questions are tangled here: whether two trees match exactly, and where to stand while asking. What happens if you solve each one alone?
+-- step Handle the empty inputs
+1 if subRoot is None: return True
+  hint: Is an empty tree a subtree of anything?
+  why: Yes, of every tree, so there is nothing to search for.
+2 if root is None: return False
+  hint: What does an empty main tree contain?
+  why: Nothing but the empty tree, and subRoot is not empty by now.
+-- step Match here or look below
+3 return same(root, subRoot) or isSubtree(root.left, subRoot) or isSubtree(root.right, subRoot)
+  hint: What do you ask at each node of the main tree?
+  why: Whether the tree rooted here is identical to subRoot; if not, try both children and accept either.
+-- step Compare two trees exactly (in same(a, b))
+4 if a is None and b is None: return True
+  hint: What if both positions are empty?
+  why: They match.
+5 if a is None or b is None: return False
+  hint: And if only one is?
+  why: A node against nothing never matches.
+6 return a.val == b.val and same(a.left, b.left) and same(a.right, b.right)
+  hint: When do two nodes match?
+  why: Equal values, and both pairs of children match in turn.

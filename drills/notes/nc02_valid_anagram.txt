@@ -1,4 +1,5 @@
 @kind Count Map
 @big-o O(n) time · O(1) space
 @order 2
+@pattern hash-map
 Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.

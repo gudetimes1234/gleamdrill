@@ -1,0 +1,23 @@
+== pattern heap
+complexity: O(log k) per add · O(k) space
+nudge: Only the k largest values can ever be the answer. Which heap keeps exactly those, with the answer sitting at the top?
+-- step Keep only the k largest
+1 remember k
+  hint: What does add need to know later?
+  why: The size the store must never grow past.
+2 heap = min-heap of nums
+  hint: Which kind of heap puts the kth largest within reach?
+  why: A min-heap of the k largest values has the smallest of them, the kth largest overall, at the top.
+3 while the heap holds more than k: pop the smallest
+  hint: What do you throw away from the initial list?
+  why: Everything below the k largest; it can never be the answer again.
+-- step Add a value
+4 push value
+  hint: What happens to a new value first?
+  why: It goes into the heap, in O(log k).
+5 if the heap holds more than k: pop the smallest
+  hint: How do you keep the size at k?
+  why: Drop the smallest value; it has at least k values above it now.
+6 return the top if the heap holds k values, else None
+  hint: When is there an answer at all?
+  why: Only once k values have arrived; then the top of the min-heap is the kth largest.

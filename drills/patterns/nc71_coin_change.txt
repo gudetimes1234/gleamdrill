@@ -1,0 +1,72 @@
+== pattern dp-1d
+complexity: O(amount·coins) time · O(amount) space
+nudge: The fewest coins for a target is one more than the fewest for what is left after some coin. Build the answers up from zero; what do you do with amounts that cannot be made?
+-- step Start from zero
+1 table = {0: 0}
+  hint: Which amount do you already know the answer for?
+  why: Zero takes no coins. Amounts that cannot be made are simply left out, so no infinity sentinel is needed.
+-- step Build every amount up to the target
+2 for target from 1 to amount:
+  hint: In what order do you fill the amounts?
+  why: Upwards, so every smaller amount a coin could leave behind is already settled.
+3     options = [table[target - coin] for each coin <= target whose remainder is in table]
+  hint: Which earlier answers could this amount come from?
+  why: For each coin that fits, the fewest coins for what is left, if that remainder is reachable at all.
+4     if options: table[target] = min(options) + 1
+  hint: When does this amount get an entry, and what is it?
+  why: Only if some remainder was reachable; then it is the cheapest of those plus this one coin.
+-- step Read off the answer
+5 return table.get(amount, -1)
+  hint: What if the amount never got an entry?
+  why: It cannot be made from these coins, so answer -1.
+== pattern bfs
+complexity: O(amount·coins) time · O(amount) space
+nudge: The amounts you can reach with k coins are one level of a search from zero. Which level is the first to contain the target?
+-- step Start the search at zero
+1 if amount == 0: return 0
+  hint: What if there is nothing to make?
+  why: Zero coins; the search below starts counting at one.
+2 frontier = [0]
+  hint: Where does the search start?
+  why: At an amount of zero, reached with no coins.
+3 seen = {0}
+  hint: How do you avoid exploring an amount twice?
+  why: Remember every amount already reached; the first time is with the fewest coins.
+4 used = 0
+  hint: What does each level stand for?
+  why: The number of coins used so far.
+-- step Expand one level per coin
+5 while frontier is not empty:
+  hint: When does the search give up?
+  why: When no new amount below the target is left to grow from.
+6     used += 1
+  hint: What does moving to the next level cost?
+  why: One more coin.
+7     following = []
+  hint: Where do the amounts of the next level go?
+  why: Into a fresh list, so levels stay separate and used stays accurate.
+8     for each total in frontier:
+  hint: Which amounts do you grow from?
+  why: Every amount on the current level.
+9         for each coin in coins:
+  hint: How does an amount grow?
+  why: By adding any one coin.
+10             nxt = total + coin
+  hint: What amount does that give?
+  why: The current amount plus this coin.
+11             if nxt == amount: return used
+  hint: When are you done?
+  why: The first time the target appears, because breadth-first levels arrive in order of coins used.
+12             if nxt < amount and nxt not in seen:
+  hint: Which new amounts are worth keeping?
+  why: Ones below the target that no earlier level reached; anything over the target can never come back down.
+13                 mark nxt seen and add it to following
+  hint: What do you do with a new amount?
+  why: Record it so it is never explored again, and queue it for the next level.
+14     frontier = following
+  hint: What does the search grow from next?
+  why: The level just built.
+-- step The target was never reached
+15 return -1
+  hint: What if the frontier runs dry?
+  why: Every reachable amount below the target was explored without hitting it.

@@ -1,0 +1,27 @@
+== pattern bit-manipulation
+complexity: O(1) time · O(1) space
+nudge: XOR adds bits but forgets to carry, and AND finds exactly where a carry was owed. How do you combine the two until nothing is owed, and how do negatives survive in 32 bits?
+-- step Fix both numbers to 32 bits
+1 a = a AND MASK
+  hint: What must you do to a before looping in an unbounded-integer language?
+  why: Keep only its low 32 bits, so a negative number becomes its two's-complement pattern.
+2 b = b AND MASK
+  hint: And b?
+  why: The same mask, so the carry loop works on 32-bit patterns and terminates.
+-- step Add without carrying, then add the carries
+3 while b is not zero:
+  hint: When is the sum finished?
+  why: When there is no carry left to add.
+4     carry = ((a AND b) shifted left by 1) AND MASK
+  hint: Where are carries owed, and where do they land?
+  why: Wherever both bits are set; shifting left one moves each carry to the column it belongs in, and the mask drops anything past bit 31.
+5     a = (a XOR b) AND MASK
+  hint: What is the sum ignoring carries?
+  why: XOR: one in exactly one input gives one, two ones give zero with the carry handled separately.
+6     b = carry
+  hint: What still has to be added?
+  why: The carries, which become the next number to add.
+-- step Read the sign back
+7 return a if a <= LARGEST else NOT (a XOR MASK)
+  hint: How do you turn a 32-bit pattern back into a signed number?
+  why: A pattern above the signed maximum has its sign bit set; flipping the low 32 bits and then every bit gives the negative value.

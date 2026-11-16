@@ -1,0 +1,36 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: A piece can only end where every character inside it has run out. If you knew each character's last position, how far must the current piece reach?
+-- step Find each character's last position
+1 last = map from each character to its last index in s
+  hint: What do you need to know about each character before sweeping?
+  why: Where it appears for the last time; writing every index in order leaves the last one standing.
+-- step Sweep, pushing the end out
+2 out = []
+  hint: What do you collect?
+  why: The size of each piece, in order.
+3 start = 0
+  hint: Where does the first piece begin?
+  why: At index 0.
+4 end = -1
+  hint: Where does the current piece end before you have seen anything?
+  why: Nowhere yet; any character will push it out.
+5 for i, c in enumerate(s):
+  hint: How do you walk the string?
+  why: Once, with each index and character.
+6     end = max(end, last[c])
+  hint: How does character c constrain the piece?
+  why: The piece must run at least to c's last position.
+7     if i == end:
+  hint: When can the piece close?
+  why: When the walk reaches its end: nothing inside it appears again later.
+8         append end - start + 1 to out
+  hint: What do you record?
+  why: The piece's length.
+9         start = i + 1
+  hint: Where does the next piece begin?
+  why: Just after this one.
+-- step Return the sizes
+10 return out
+  hint: What is the answer?
+  why: The sizes of the pieces, left to right.
