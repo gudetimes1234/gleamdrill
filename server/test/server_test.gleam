@@ -274,8 +274,7 @@ fn exec_config() -> config.Config {
   )
 }
 
-const harness =
-  "[
+const harness = "[
   {\"contains_duplicate?([1, 2, 3, 1])\", inspect(true), inspect(Solution.contains_duplicate?([1, 2, 3, 1]))},
   {\"contains_duplicate?([1, 2, 3, 4])\", inspect(false), inspect(Solution.contains_duplicate?([1, 2, 3, 4]))}
 ]"
@@ -359,8 +358,7 @@ end
 // one drills/go/harnesses/nc01_contains_duplicate.go carries; the prelude it
 // calls into is staged from server/priv/go by exec itself.
 
-const go_harness =
-  "package main
+const go_harness = "package main
 
 func main() {
 	run(func() []testCase {
@@ -403,8 +401,7 @@ func containsDuplicate(nums []int) bool {
 // A refactoring drill's style checks read solution.go from the attempt's
 // directory, comments blanked: the comment mentioning `switch` must not
 // count, the real one must.
-const go_style_harness =
-  "package main
+const go_style_harness = "package main
 
 func main() {
 	run(func() []testCase {
@@ -551,8 +548,7 @@ func containsDuplicate(nums []int) bool {
 // the one drills/haskell/harnesses/nc01_contains_duplicate.hs carries; the
 // Drill prelude it imports is staged from server/priv/haskell by exec itself.
 
-const haskell_harness =
-  "module Main where
+const haskell_harness = "module Main where
 
 import Drill
 import Solution
@@ -668,8 +664,7 @@ containsDuplicate nums = containsDuplicate nums
 // the one drills/ruby/harnesses/nc01_contains_duplicate.rb carries; the
 // runner it is loaded by is staged from server/priv/ruby by exec itself.
 
-const ruby_harness =
-  "need :contains_duplicate
+const ruby_harness = "need :contains_duplicate
 
 tc \"contains_duplicate([1, 2, 3, 1])\", true, contains_duplicate([1, 2, 3, 1])
 tc \"contains_duplicate([1, 2, 3, 4])\", false, contains_duplicate([1, 2, 3, 4])

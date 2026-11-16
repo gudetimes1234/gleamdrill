@@ -14,8 +14,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 
-const stash_epilogue =
-  "
+const stash_epilogue = "
 
 import json as __gleamdrill_json__
 from browser import self as __gleamdrill_self__
@@ -28,8 +27,7 @@ __gleamdrill_self__.__gleamdrill_result__ = __gleamdrill_json__.dumps(__results_
 /// crashing is exactly the case worth reading. Only stdout is redirected:
 /// Brython reports tracebacks through stderr, and swallowing those would cost
 /// the error messages.
-const capture_prologue =
-  "import sys as __gleamdrill_sys__
+const capture_prologue = "import sys as __gleamdrill_sys__
 from browser import self as __gleamdrill_self__
 
 
