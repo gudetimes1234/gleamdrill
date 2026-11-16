@@ -269,6 +269,87 @@ of a set, two pointers instead of a hash map, fixed count arrays instead of a
 frequency dictionary, brute force where it is the honest baseline the clever
 version has to beat.
 
+### Line Drill
+
+Typing a solution from a blank editor is the right test of a card you already
+know and the wrong first lesson. **Line Drill** is the rung below it: the code
+is laid out as a skeleton, its scaffolding given (the signature, a node class,
+an import) and every line that carries the idea a blank to type. Enter checks
+the line; a match locks it with its highlighting and the next blank takes the
+focus. The last line runs the harness by itself, and the grade buttons come
+with the result, as in any drill.
+
+**Which face a card opens with** is the card's FSRS state. A card that has never
+been reviewed, is still in its learning steps, or is relearning after a lapse
+opens in Line Drill when its problem has pattern content; a card in Review opens
+free-typed. Recall and Blitz never do. `l` switches either way at any time:
+leaving carries the locked lines into the editor, and coming back resumes where
+you were, so a revealed line is never forgotten by switching. The vim keymap
+does not apply inside Line Drill; there is one input and it is plain text.
+
+**A problem can be written more than one way**, and the skeleton does not
+decide for you. Every pattern a problem has (Trapping Rain Water: two pointers,
+and prefix maxima) is alive until a typed line rules it out, so a first line
+from the prefix-max version switches the skeleton, the hints and the step
+titles to it. A line both patterns share locks in both, and the card says how
+many ways are still open. `o` proposes the next pattern; when switching would
+drop typed lines the status bar asks first. The free editor's rail teaches the
+same patterns: it guesses one from what is typed when the problem opens, never
+while you type, and its picker changes it by hand.
+
+**Blanks keep the shape of the code without giving it away.** Each box is the
+expected line's length rounded up to four characters, and indented as the line
+is. Matching ignores runs of whitespace and a trailing `;` or `,`; otherwise the
+text must be exact. A miss shakes the box and counts; after three the reveal is
+offered more urgently, never forced.
+
+**What counts.** The next line's hint (`h`) and why (`y`) are folded, and opening
+either is help: the solve is no longer clean, as with a step's hint on the rail.
+Revealing a line (`c`) is a reveal, logged as one. Once a line locks, its hint
+and why are shown with it for free, since they now explain what you did rather
+than tell you what to do. The grade is still yours: Line Drill never caps it,
+and Easy is there to press. What changes is the log. A review typed into Line
+Drill, or one where any line locked before switching away, is stored with
+`mode = 'line'`; clean solves and calibration count only `free` reviews, and the
+stats screen shows how many reviews were Line Drill.
+
+**The content** is three things per problem, checked by the generator:
+
+- `drills/patterns/VOCAB`: the fixed vocabulary of pattern slugs and names
+  (`hash-map`, `two-pointers`, `dp-1d` ...). Brute force is not a pattern; a
+  brute-force solution stays in the Solution pane only.
+- `drills/patterns/<stem>.txt`: language-neutral pseudocode, keyed by the
+  drill's stem (`nc24_trapping_rain_water.txt`). One `== pattern <slug>` section
+  per pattern, each with `complexity:` and `nudge:`, then `-- step <title>`
+  headers over numbered lines. Every line has an indented `hint:` (a question)
+  and `why:` (its answer), and the numbers run 1, 2, 3 ... within a pattern.
+
+  ```
+  == pattern linked-list-pointers
+  complexity: O(n) time · O(1) space
+  nudge: Walk the list once, turning each link around as you pass it.
+  -- step Start with nothing behind you
+  1 previous = None
+    hint: What does the first node point at once it is reversed?
+    why: Nothing: the old head becomes the tail.
+  ```
+
+- The solutions themselves. The variant's note gets `@pattern <slug>` beside
+  `@kind`, and each code line that should be a blank ends in a tag naming its
+  pseudocode line: `  # @3`, or `  # @3,4` for a line covering two. Several code
+  lines may share a tag. Untagged lines are given, full-line comments are left
+  out, and a tagged line may not keep a trailing comment (the learner would
+  have to type it). The tags are stripped from every copy of the code a
+  learner reads, and `make verify` runs the tagged file as it always did.
+
+The build fails on an unknown slug, a missing hint or why, misnumbered lines,
+a tag pointing at no line, a pseudocode line no tag covers, a `@pattern` with
+no tags (or tags with no `@pattern`), two solutions of one problem claiming the
+same pattern, and a pattern no Python solution claims. Python is the only
+language with Line Drill so far; `gleam run -m check_patterns` in `drills/`
+runs every one of these checks without writing anything, and `make content`
+prints the coverage.
+
 ### The Gleam Language Tour
 
 The **Gleam Language Tour** is [tour.gleam.run](https://tour.gleam.run),

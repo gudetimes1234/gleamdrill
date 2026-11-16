@@ -166,6 +166,58 @@ pub fn plan_steps(stage: ApproachStage) -> List(String) {
   }
 }
 
+/// One way of solving a problem, line by line, in one language: what Line
+/// Drill blanks out and the step rail explains.
+///
+/// The prose is written once per pattern as pseudocode (`notes`, one per
+/// pseudocode line, in order); `lines` is this language's canonical solution,
+/// where each `Blank` points back at the pseudocode lines it implements.
+/// `steps` are the group headers the notes' `step` index into.
+pub type Pattern {
+  Pattern(
+    slug: String,
+    name: String,
+    complexity: String,
+    nudge: String,
+    steps: List(String),
+    notes: List(LineNote),
+    /// The pseudocode written out whole: the rail's "show the whole thing".
+    pseudocode: String,
+    lines: List(PatternLine),
+  )
+}
+
+/// A line of a language solution. `Given` lines are shown as they are (the
+/// signature, a helper class, a closing line); a `Blank` is typed. `text` is
+/// the line without its indentation, which `indent` (in spaces) carries.
+pub type PatternLine {
+  Given(text: String)
+  Blank(text: String, indent: Int, step: Int, ids: List(Int))
+}
+
+/// One pseudocode line: the hint that points at it and the why that explains
+/// it. Shared by every language's solution of the pattern.
+pub type LineNote {
+  LineNote(id: Int, step: Int, pseudo: String, hint: String, why: String)
+}
+
+/// The notes a blank implements, in tag order.
+pub fn notes_for(pattern: Pattern, ids: List(Int)) -> List(LineNote) {
+  list.filter_map(ids, fn(id) {
+    list.find(pattern.notes, fn(note) { note.id == id })
+  })
+}
+
+/// The pattern's blanks, in order.
+pub fn blanks(pattern: Pattern) -> List(PatternLine) {
+  list.filter(pattern.lines, fn(line) {
+    case line {
+      Blank(..) -> True
+      Given(_) -> False
+    }
+  })
+}
+
 pub type Problem {
   Problem(
     title: String,
@@ -175,6 +227,10 @@ pub type Problem {
     /// anything a user typed: the view renders it unescaped.
     prompt_html: Bool,
     approach: List(ApproachStage),
+    /// Line Drill: every pattern this problem can be typed line by line
+    /// with, in its own language, canonical first. Empty: no Line Drill yet,
+    /// and the old step rail.
+    patterns: List(Pattern),
     solutions: List(Solution),
     language: Language,
     check: Option(Check),

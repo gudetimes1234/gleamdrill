@@ -406,6 +406,7 @@ fn history_json(history: History) -> Json {
     #("totalReviews", json.int(history.total_reviews)),
     #("matureReviews", json.int(history.mature_reviews)),
     #("matureCorrect", json.int(history.mature_correct)),
+    #("lineReviews", json.int(history.line_reviews)),
     #(
       "days",
       json.array(history.days, fn(day) {
@@ -423,6 +424,8 @@ fn history_decoder() -> Decoder(History) {
   use total_reviews <- decode.field("totalReviews", decode.int)
   use mature_reviews <- decode.field("matureReviews", decode.int)
   use mature_correct <- decode.field("matureCorrect", decode.int)
+  // Stored before Line Drill existed: none of those reviews were in it.
+  use line_reviews <- decode.optional_field("lineReviews", 0, decode.int)
   use days <- decode.field(
     "days",
     decode.list({
@@ -437,6 +440,7 @@ fn history_decoder() -> Decoder(History) {
     total_reviews:,
     mature_reviews:,
     mature_correct:,
+    line_reviews:,
   ))
 }
 

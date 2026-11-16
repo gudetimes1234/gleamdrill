@@ -62,6 +62,8 @@ pub type History {
     total_reviews: Int,
     mature_reviews: Int,
     mature_correct: Int,
+    /// Reviews typed into Line Drill's blanks, out of `total_reviews`.
+    line_reviews: Int,
   )
 }
 
@@ -101,7 +103,13 @@ pub fn empty() -> Local {
 }
 
 pub fn empty_history() -> History {
-  History(days: [], total_reviews: 0, mature_reviews: 0, mature_correct: 0)
+  History(
+    days: [],
+    total_reviews: 0,
+    mature_reviews: 0,
+    mature_correct: 0,
+    line_reviews: 0,
+  )
 }
 
 pub fn is_empty(local: Local) -> Bool {
@@ -181,7 +189,8 @@ pub fn record(
         day_index,
         rating != fsrs.Again,
         was_mature,
-      ),
+      )
+        |> count_line(review.mode == wire.Line, 1),
     )
 
   let logged =
@@ -200,6 +209,7 @@ pub fn record(
         memory.stability
       }),
       recall: review.recall,
+      mode: review.mode,
     )
 
   #(
@@ -252,7 +262,8 @@ pub fn unrecord(
               day_index,
               row.rating != fsrs.Again,
               row.state_before == wire.state_code(fsrs.Review),
-            ),
+            )
+              |> count_line(row.mode == wire.Line, -1),
           ),
           log: rest,
         ),
@@ -288,7 +299,17 @@ fn untally(
     total_reviews: int.max(0, history.total_reviews - 1),
     mature_reviews: int.max(0, history.mature_reviews - bit(mature)),
     mature_correct: int.max(0, history.mature_correct - bit(mature && correct)),
+    line_reviews: history.line_reviews,
   )
+}
+
+/// One Line Drill review more (`by` 1) or fewer (-1), when `line` is set.
+fn count_line(history: History, line: Bool, by: Int) -> History {
+  case line {
+    True ->
+      History(..history, line_reviews: int.max(0, history.line_reviews + by))
+    False -> history
+  }
 }
 
 /// This track's rollups, or empty ones. A track nobody has answered in has
@@ -345,6 +366,7 @@ pub fn tally(
     total_reviews: history.total_reviews + 1,
     mature_reviews: history.mature_reviews + bit(mature),
     mature_correct: history.mature_correct + bit(mature && correct),
+    line_reviews: history.line_reviews,
   )
 }
 
@@ -631,6 +653,7 @@ pub fn stats(
     total_reviews: rollup.total_reviews,
     mature_reviews: rollup.mature_reviews,
     mature_correct: rollup.mature_correct,
+    line_reviews: rollup.line_reviews,
     state_counts: state_counts(local, track),
     history:,
     forecast: forecast(local, track, now),
@@ -867,12 +890,14 @@ pub fn insights(local: Local, track: String) -> wire.Insights {
     list.filter_map(chronological, fn(entry) {
       let #(problem, row) = entry
       // A recall-only review has no code behind it, so it says nothing
-      // about how fast the problem can be solved.
+      // about how fast the problem can be solved; a Line Drill one was
+      // typed into blanks, which is an assisted attempt, not a solve.
       case
         fsrs.rating_to_int(row.rating) > 1
         && !row.revealed
         && !row.auto_failed
-        && !row.recall,
+        && !row.recall
+        && row.mode == wire.Free,
         row.duration_ms
       {
         True, Some(duration_ms) ->
@@ -937,6 +962,7 @@ fn calibration(
             fsrs.rating_to_int(next.rating) > 1
             && !next.revealed
             && !next.auto_failed
+            && next.mode == wire.Free
           }),
         ))
     }

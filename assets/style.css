@@ -2418,7 +2418,9 @@ gleam-compare .cm-mergeSpacer {
 }
 
 .rail-step-layers kbd,
-.rail-foot kbd {
+.rail-foot kbd,
+.line-drill button kbd,
+.rail-patterns kbd {
     margin-left: 6px;
     padding: 1px 5px;
     border: 1px solid var(--border);
@@ -5809,4 +5811,365 @@ body {
         padding-bottom: 8px;
         z-index: 30;
     }
+}
+
+/* --- Line Drill --------------------------------------------------------------
+   The solution as a column of blanks typed one line at a time (left), and the
+   line card (right). The code column is plain DOM, highlighted per line by the
+   editor's tokenizer into @lezer/highlight's tok-* classes, coloured here like
+   the editor theme. On a phone the side card folds away and the card under the
+   active blank takes its place. */
+
+.editor-frame.line-mode {
+    background: var(--bg-secondary);
+}
+
+.line-drill {
+    display: flex;
+    gap: 0;
+    min-height: 320px;
+}
+
+.line-code {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 14px 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--editor-font-size, 14px);
+    line-height: 1.5;
+}
+
+.line-row {
+    display: flex;
+    align-items: flex-start;
+    min-height: 2.1em;
+    padding: 1px 12px 1px 0;
+    white-space: pre;
+}
+
+.line-no {
+    flex: 0 0 3.2em;
+    padding-right: 1em;
+    text-align: right;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    user-select: none;
+    line-height: 1.9em;
+}
+
+.line-row.active .line-no {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.line-text {
+    font-family: inherit;
+    line-height: 1.9em;
+    white-space: pre;
+}
+
+.line-box {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 0.5ch;
+    min-height: 1.9em;
+}
+
+.line-row.locked .line-box {
+    border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+    background: color-mix(in srgb, var(--success) 6%, transparent);
+}
+
+.line-row.locked.revealed .line-box {
+    border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+    background: color-mix(in srgb, var(--warning) 7%, transparent);
+}
+
+.line-box.empty {
+    background: color-mix(in srgb, var(--bg-hover) 22%, transparent);
+    max-width: 100%;
+}
+
+.line-active {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.line-input {
+    font-family: var(--font-mono);
+    font-size: max(16px, var(--editor-font-size, 14px));
+    line-height: 1.9em;
+    height: 1.9em;
+    min-width: 12ch;
+    max-width: 100%;
+    padding: 0 0.5ch;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    caret-color: var(--accent);
+    box-sizing: content-box;
+}
+
+.line-input:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    outline-offset: 1px;
+}
+
+.line-row.missed .line-input {
+    border-color: var(--error);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .line-row.missed .line-input {
+        animation: line-shake 300ms var(--ease);
+    }
+}
+
+@keyframes line-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); }
+}
+
+/* Editor colours for the highlighter's classes. */
+.line-text .tok-keyword { color: #cba6f7; }
+.line-text .tok-string, .line-text .tok-string2 { color: #a6e3a1; }
+.line-text .tok-comment { color: #6c7086; font-style: italic; }
+.line-text .tok-number, .line-text .tok-bool, .line-text .tok-atom { color: #fab387; }
+.line-text .tok-typeName, .line-text .tok-className { color: #f9e2af; }
+.line-text .tok-variableName, .line-text .tok-propertyName { color: #cdd6f4; }
+.line-text .tok-definition { color: #89b4fa; }
+.line-text .tok-operator { color: #89dceb; }
+.line-text .tok-punctuation, .line-text .tok-bracket { color: #9399b2; }
+
+.line-side {
+    flex: 0 0 clamp(260px, 34%, 380px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border-left: 1px solid var(--border);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    white-space: normal;
+}
+
+.line-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.line-progress-bar {
+    flex: 1 1 auto;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--border);
+    overflow: hidden;
+}
+
+.line-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: inherit;
+    transition: width var(--ease);
+}
+
+.line-progress-text {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.line-pattern {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--text-secondary);
+}
+
+.line-pattern strong {
+    color: var(--text-primary);
+}
+
+.line-pattern.picking {
+    color: var(--warning);
+}
+
+.line-step-count {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.line-step-title {
+    margin: 2px 0 0;
+    font-size: 17px;
+    color: var(--text-primary);
+}
+
+.line-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-primary);
+}
+
+.line-card.explained {
+    border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+}
+
+.line-card-head {
+    color: var(--accent);
+    font-size: 13px;
+}
+
+.line-card-mark {
+    margin-right: 6px;
+    color: var(--success);
+}
+
+.line-note p {
+    margin: 0;
+    line-height: 1.45;
+}
+
+.line-note-why {
+    margin-top: 8px;
+}
+
+.line-ways {
+    color: var(--warning);
+}
+
+.line-misses {
+    color: var(--error);
+}
+
+.line-layer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.line-way p {
+    margin: 2px 0 0;
+}
+
+.line-reveal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.line-reveal-button.urgent {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.line-complete {
+    margin: 0;
+    color: var(--success);
+}
+
+.line-foot {
+    margin-top: auto;
+}
+
+/* Desktop: the card is beside the code; the inline copy is for phones. */
+.line-card-inline {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .line-drill {
+        display: block;
+    }
+
+    .line-side {
+        border-left: none;
+        border-top: 1px solid var(--border);
+    }
+
+    /* The card under the active blank replaces the side card's line card. */
+    .line-side .line-card.next {
+        display: none;
+    }
+
+    .line-card-inline {
+        display: block;
+        white-space: normal;
+        font-family: var(--font-ui);
+        font-size: 14px;
+    }
+
+    .line-row.active {
+        flex-wrap: wrap;
+    }
+}
+
+/* The free-type rail, built on a problem's patterns. */
+.rail-patterns {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.rail-pattern {
+    font: inherit;
+    font-size: 12px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.rail-pattern.active {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.rail-complexity {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.rail-group {
+    list-style: none;
+}
+
+.rail-group-title {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin: 6px 0 2px;
+}
+
+.rail-lines {
+    padding-left: 0;
+    margin: 0;
+}
+
+.rail-line {
+    list-style: none;
+}
+
+.line-toggle.active {
+    border-color: var(--accent);
+    color: var(--accent);
 }

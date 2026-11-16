@@ -17,6 +17,7 @@ import gleam/string
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/content/problems
 import gleamdrill/domain/board
+import gleamdrill/domain/line_drill
 import gleamdrill/domain/queue
 import gleamdrill/domain/walk
 import gleamdrill/model as shared_model
@@ -154,7 +155,44 @@ fn started(shared: Shared, page: Model, draft: String) -> Model {
         ..model.open_problem_view(shared, page, ref),
         grading: initial_grading(shared, page, ref),
       )
+      |> with_mode(shared, ref)
     Error(Nil) -> page
+  }
+}
+
+/// Which face the code panel opens with. A card on the learning rung -- new,
+/// in its learning steps, or relearning after a lapse -- opens in Line
+/// Drill when its problem has patterns; a card in review opens free-typed.
+/// Neither a recall card nor a Blitz has blanks to fill. The free-type rail
+/// guesses its pattern once, here, from whatever the editor opens with.
+fn with_mode(page: Model, shared: Shared, ref: ProblemRef) -> Model {
+  let patterns = model.current_patterns(page)
+  let line =
+    patterns != []
+    && !page.recall
+    && page.blitz == None
+    && model.on_learning_rung(shared, ref)
+  Model(
+    ..page,
+    line_mode: line,
+    line_drill: case line {
+      True -> Some(line_drill.start(patterns))
+      False -> None
+    },
+    rail_pattern: guess_rail_pattern(patterns, page.draft),
+  )
+}
+
+fn guess_rail_pattern(
+  patterns: List(problem.Pattern),
+  text: String,
+) -> option.Option(String) {
+  case line_drill.detect(patterns, text) {
+    Some(slug) -> Some(slug)
+    None ->
+      list.first(patterns)
+      |> result.map(fn(pattern) { pattern.slug })
+      |> option.from_result
   }
 }
 
@@ -250,7 +288,11 @@ pub fn update(shared: Shared, page: Model, msg: Msg) -> Step {
     msg.EditorResized(height) -> #(page, effect.none(), [
       shared.EditorHeightChanged(height),
     ])
-    msg.EditorFocusRequested -> #(page, focus_now("gleam-editor"), [])
+    msg.EditorFocusRequested ->
+      case page.line_mode {
+        True -> #(page, focus_now(".line-input"), [])
+        False -> #(page, focus_now("gleam-editor"), [])
+      }
     msg.UserChangedKeymap(mode) -> #(page, effect.none(), [
       shared.KeymapChanged(mode),
     ])
@@ -294,7 +336,23 @@ pub fn update(shared: Shared, page: Model, msg: Msg) -> Step {
       }
     msg.NoteFocusRequested -> focus_note(page)
 
-    msg.UserClickedRun -> request_run(shared, page, model.TestRun)
+    msg.UserClickedRun ->
+      case page.line_mode, page.line_drill {
+        // Line Drill runs the assembled code, once there is all of it.
+        True, Some(state) ->
+          case line_drill.complete(state) {
+            True ->
+              request_run(
+                shared,
+                Model(..page, draft: line_drill.assembled(state)),
+                model.TestRun,
+              )
+            False -> #(page, effect.none(), [
+              shared.Say("fill every blank first; the tests run by themselves"),
+            ])
+          }
+        _, _ -> request_run(shared, page, model.TestRun)
+      }
     msg.UserClickedScratchRun -> request_run(shared, page, model.ScratchRun)
     msg.UserClickedStopRun -> #(page, effect.none(), [abandon_run(shared, page)])
     msg.UserClickedRetryRuntime(language) -> #(page, effect.none(), [
@@ -338,6 +396,35 @@ pub fn update(shared: Shared, page: Model, msg: Msg) -> Step {
         ),
       )
     msg.UserRevealedWholeThing -> none(Model(..page, whole_thing_shown: True))
+    msg.RailPatternPicked(slug) ->
+      none(Model(..page, rail_pattern: Some(slug), walk: walk.fresh_walk()))
+    msg.LineSubmitted(text) -> line_submitted(shared, page, text)
+    msg.LineInputChanged(text) ->
+      none(on_line(page, fn(state) { line_drill.set_input(state, text) }))
+    msg.LineHintShown ->
+      none(on_line(page, line_drill.show_note(_, hint: True)))
+    msg.LineWhyShown ->
+      none(on_line(page, line_drill.show_note(_, hint: False)))
+    msg.LineRevealed -> line_revealed(shared, page)
+    msg.LinePatternCycled -> line_pattern_cycled(page)
+    // The switch drops typed lines, so the draft drops them too: `l` must
+    // not carry a line the other pattern never had into the editor.
+    msg.LinePatternConfirmed -> #(
+      {
+        let page = on_line(page, line_drill.confirm_pick)
+        case page.line_drill {
+          Some(state) -> Model(..page, draft: line_drill.assembled(state))
+          None -> page
+        }
+      },
+      focus_line(),
+      [
+        shared.NoticeCleared,
+      ],
+    )
+    msg.LinePatternCancelled -> none(on_line(page, line_drill.cancel_pick))
+    msg.LineModeToggled -> line_mode_toggled(page)
+    msg.LineFocusRequested -> #(page, focus_now(".line-input"), [])
     msg.UserToggledPrompt -> #(page, effect.none(), [shared.PromptToggled])
     msg.UserToggledPane(pane) -> toggle_pane(page, pane)
     msg.UserToggledSolutionPanel -> none(toggle_solution_panel(shared, page))
@@ -554,52 +641,73 @@ fn graded(shared: Shared, page: Model, rating: fsrs.Rating) -> Step {
             whole_thing_shown: page.whole_thing_shown,
             walk: page.walk,
             walk_code_seen: page.walk_code_seen,
+            line_drill: page.line_drill,
+            line_mode: page.line_mode,
+            rail_pattern: page.rail_pattern,
             duration_ms: elapsed,
             card_before: shared_model.card_for(shared, ref),
           )),
         ),
         store.record_review(
           shared,
-          case page.recall {
-            // Revealing is the mechanism here, not a peek, and there was no
-            // code to time: the row says "recall" and nothing else.
-            True ->
-              wire.Review(
-                problem: ref,
-                rating:,
-                duration_ms: None,
-                auto_failed: False,
-                revealed: False,
-                practice: !page.studying,
-                recall: True,
-              )
-            False ->
-              wire.Review(
-                problem: ref,
-                rating:,
-                duration_ms: Some(elapsed),
-                // An ungraded card's run is a demonstration, not a test, so
-                // it is never logged as a failure.
-                auto_failed: case model.current_problem(page) {
-                  Ok(current) ->
-                    problem.graded(current)
-                    && shared_model.run_failed(shared.run)
-                  Error(Nil) -> shared_model.run_failed(shared.run)
-                },
-                revealed: case model.current_problem(page) {
-                  Ok(current) -> model.answer_revealed(page, current.approach)
-                  Error(Nil) -> page.revealed_solution != None
-                },
-                // A hand-picked sitting is practice, not a scheduled review.
-                practice: !page.studying,
-                recall: False,
-              )
-          },
+          review_for(shared, page, ref, rating, elapsed),
           msg.ReviewRecorded,
         ),
         [],
       )
     }
+  }
+}
+
+/// The review a grade logs: what was pressed, how long it took, and what the
+/// attempt leaned on. Pure, so the mode it records can be tested directly.
+pub fn review_for(
+  shared: Shared,
+  page: Model,
+  ref: ProblemRef,
+  rating: fsrs.Rating,
+  elapsed: Int,
+) -> wire.Review {
+  case page.recall {
+    // Revealing is the mechanism here, not a peek, and there was no
+    // code to time: the row says "recall" and nothing else.
+    True ->
+      wire.Review(
+        problem: ref,
+        rating:,
+        duration_ms: None,
+        auto_failed: False,
+        revealed: False,
+        practice: !page.studying,
+        recall: True,
+        mode: wire.Free,
+      )
+    False ->
+      wire.Review(
+        problem: ref,
+        rating:,
+        duration_ms: Some(elapsed),
+        // An ungraded card's run is a demonstration, not a test, so
+        // it is never logged as a failure.
+        auto_failed: case model.current_problem(page) {
+          Ok(current) ->
+            problem.graded(current) && shared_model.run_failed(shared.run)
+          Error(Nil) -> shared_model.run_failed(shared.run)
+        },
+        revealed: case model.current_problem(page) {
+          Ok(current) -> model.answer_revealed(page, current.approach)
+          Error(Nil) -> page.revealed_solution != None
+        },
+        // A hand-picked sitting is practice, not a scheduled review.
+        practice: !page.studying,
+        recall: False,
+        // Typed into Line Drill's blanks: an assisted attempt, kept
+        // out of the clean-solve numbers.
+        mode: case model.line_assisted(page) {
+          True -> wire.Line
+          False -> wire.Free
+        },
+      )
   }
 }
 
@@ -682,6 +790,9 @@ fn undo_recorded(
         whole_thing_shown: point.whole_thing_shown,
         walk: point.walk,
         walk_code_seen: point.walk_code_seen,
+        line_drill: point.line_drill,
+        line_mode: point.line_mode,
+        rail_pattern: point.rail_pattern,
         slot: NoPane,
         panel: case point.revealed_solution {
           Some(_) -> SolutionPanel
@@ -712,7 +823,9 @@ fn undo_recorded(
 }
 
 /// A solve is clean when nothing was given away: no solution shown, no code
-/// slice, no whole pseudocode, and no step opened for its hint or its why.
+/// slice, no whole pseudocode, no step opened for its hint or its why, and
+/// in Line Drill no line revealed and no hint or why opened before its line
+/// was typed. The explanation shown once a line locks is free.
 ///
 /// The step *titles* do not count, because the rail lists them from the
 /// moment the problem opens and nobody chose to see them. That is the
@@ -723,6 +836,7 @@ fn answer_given_away(page: Model) -> Bool {
     Ok(current) ->
       model.answer_revealed(page, current.approach)
       || walk.any_layer_shown(page.walk)
+      || model.line_help_used(page)
     Error(Nil) -> False
   }
 }
@@ -786,6 +900,7 @@ fn advance_inner(shared: Shared, page: Model) -> Step {
             },
             grading: initial_grading(shared, page, ref),
           )
+          |> fn(opened) { with_mode(opened, shared, ref) }
         Error(Nil) -> Model(..advanced, draft: "")
       }
       #(advanced, effect.none(), [
@@ -1050,13 +1165,15 @@ fn pane_selected(
         True -> page
         False -> Model(..page, zoomed: False)
       }
-      #(page, focus_region(page.active), [])
+      #(page, focus_region(page, page.active), [])
     }
   }
 }
 
-fn focus_region(region: model.Region) -> Effect(Msg) {
+fn focus_region(page: Model, region: model.Region) -> Effect(Msg) {
   case region {
+    // Line Drill sits in the editor's region: its active blank is the editor.
+    model.EditorRegion if page.line_mode -> focus_now(".line-input")
     model.EditorRegion -> focus_now("gleam-editor")
     model.NoteRegion -> focus_now(".note-input")
     _ -> blur()
@@ -1078,7 +1195,9 @@ fn kill_pane(shared: Shared, page: Model) -> Step {
     _, model.SolutionRegion -> none(closed(Model(..page, panel: CodePanel)))
     _, model.NoteRegion -> none(closed(Model(..page, slot: NoPane)))
     _, region -> #(page, effect.none(), [
-      shared.Say("can't kill the " <> panes.name(region) <> " pane"),
+      shared.Say(
+        "can't kill the " <> panes.region_name(page, region) <> " pane",
+      ),
     ])
   }
 }
@@ -1090,11 +1209,174 @@ fn focus_note(page: Model) -> Step {
 /// Move the rail's focus, clamped to the steps this problem actually has. A
 /// problem with no walkthrough has none, and the focus stays at zero.
 fn focus_walk(page: Model, index: Int) -> Model {
-  let total = case model.current_problem(page) {
-    Ok(current) -> list.length(walk.walk_steps(current.approach))
-    Error(Nil) -> 0
+  // A problem with patterns walks the rail pattern's lines; any other walks
+  // its plan's steps.
+  let total = case model.rail_pattern(page), model.current_problem(page) {
+    Ok(pattern), _ -> list.length(pattern.notes)
+    Error(Nil), Ok(current) -> list.length(walk.walk_steps(current.approach))
+    Error(Nil), Error(Nil) -> 0
   }
   Model(..page, walk: walk.focus_step(page.walk, index, total))
+}
+
+// --- Line Drill ---------------------------------------------------------------
+
+fn on_line(
+  page: Model,
+  change: fn(line_drill.LineState) -> line_drill.LineState,
+) -> Model {
+  case page.line_drill {
+    Some(state) -> Model(..page, line_drill: Some(change(state)))
+    None -> page
+  }
+}
+
+/// A line checked. A match locks it and moves the focus on; the last one
+/// runs the assembled code against the harness, which is what opens the
+/// grade buttons. A miss leaves the text where it is to be fixed.
+fn line_submitted(shared: Shared, page: Model, text: String) -> Step {
+  case page.line_drill {
+    None -> none(page)
+    Some(state) -> {
+      let #(state, outcome) = line_drill.submit(state, text)
+      let page = Model(..page, line_drill: Some(state))
+      case outcome {
+        line_drill.Miss -> #(page, focus_line(), [])
+        line_drill.Locked | line_drill.Narrowed -> line_locked(shared, page)
+      }
+    }
+  }
+}
+
+fn line_revealed(shared: Shared, page: Model) -> Step {
+  case page.line_drill {
+    None -> none(page)
+    Some(state) ->
+      line_locked(
+        shared,
+        Model(..page, line_drill: Some(line_drill.reveal_line(state))),
+      )
+  }
+}
+
+/// After any line locks: the code so far becomes the draft, and a finished
+/// skeleton runs itself.
+fn line_locked(shared: Shared, page: Model) -> Step {
+  case page.line_drill {
+    None -> none(page)
+    Some(state) -> {
+      let page = Model(..page, draft: line_drill.assembled(state))
+      case line_drill.complete(state) {
+        False -> #(page, focus_line(), [])
+        True -> {
+          let #(page, fx, changes) = request_run(shared, page, model.TestRun)
+          #(page, effect.batch([fx, blur()]), changes)
+        }
+      }
+    }
+  }
+}
+
+/// `o`: the next pattern, applied at once when it would cost no typed line,
+/// otherwise asked about in the status bar first.
+fn line_pattern_cycled(page: Model) -> Step {
+  case page.line_drill {
+    None -> none(page)
+    Some(state) ->
+      case list.length(state.patterns) > 1 {
+        False -> #(page, effect.none(), [
+          shared.Say("this problem has one pattern"),
+        ])
+        True -> {
+          let picked = line_drill.cycle_pick(state)
+          case picked.picking {
+            None -> none(page)
+            Some(slug) ->
+              case line_drill.dropped_by(picked, slug) {
+                0 ->
+                  none(
+                    Model(
+                      ..page,
+                      line_drill: Some(line_drill.confirm_pick(picked)),
+                    ),
+                  )
+                dropped -> #(Model(..page, line_drill: Some(picked)), blur(), [
+                  shared.Say(
+                    "switch to "
+                    <> pattern_name(picked, slug)
+                    <> "? drops "
+                    <> int.to_string(dropped)
+                    <> " typed line"
+                    <> case dropped {
+                      1 -> ""
+                      _ -> "s"
+                    }
+                    <> " \u{b7} Enter switch \u{b7} o next \u{b7} Esc keep",
+                  ),
+                ])
+              }
+          }
+        }
+      }
+  }
+}
+
+fn pattern_name(state: line_drill.LineState, slug: String) -> String {
+  list.find(state.patterns, fn(pattern) { pattern.slug == slug })
+  |> result.map(fn(pattern) { pattern.name })
+  |> result.unwrap(slug)
+}
+
+/// `l`: Line Drill and the free editor, both ways. Leaving Line Drill carries
+/// the lines locked so far into the editor; coming back resumes where it
+/// was, so a revealed line is never forgotten by switching.
+fn line_mode_toggled(page: Model) -> Step {
+  let patterns = model.current_patterns(page)
+  case patterns, page.recall, page.line_mode {
+    [], _, _ -> #(page, effect.none(), [
+      shared.Say("no Line Drill for this problem yet"),
+    ])
+    _, True, _ -> none(page)
+    _, False, True -> {
+      let draft = case page.line_drill {
+        Some(state) ->
+          case line_drill.position(state) > 0 {
+            True -> line_drill.assembled(state)
+            False -> page.draft
+          }
+        None -> page.draft
+      }
+      #(
+        Model(
+          ..page,
+          line_mode: False,
+          draft:,
+          rail_pattern: guess_rail_pattern(patterns, draft),
+          walk: walk.fresh_walk(),
+        ),
+        focus_after_render("gleam-editor"),
+        [],
+      )
+    }
+    _, False, False -> #(
+      Model(
+        ..page,
+        line_mode: True,
+        line_drill: case page.line_drill {
+          Some(state) -> Some(state)
+          None -> Some(line_drill.start(patterns))
+        },
+        panel: CodePanel,
+      ),
+      focus_line(),
+      [],
+    )
+  }
+}
+
+/// Focus the active blank once it is on screen: a locked line moves it.
+fn focus_line() -> Effect(Msg) {
+  focus_after_render(".line-input")
 }
 
 // --- quizzes and boards -------------------------------------------------------
@@ -1147,6 +1429,7 @@ fn submitted_answer(shared: Shared, page: Model) -> Step {
             // The exam is an assessment, not practice.
             practice: False,
             recall: False,
+            mode: wire.Free,
           ),
           msg.ReviewRecorded,
         ),
@@ -1213,6 +1496,7 @@ fn submitted_board(shared: Shared, page: Model) -> Step {
             revealed: False,
             practice: !page.studying,
             recall: False,
+            mode: wire.Free,
           ),
           msg.ReviewRecorded,
         ),

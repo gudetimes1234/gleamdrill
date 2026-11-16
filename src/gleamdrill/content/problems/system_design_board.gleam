@@ -195,6 +195,7 @@ fn b(
     prompt: prompt,
     prompt_html: False,
     approach: [],
+    patterns: [],
     solutions: [],
     language: problem.Board,
     check: None,

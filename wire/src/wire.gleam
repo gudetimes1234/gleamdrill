@@ -235,6 +235,8 @@ pub type Stats {
     /// Reviews of cards that had already graduated -- Anki's "true retention".
     mature_reviews: Int,
     mature_correct: Int,
+    /// Reviews typed into Line Drill's blanks, out of `total_reviews`.
+    line_reviews: Int,
     /// Card counts keyed by state code.
     state_counts: List(#(Int, Int)),
     history: List(DayTally),
@@ -280,7 +282,37 @@ pub type ReviewRow {
     /// grade was given from memory, with no code written. Scheduled like
     /// any review, but never counted as a solve.
     recall: Bool,
+    /// How the code was written. See `ReviewMode`.
+    mode: ReviewMode,
   )
+}
+
+/// How the code of a review was written: free-typed into an empty editor,
+/// or line by line into Line Drill's blanks. A Line Drill review is graded
+/// and scheduled like any other, but it is an assisted attempt and never
+/// counts as a clean solve.
+pub type ReviewMode {
+  Free
+  Line
+}
+
+pub fn review_mode_to_string(mode: ReviewMode) -> String {
+  case mode {
+    Free -> "free"
+    Line -> "line"
+  }
+}
+
+/// Anything but "line" is free: a row from before the column existed was.
+pub fn review_mode_from_string(text: String) -> ReviewMode {
+  case text {
+    "line" -> Line
+    _ -> Free
+  }
+}
+
+fn review_mode_decoder() -> Decoder(ReviewMode) {
+  decode.map(decode.string, review_mode_from_string)
 }
 
 /// A review as the client submits it. The server decides the resulting
@@ -298,6 +330,8 @@ pub type Review {
     practice: Bool,
     /// See `ReviewRow.recall`.
     recall: Bool,
+    /// See `ReviewMode`.
+    mode: ReviewMode,
   )
 }
 
@@ -597,6 +631,7 @@ pub fn stats_to_json(stats: Stats) -> Json {
     #("totalReviews", json.int(stats.total_reviews)),
     #("matureReviews", json.int(stats.mature_reviews)),
     #("matureCorrect", json.int(stats.mature_correct)),
+    #("lineReviews", json.int(stats.line_reviews)),
     #("streakDays", json.int(stats.streak_days)),
     #(
       "stateCounts",
@@ -680,6 +715,7 @@ fn review_row_fields(row: ReviewRow) -> List(#(String, Json)) {
     #("scheduledDays", json.int(row.scheduled_days)),
     #("stabilityAfter", nullable_float(row.stability_after)),
     #("recall", json.bool(row.recall)),
+    #("mode", json.string(review_mode_to_string(row.mode))),
   ]
 }
 
@@ -693,6 +729,7 @@ pub fn review_to_json(review: Review) -> Json {
       #("revealed", json.bool(review.revealed)),
       #("practice", json.bool(review.practice)),
       #("recall", json.bool(review.recall)),
+      #("mode", json.string(review_mode_to_string(review.mode))),
     ]),
   )
 }
@@ -1065,6 +1102,8 @@ pub fn stats_decoder() -> Decoder(Stats) {
   use total_reviews <- decode.field("totalReviews", decode.int)
   use mature_reviews <- decode.field("matureReviews", decode.int)
   use mature_correct <- decode.field("matureCorrect", decode.int)
+  // A server from before Line Drill sends no count: none were.
+  use line_reviews <- decode.optional_field("lineReviews", 0, decode.int)
   use streak_days <- decode.field("streakDays", decode.int)
   use state_counts <- decode.field(
     "stateCounts",
@@ -1095,6 +1134,7 @@ pub fn stats_decoder() -> Decoder(Stats) {
     total_reviews:,
     mature_reviews:,
     mature_correct:,
+    line_reviews:,
     state_counts:,
     history:,
     forecast:,
@@ -1146,6 +1186,8 @@ pub fn review_row_decoder() -> Decoder(ReviewRow) {
   )
   // Rows logged before recall mode existed have no flag: none of them were.
   use recall <- decode.optional_field("recall", False, decode.bool)
+  // Likewise rows from before Line Drill: all of them were free-typed.
+  use mode <- decode.optional_field("mode", Free, review_mode_decoder())
   decode.success(ReviewRow(
     at:,
     rating:,
@@ -1156,6 +1198,7 @@ pub fn review_row_decoder() -> Decoder(ReviewRow) {
     scheduled_days:,
     stability_after:,
     recall:,
+    mode:,
   ))
 }
 
@@ -1176,6 +1219,7 @@ pub fn review_decoder() -> Decoder(Review) {
   use revealed <- decode.optional_field("revealed", False, decode.bool)
   use practice <- decode.optional_field("practice", False, decode.bool)
   use recall <- decode.optional_field("recall", False, decode.bool)
+  use mode <- decode.optional_field("mode", Free, review_mode_decoder())
   decode.success(Review(
     problem:,
     rating:,
@@ -1184,6 +1228,7 @@ pub fn review_decoder() -> Decoder(Review) {
     revealed:,
     practice:,
     recall:,
+    mode:,
   ))
 }
 

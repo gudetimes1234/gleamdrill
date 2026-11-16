@@ -88,6 +88,13 @@ const answerPickerIfShown = async () => {
 /// A drill opens with the prompt beside the editor and nothing focused.
 const startCoding = async () => {
   await page.waitForSelector(".run-bar", { timeout: 20000 });
+  // A new Python card opens in Line Drill. This suite drives the free
+  // editor, so it takes the header's toggle (a focused line input would eat
+  // the `l` key).
+  if (await page.isVisible(".line-drill")) {
+    await page.click(".line-toggle");
+    await page.waitForSelector("gleam-editor", { timeout: 20000 });
+  }
   await page.evaluate(() => document.activeElement?.blur());
 };
 

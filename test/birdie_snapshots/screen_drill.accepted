@@ -23,17 +23,10 @@ test_name: drill_screen_test
       <button class="btn-secondary prompt-toggle active " type="button">
         Problem
       </button>
-      <div class="keymap-picker">
-        <button class="keymap-option active " title="Std keybindings">
-          Std
-        </button>
-        <button class="keymap-option " title="Vim keybindings">
-          Vim
-        </button>
-        <button class="keymap-option " title="Emacs keybindings">
-          Emacs
-        </button>
-      </div>
+      <button aria-pressed="true" class="btn-secondary line-toggle active " type="button">
+        Line drill
+      </button>
+
     </div>
     <div class="progress-text" style="--progress:0%;">
       Pass 1/1 · Problem 1/1
@@ -62,8 +55,207 @@ test_name: drill_screen_test
       </div>
       <div class="work-row">
         <div class="editor-column">
-          <div class="editor-frame" data-language="python">
-            <gleam-editor data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Valid Anagram|1" keymap="default" language="python"></gleam-editor>
+          <div class="editor-frame line-mode" data-language="python">
+            <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Valid Anagram|1|line" class="line-drill">
+              <div aria-label="Line Drill" class="line-code">
+                <div class="line-rows">
+                  <div data-lustre-key="0" class="line-row given">
+                    <span class="line-no">
+                      1
+                    </span>
+                    <code class="line-text"><span class="tok-keyword">def</span> <span class="tok-variableName tok-definition">isAnagram</span>(<span class="tok-variableName">s</span>, <span class="tok-variableName">t</span>):</code>
+                  </div>
+                  <div data-lustre-key="active-1-0" class="line-row active ">
+                    <span class="line-no">
+                      2
+                    </span>
+                    <span style="padding-left:4ch;"></span>
+                    <div class="line-active">
+                      <input aria-label="Line 2" autocapitalize="off" autocomplete="off" autocorrect="off" class="line-input" spellcheck="false" style="width:22ch;" type="text" value>
+                      <div class="line-card-inline">
+                        <div class="line-card next">
+                          <div class="line-card-head">
+                            Line 2
+                          </div>
+                          <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                            Hint
+                            <kbd>
+                              h
+                            </kbd>
+                          </button>
+                          <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                            Why
+                            <kbd>
+                              y
+                            </kbd>
+                          </button>
+                          <div class="line-reveal">
+                            <button class="btn-secondary line-reveal-button " type="button">
+                              Reveal line
+                              <kbd>
+                                c
+                              </kbd>
+                            </button>
+                            <span class="hint-warning">
+                              logged as a reveal
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div data-lustre-key="2" class="line-row blank">
+                    <span class="line-no">
+                      3
+                    </span>
+                    <span style="padding-left:8ch;"></span>
+                    <span class="line-box empty" style="width:14ch;"></span>
+                  </div>
+                  <div data-lustre-key="3" class="line-row given">
+                    <span class="line-no">
+                      4
+                    </span>
+                    <code class="line-text"></code>
+                  </div>
+                  <div data-lustre-key="4" class="line-row blank">
+                    <span class="line-no">
+                      5
+                    </span>
+                    <span style="padding-left:4ch;"></span>
+                    <span class="line-box empty" style="width:14ch;"></span>
+                  </div>
+                  <div data-lustre-key="5" class="line-row blank">
+                    <span class="line-no">
+                      6
+                    </span>
+                    <span style="padding-left:4ch;"></span>
+                    <span class="line-box empty" style="width:18ch;"></span>
+                  </div>
+                  <div data-lustre-key="6" class="line-row blank">
+                    <span class="line-no">
+                      7
+                    </span>
+                    <span style="padding-left:8ch;"></span>
+                    <span class="line-box empty" style="width:38ch;"></span>
+                  </div>
+                  <div data-lustre-key="7" class="line-row given">
+                    <span class="line-no">
+                      8
+                    </span>
+                    <code class="line-text"></code>
+                  </div>
+                  <div data-lustre-key="8" class="line-row blank">
+                    <span class="line-no">
+                      9
+                    </span>
+                    <span style="padding-left:4ch;"></span>
+                    <span class="line-box empty" style="width:18ch;"></span>
+                  </div>
+                  <div data-lustre-key="9" class="line-row blank">
+                    <span class="line-no">
+                      10
+                    </span>
+                    <span style="padding-left:8ch;"></span>
+                    <span class="line-box empty" style="width:26ch;"></span>
+                  </div>
+                  <div data-lustre-key="10" class="line-row blank">
+                    <span class="line-no">
+                      11
+                    </span>
+                    <span style="padding-left:12ch;"></span>
+                    <span class="line-box empty" style="width:14ch;"></span>
+                  </div>
+                  <div data-lustre-key="11" class="line-row blank">
+                    <span class="line-no">
+                      12
+                    </span>
+                    <span style="padding-left:8ch;"></span>
+                    <span class="line-box empty" style="width:18ch;"></span>
+                  </div>
+                  <div data-lustre-key="12" class="line-row blank">
+                    <span class="line-no">
+                      13
+                    </span>
+                    <span style="padding-left:8ch;"></span>
+                    <span class="line-box empty" style="width:22ch;"></span>
+                  </div>
+                  <div data-lustre-key="13" class="line-row blank">
+                    <span class="line-no">
+                      14
+                    </span>
+                    <span style="padding-left:12ch;"></span>
+                    <span class="line-box empty" style="width:14ch;"></span>
+                  </div>
+                  <div data-lustre-key="14" class="line-row given">
+                    <span class="line-no">
+                      15
+                    </span>
+                    <code class="line-text"></code>
+                  </div>
+                  <div data-lustre-key="15" class="line-row blank">
+                    <span class="line-no">
+                      16
+                    </span>
+                    <span style="padding-left:4ch;"></span>
+                    <span class="line-box empty" style="width:14ch;"></span>
+                  </div>
+                </div>
+              </div>
+              <aside class="line-side">
+                <div class="line-progress">
+                  <div aria-valuemax="12" aria-valuenow="0" class="line-progress-bar" role="progressbar">
+                    <div class="line-progress-fill" style="width:0%;"></div>
+                  </div>
+                  <span class="line-progress-text">
+                    0 of 12 blanks complete
+                  </span>
+                </div>
+                <div class="line-step">
+                  <span class="line-step-count">
+                    Step 1 of 4
+                  </span>
+                  <h3 class="line-step-title">
+                    Rule out different lengths
+                  </h3>
+                </div>
+                <div class="line-card next">
+                  <div class="line-card-head">
+                    Line 2
+                  </div>
+                  <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                    Hint
+                    <kbd>
+                      h
+                    </kbd>
+                  </button>
+                  <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                    Why
+                    <kbd>
+                      y
+                    </kbd>
+                  </button>
+                  <div class="line-reveal">
+                    <button class="btn-secondary line-reveal-button " type="button">
+                      Reveal line
+                      <kbd>
+                        c
+                      </kbd>
+                    </button>
+                    <span class="hint-warning">
+                      logged as a reveal
+                    </span>
+                  </div>
+                </div>
+                <div class="line-foot">
+                  <button class="link-button" type="button">
+                    Type it freely instead
+                    <kbd>
+                      l
+                    </kbd>
+                  </button>
+                </div>
+              </aside>
+            </div>
           </div>
           <aside class="prompt-side read-sheet">
             <button aria-label="Hide the problem" class="answer-close prompt-close" type="button">
@@ -157,120 +349,7 @@ test_name: drill_screen_test
         </div>
       </div>
     </div>
-    <aside data-lustre-key="rail" class="plan-rail">
-      <div class="rail-header">
-        <h3 class="panel-title">
-          Approach
-        </h3>
-        <span class="rail-count">
-          1/6
-        </span>
-      </div>
-      <div class="rail-nudge">
-        <button class="link-button rail-nudge-toggle " type="button">
-          Nudge …
-          <kbd>
-            a
-          </kbd>
-        </button>
-      </div>
-      <ol class="rail-steps">
-        <li class="rail-step current ">
-          <button class="link-button rail-step-title" type="button">
-            <span class="rail-step-number">
-              1
-            </span>
-            <span class="rail-step-text">
-              If the lengths differ, return false before counting anything.
-            </span>
-          </button>
-          <div class="rail-step-layers">
-            <button class="btn-secondary walk-reveal walk-reveal-hint" type="button">
-              Hint
-              <kbd>
-                h
-              </kbd>
-            </button>
-            <button class="btn-secondary walk-reveal walk-reveal-why" type="button">
-              Why
-              <kbd>
-                y
-              </kbd>
-            </button>
-            <button class="btn-secondary walk-reveal walk-reveal-code" type="button">
-              Code
-              <kbd>
-                c
-              </kbd>
-            </button>
-            <span class="hint-warning">
-              logged as a reveal
-            </span>
-          </div>
-        </li>
-        <li class="rail-step ">
-          <button class="link-button rail-step-title" type="button">
-            <span class="rail-step-number">
-              2
-            </span>
-            <span class="rail-step-text">
-              Build a character-to-count map from the first string.
-            </span>
-          </button>
-        </li>
-        <li class="rail-step ">
-          <button class="link-button rail-step-title" type="button">
-            <span class="rail-step-number">
-              3
-            </span>
-            <span class="rail-step-text">
-              Walk the second string, decrementing each character&#39;s count.
-            </span>
-          </button>
-        </li>
-        <li class="rail-step ">
-          <button class="link-button rail-step-title" type="button">
-            <span class="rail-step-number">
-              4
-            </span>
-            <span class="rail-step-text">
-              Fail the moment a character is missing from the map or its count drops below zero.
-            </span>
-          </button>
-        </li>
-        <li class="rail-step ">
-          <button class="link-button rail-step-title" type="button">
-            <span class="rail-step-number">
-              5
-            </span>
-            <span class="rail-step-text">
-              Reaching the end means every count balanced out — return true.
-            </span>
-          </button>
-        </li>
-        <li class="rail-step ">
-          <button class="link-button rail-step-title" type="button">
-            <span class="rail-step-number">
-              6
-            </span>
-            <span class="rail-step-text">
-              If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map&#39;s O(n).
-            </span>
-          </button>
-        </li>
-      </ol>
-      <div class="rail-foot">
-        <button class="btn-secondary rail-whole-open" type="button">
-          Show the whole thing
-          <kbd>
-            w
-          </kbd>
-        </button>
-        <span class="hint-warning">
-          logged as a reveal
-        </span>
-      </div>
-    </aside>
+
   </div>
 </div>
 <div class="statusbar">
@@ -301,7 +380,7 @@ test_name: drill_screen_test
     </button>
   </div>
   <span class="statusbar-context">
-    DRILL · PYTHON
+    LINE · PYTHON
   </span>
   <span class="leader-chip " title="C-b then a key runs a tmux command; , then a key uses a shortcut even while a button has focus">
     C-b
@@ -339,36 +418,36 @@ test_name: drill_screen_test
         easy
       </span>
     </button>
-    <button class="keyhint" title="Run your code alone and read its output">
+    <button class="keyhint" title="Type the next line">
       <span class="keyhint-keys">
-        r
+        i/e/↵
       </span>
       <span class="keyhint-label">
-        run
+        type
       </span>
     </button>
-    <button class="keyhint" title="Run the tests">
+    <button class="keyhint" title="This line&#39;s hint">
       <span class="keyhint-keys">
-        t
+        h
       </span>
       <span class="keyhint-label">
-        test
+        hint
       </span>
     </button>
-    <button class="keyhint" title="Focus the editor">
+    <button class="keyhint" title="Why this line">
       <span class="keyhint-keys">
-        i/e
+        y
       </span>
       <span class="keyhint-label">
-        edit
+        why
       </span>
     </button>
-    <button class="keyhint" title="Show the reference solution">
+    <button class="keyhint" title="Reveal this line (logged as a reveal)">
       <span class="keyhint-keys">
-        s
+        c
       </span>
       <span class="keyhint-label">
-        solution
+        reveal
       </span>
     </button>
   </div>

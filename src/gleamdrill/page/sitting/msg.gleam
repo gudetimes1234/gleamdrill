@@ -63,6 +63,26 @@ pub type Msg {
   WalkCodeShown
   /// The whole pseudocode, from the foot of the rail. A reveal.
   UserRevealedWholeThing
+  /// The free-type rail's pattern picker, for a problem with patterns.
+  RailPatternPicked(String)
+  // --- Line Drill ---
+  /// Enter (or Ctrl+Enter) in the active blank: check the line.
+  LineSubmitted(String)
+  LineInputChanged(String)
+  /// The active blank's hint or why, before it is typed. Counts as help.
+  LineHintShown
+  LineWhyShown
+  /// Fill the active blank with the line. A reveal.
+  LineRevealed
+  /// `o`: propose the next pattern; it applies at once when nothing typed
+  /// would be lost, and waits for Enter otherwise.
+  LinePatternCycled
+  LinePatternConfirmed
+  LinePatternCancelled
+  /// `l`: Line Drill or the free editor, either way.
+  LineModeToggled
+  /// `i`, `e` or Enter with the blank blurred: back into it.
+  LineFocusRequested
   /// `p` or the header button: the prompt sidebar, shown or hidden.
   UserToggledPrompt
   /// A pane's key: open it in the slot, or close it if it is the one shown.

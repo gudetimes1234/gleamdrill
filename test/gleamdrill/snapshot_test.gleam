@@ -12,9 +12,12 @@ import gleam/list
 import gleam/string
 import gleam/uri
 import gleamdrill/app
+import gleamdrill/content/problems
+import gleamdrill/domain/line_drill
 import gleamdrill/model
 import gleamdrill/msg
 import gleamdrill/page/auth/model as auth_model
+import gleamdrill/page/sitting/view/line_drill as line_view
 import gleamdrill/page/study/model as study_model
 import gleamdrill/shared/update as shared_update
 import lustre/element
@@ -97,6 +100,74 @@ pub fn sign_in_screen_test() {
 
 pub fn drill_screen_test() {
   screen([msg.UserClickedStudy]) |> birdie.snap(title: "screen: drill")
+}
+
+// --- Line Drill ---------------------------------------------------------------
+
+/// The Line Drill panel for a problem after `lines` submissions, then `then`.
+fn line_screen(
+  subcategory: String,
+  title: String,
+  lines: List(String),
+  then: fn(line_drill.LineState) -> line_drill.LineState,
+) -> String {
+  let assert Ok(found) = problems.find("NeetCode 150", subcategory, title)
+  line_drill.start(found.patterns)
+  |> list.fold(lines, _, fn(state, line) { line_drill.submit(state, line).0 })
+  |> then
+  |> line_view.view(found)
+  |> element.to_readable_string
+}
+
+fn reverse_screen(lines, then) -> String {
+  line_screen("Linked List", "Reverse Linked List", lines, then)
+}
+
+fn unchanged(state: line_drill.LineState) -> line_drill.LineState {
+  state
+}
+
+pub fn line_start_screen_test() {
+  reverse_screen([], unchanged) |> birdie.snap(title: "line: start")
+}
+
+pub fn line_ambiguous_screen_test() {
+  line_screen("Arrays & Hashing", "Two Sum", [], unchanged)
+  |> birdie.snap(title: "line: ambiguous")
+}
+
+pub fn line_locked_screen_test() {
+  reverse_screen(["previous = None", "while head is not None:"], unchanged)
+  |> birdie.snap(title: "line: locked")
+}
+
+pub fn line_missed_three_times_screen_test() {
+  reverse_screen(
+    ["previous = None", "for x in head:", "while True:", "loop"],
+    fn(state) { line_drill.show_note(state, hint: True) },
+  )
+  |> birdie.snap(title: "line: missed three times")
+}
+
+pub fn line_revealed_screen_test() {
+  reverse_screen(["previous = None"], line_drill.reveal_line)
+  |> birdie.snap(title: "line: revealed")
+}
+
+pub fn line_complete_screen_test() {
+  reverse_screen(
+    [
+      "previous = None",
+      "while head is not None:",
+      "following = head.next",
+      "head.next = previous",
+      "previous = head",
+      "head = following",
+      "return previous",
+    ],
+    unchanged,
+  )
+  |> birdie.snap(title: "line: complete")
 }
 
 // --- payloads -----------------------------------------------------------------

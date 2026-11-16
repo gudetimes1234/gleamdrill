@@ -99,6 +99,7 @@ pub fn history(
       scheduled_days: row.scheduled_days,
       stability_after: row.stability_after,
       recall: row.recall,
+      mode: row.mode,
     )
   })
 }

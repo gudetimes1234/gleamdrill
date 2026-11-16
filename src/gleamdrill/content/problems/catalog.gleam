@@ -15,6 +15,7 @@ import gleamdrill/content/problem.{
   Category, Easy, Hard, Medium, Problem, Solution, Subcategory,
 }
 import gleamdrill/content/problems/generated/approaches
+import gleamdrill/content/problems/generated/patterns
 
 /// `difficulty` is LeetCode's rating, written once here for all four
 /// language mirrors.
@@ -1008,6 +1009,7 @@ fn build(
     prompt_html: False,
     prompt: drill.prompt,
     approach: approaches.for_title(drill.title),
+    patterns: patterns.for_stem(drill.stem, problem.language_slug(language)),
     solutions: list.map(solutions, fn(s) {
       Solution(label: s.0, complexity: s.1, note: s.2, code: s.3)
     }),

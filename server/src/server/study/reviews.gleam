@@ -262,6 +262,7 @@ fn insert_review(
     input.revealed,
     input.recall,
     card_before,
+    wire.review_mode_to_string(input.mode),
   )
   |> done
 }

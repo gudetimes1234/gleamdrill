@@ -378,6 +378,7 @@ pub fn archive_round_trips_test() {
             scheduled_days: 15,
             stability_after: Some(21.4),
             recall: False,
+            mode: wire.Free,
           ),
         ),
       ],
@@ -508,6 +509,7 @@ pub fn stats_round_trips_test() {
       total_reviews: 412,
       mature_reviews: 190,
       mature_correct: 171,
+      line_reviews: 37,
       state_counts: [#(1, 12), #(2, 88), #(3, 4)],
       history: [
         wire.DayTally(days_ago: 0, total: 9, correct: 8),
@@ -527,6 +529,7 @@ pub fn empty_stats_round_trip_test() {
       total_reviews: 0,
       mature_reviews: 0,
       mature_correct: 0,
+      line_reviews: 0,
       state_counts: [],
       history: [],
       forecast: [],
@@ -566,6 +569,7 @@ pub fn review_row_round_trips_test() {
       scheduled_days: 15,
       stability_after: Some(21.4),
       recall: False,
+      mode: wire.Free,
     )
   round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
 }
@@ -584,6 +588,7 @@ pub fn review_row_without_a_duration_round_trips_test() {
       scheduled_days: 0,
       stability_after: None,
       recall: False,
+      mode: wire.Free,
     )
   round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
 }
@@ -598,6 +603,7 @@ pub fn review_round_trips_test() {
       revealed: False,
       practice: False,
       recall: False,
+      mode: wire.Free,
     )
   round_trip(review, wire.review_to_json, wire.review_decoder())
 }
@@ -612,6 +618,7 @@ pub fn practice_review_round_trips_test() {
       revealed: True,
       practice: True,
       recall: False,
+      mode: wire.Free,
     )
   round_trip(review, wire.review_to_json, wire.review_decoder())
 }
@@ -627,6 +634,7 @@ pub fn recall_review_round_trips_test() {
       revealed: False,
       practice: False,
       recall: True,
+      mode: wire.Free,
     )
   round_trip(review, wire.review_to_json, wire.review_decoder())
 }
@@ -643,8 +651,52 @@ pub fn recall_review_row_round_trips_test() {
       scheduled_days: 4,
       stability_after: Some(6.0),
       recall: True,
+      mode: wire.Free,
     )
   round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
+}
+
+/// A Line Drill review: graded like any other, logged as assisted.
+pub fn line_review_round_trips_test() {
+  let review =
+    wire.Review(
+      problem: a_ref(),
+      rating: fsrs.Good,
+      duration_ms: Some(95_000),
+      auto_failed: False,
+      revealed: True,
+      practice: False,
+      recall: False,
+      mode: wire.Line,
+    )
+  round_trip(review, wire.review_to_json, wire.review_decoder())
+}
+
+pub fn line_review_row_round_trips_test() {
+  let row =
+    wire.ReviewRow(
+      at: fsrs.from_epoch(1_787_700_000.0),
+      rating: fsrs.Good,
+      duration_ms: Some(95_000),
+      revealed: False,
+      auto_failed: False,
+      state_before: 1,
+      scheduled_days: 0,
+      stability_after: Some(2.0),
+      recall: False,
+      mode: wire.Line,
+    )
+  round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
+}
+
+/// Clients and rows from before Line Drill send no mode: they were free.
+pub fn review_without_mode_is_free_test() {
+  let body =
+    "{\"category\":\"c\",\"subcategory\":\"s\",\"title\":\"t\",\"rating\":3}"
+  let assert Ok(review) = json.parse(from: body, using: wire.review_decoder())
+  review.mode |> should.equal(wire.Free)
+  wire.review_mode_from_string("line") |> should.equal(wire.Line)
+  wire.review_mode_from_string("anything else") |> should.equal(wire.Free)
 }
 
 /// Older clients omit `practice` entirely. It has to default rather than 422,
@@ -663,6 +715,7 @@ pub fn review_without_practice_defaults_to_false_test() {
       revealed: False,
       practice: False,
       recall: False,
+      mode: wire.Free,
     )),
   )
 }
