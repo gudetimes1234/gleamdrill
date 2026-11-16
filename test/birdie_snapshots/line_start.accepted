@@ -1,0 +1,183 @@
+---
+version: 2.0.2
+title: line: start
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: line_start_screen_test
+---
+<div class="line-drill">
+  <div aria-label="Line Drill" class="line-code">
+    <div class="line-rows">
+      <div data-lustre-key="0" class="line-row given">
+        <span class="line-no">
+          1
+        </span>
+        <code class="line-text"><span class="tok-keyword">class</span> <span class="tok-variableName tok-definition">ListNode</span>:</code>
+      </div>
+      <div data-lustre-key="1" class="line-row given">
+        <span class="line-no">
+          2
+        </span>
+        <code class="line-text">    <span class="tok-keyword">def</span> <span class="tok-variableName tok-definition">__init__</span>(<span class="tok-keyword">self</span>, <span class="tok-variableName">val</span><span class="tok-operator">=</span><span class="tok-number">0</span>, <span class="tok-variableName">next</span><span class="tok-operator">=</span><span class="tok-keyword">None</span>):</code>
+      </div>
+      <div data-lustre-key="2" class="line-row given">
+        <span class="line-no">
+          3
+        </span>
+        <code class="line-text">        <span class="tok-keyword">self</span>.<span class="tok-propertyName">val</span> <span class="tok-operator">=</span> <span class="tok-variableName">val</span></code>
+      </div>
+      <div data-lustre-key="3" class="line-row given">
+        <span class="line-no">
+          4
+        </span>
+        <code class="line-text">        <span class="tok-keyword">self</span>.<span class="tok-propertyName">next</span> <span class="tok-operator">=</span> <span class="tok-variableName">next</span></code>
+      </div>
+      <div data-lustre-key="4" class="line-row given">
+        <span class="line-no">
+          5
+        </span>
+        <code class="line-text"></code>
+      </div>
+      <div data-lustre-key="5" class="line-row given">
+        <span class="line-no">
+          6
+        </span>
+        <code class="line-text"><span class="tok-keyword">def</span> <span class="tok-variableName tok-definition">reverseList</span>(<span class="tok-variableName">head</span>):</code>
+      </div>
+      <div data-lustre-key="active-6-0" class="line-row active ">
+        <span class="line-no">
+          7
+        </span>
+        <span style="padding-left:4ch;"></span>
+        <div class="line-active">
+          <input aria-label="Line 7" autocapitalize="off" autocomplete="off" autocorrect="off" class="line-input" spellcheck="false" style="width:18ch;" type="text" value>
+          <div class="line-card-inline">
+            <div class="line-card next">
+              <div class="line-card-head">
+                Line 7
+              </div>
+              <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                Hint
+                <kbd>
+                  h
+                </kbd>
+              </button>
+              <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                Why
+                <kbd>
+                  y
+                </kbd>
+              </button>
+              <div class="line-reveal">
+                <button class="btn-secondary line-reveal-button " type="button">
+                  Reveal line
+                  <kbd>
+                    c
+                  </kbd>
+                </button>
+                <span class="hint-warning">
+                  logged as a reveal
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-lustre-key="7" class="line-row blank">
+        <span class="line-no">
+          8
+        </span>
+        <span style="padding-left:4ch;"></span>
+        <span class="line-box empty" style="width:26ch;"></span>
+      </div>
+      <div data-lustre-key="8" class="line-row blank">
+        <span class="line-no">
+          9
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:26ch;"></span>
+      </div>
+      <div data-lustre-key="9" class="line-row blank">
+        <span class="line-no">
+          10
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:22ch;"></span>
+      </div>
+      <div data-lustre-key="10" class="line-row blank">
+        <span class="line-no">
+          11
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:18ch;"></span>
+      </div>
+      <div data-lustre-key="11" class="line-row blank">
+        <span class="line-no">
+          12
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:18ch;"></span>
+      </div>
+      <div data-lustre-key="12" class="line-row blank">
+        <span class="line-no">
+          13
+        </span>
+        <span style="padding-left:4ch;"></span>
+        <span class="line-box empty" style="width:18ch;"></span>
+      </div>
+    </div>
+  </div>
+  <aside class="line-side">
+    <div class="line-progress">
+      <div aria-valuemax="7" aria-valuenow="0" class="line-progress-bar" role="progressbar">
+        <div class="line-progress-fill" style="width:0%;"></div>
+      </div>
+      <span class="line-progress-text">
+        0 of 7 blanks complete
+      </span>
+    </div>
+    <div class="line-step">
+      <span class="line-step-count">
+        Step 1 of 3
+      </span>
+      <h3 class="line-step-title">
+        Start with nothing behind you
+      </h3>
+    </div>
+    <div class="line-card next">
+      <div class="line-card-head">
+        Line 7
+      </div>
+      <button class="btn-secondary walk-reveal line-layer-button" type="button">
+        Hint
+        <kbd>
+          h
+        </kbd>
+      </button>
+      <button class="btn-secondary walk-reveal line-layer-button" type="button">
+        Why
+        <kbd>
+          y
+        </kbd>
+      </button>
+      <div class="line-reveal">
+        <button class="btn-secondary line-reveal-button " type="button">
+          Reveal line
+          <kbd>
+            c
+          </kbd>
+        </button>
+        <span class="hint-warning">
+          logged as a reveal
+        </span>
+      </div>
+    </div>
+    <div class="line-foot">
+      <button class="link-button" type="button">
+        Type it freely instead
+        <kbd>
+          l
+        </kbd>
+      </button>
+    </div>
+  </aside>
+</div>

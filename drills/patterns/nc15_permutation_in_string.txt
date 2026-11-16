@@ -1,0 +1,39 @@
+== pattern sliding-window
+complexity: O(26·n) time · O(1) space
+nudge: A permutation of s1 is a window of s2, the same length, with the same letter counts. How do you move that window one step without recounting it?
+-- step Count the first window
+1 if len(s1) > len(s2): return False
+  hint: When can there be no window at all?
+  why: When s1 is longer than s2.
+2 need = letter counts of s1
+  hint: What does a matching window have to look like?
+  why: The same count of every letter as s1.
+3 window = letter counts of the first len(s1) letters of s2
+  hint: What is the first window?
+  why: The first len(s1) letters of s2, counted.
+4 if window == need: return True
+  hint: Could the very first window already match?
+  why: Yes; check it before sliding.
+-- step Slide one letter at a time
+5 for i from len(s1) to last index of s2:
+  hint: How does the window move?
+  why: Each step, letter i enters on the right.
+6     window[s2[i]] += 1
+  hint: What does the entering letter do?
+  why: Adds one to its count.
+7     left_char = s2[i - len(s1)]
+  hint: Which letter leaves?
+  why: The one len(s1) places back, so the window keeps its length.
+8     window[left_char] -= 1
+  hint: What does the leaving letter do?
+  why: Takes one off its count.
+9     if window[left_char] == 0: delete it from window
+  hint: What if its count reaches zero?
+  why: Drop the key, so a zero entry does not stop the two counts comparing equal.
+10     if window == need: return True
+  hint: When have you found a permutation?
+  why: When this window's counts equal s1's.
+-- step No window matched
+11 return False
+  hint: What if the slide ends without a match?
+  why: No window of s2 is a rearrangement of s1.

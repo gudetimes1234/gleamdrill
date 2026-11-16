@@ -1,4 +1,5 @@
 @kind Bottom-Up DP
 @big-o O(n²) time · O(n²) space
 @order 1
+@pattern dp-2d
 A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.

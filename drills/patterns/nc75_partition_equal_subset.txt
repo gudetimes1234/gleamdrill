@@ -1,0 +1,27 @@
+== pattern dp-1d
+complexity: O(n·sum) time · O(sum) space
+nudge: An equal split exists exactly when some subset adds up to half the total. Can you carry the set of sums reachable so far and widen it one number at a time?
+-- step Rule out an odd total
+1 total = sum of nums
+  hint: What do both halves have to add up to?
+  why: Half the total, so you need the total first.
+2 if total is odd: return False
+  hint: When is a split impossible before any work?
+  why: Integers cannot split an odd total into two equal halves.
+-- step Widen the reachable sums
+3 half = total // 2
+  hint: Which sum are you looking for?
+  why: One subset reaching half means the rest makes the other half.
+4 reachable = {0}
+  hint: Which sum can you make with no numbers?
+  why: Zero, the empty subset.
+5 for each n in nums:
+  hint: How do you bring in each number?
+  why: Once each, so no number is used twice.
+6     add reached + n to reachable for every reached sum, keeping those <= half
+  hint: What new sums does n make possible?
+  why: Every sum already reachable, plus n. Sums above half can never help, and the set collapses duplicates for free.
+-- step Check the half
+7 return half in reachable
+  hint: What is the answer?
+  why: Whether some subset reached exactly half.

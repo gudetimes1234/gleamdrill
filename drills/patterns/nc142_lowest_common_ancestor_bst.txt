@@ -1,0 +1,65 @@
+== pattern binary-search
+complexity: O(h) time · O(1) space
+nudge: Every node of a search tree states a fact about everything beneath it. Standing at the root with two target values, what does that fact tell you before you look for either one?
+-- step Start at the root
+1 node = root
+  hint: Where does the search begin?
+  why: At the root, which is an ancestor of both targets.
+2 while node is not None:
+  hint: How long do you keep descending?
+  why: Until the split point is found; the loop guard only stops a walk off the tree.
+-- step Follow the side holding both targets
+3     if p < node.val and q < node.val: node = node.left
+  hint: Both targets are smaller than this node. Where is their lowest common ancestor?
+  why: In the left subtree, since both targets live there.
+4     elif p > node.val and q > node.val: node = node.right
+  hint: And if both are larger?
+  why: The mirror case: both targets, and so their ancestor, are on the right.
+-- step Stop at the split
+5     else: return node.val
+  hint: What does it mean when neither side holds both?
+  why: The targets part ways here, or one of them is this node, so this is the lowest node with both beneath it.
+6 return -1
+  hint: What if the walk falls off the tree?
+  why: Only possible when a target is missing; the function still has to return something.
+== pattern dfs
+complexity: O(n) time · O(n) space
+nudge: Ignore the ordering altogether. If you had the path from the root down to each target, where would their lowest common ancestor be on those two paths?
+-- step Compare the two root paths
+1 toP, toQ = path(root, p), path(root, q)
+  hint: What do you find first?
+  why: The values from the root down to each target.
+2 best = -1
+  hint: What do you hold while walking the paths together?
+  why: The last value they share so far, with nothing yet.
+3 for a, b in toP and toQ side by side:
+  hint: How do you walk both paths at once?
+  why: In step from the root, which both paths start at.
+4     if a != b: break
+  hint: When do the paths stop sharing?
+  why: At the first place they differ; nothing after that is common.
+5     best = a
+  hint: What do you record while they agree?
+  why: The shared value: the deepest one recorded is the answer.
+6 return best
+  hint: What is the answer?
+  why: The last node both paths pass through.
+-- step Find a root path (in path(node, target))
+7 if node is None: return []
+  hint: What path does an empty subtree hold?
+  why: None, so an empty list says the target is not here.
+8 if node.val == target: return [node.val]
+  hint: What if this node is the target?
+  why: The path ends here.
+9 for side in (node.left, node.right):
+  hint: Where do you look otherwise?
+  why: In each child in turn.
+10     found = path(side, target)
+  hint: What do you ask each child?
+  why: For a path from it down to the target.
+11     if found: return [node.val] + found
+  hint: What if a child found one?
+  why: Put this node in front of it and pass it up.
+12 return []
+  hint: What if neither child holds the target?
+  why: No path goes through this node.

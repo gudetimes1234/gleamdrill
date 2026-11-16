@@ -1,0 +1,36 @@
+== pattern backtracking
+complexity: O(2ⁿ) time · O(n²) space
+nudge: Each candidate can be used once, and the list may hold copies. After sorting, take the head and move past it, or skip it together with every copy. Why every copy?
+-- step Sort so copies sit together
+1 return build(candidates sorted, target)
+  hint: What must be true of the input first?
+  why: Sorted, so copies are adjacent and the search can stop at the first candidate too large.
+-- step Stop when the target is met or out of reach
+2 if target == 0: return [[]]
+  hint: What if the target is already reached?
+  why: One combination, the empty one, which the callers extend.
+3 if no candidates: return []
+  hint: What if there is target left and nothing to use?
+  why: No combination down this branch.
+4 first = sorted_candidates[0]
+  hint: Which candidate do you decide about?
+  why: The smallest one left.
+5 if first > target: return []
+  hint: When is the whole branch hopeless?
+  why: When the smallest candidate overshoots, every later one does too.
+-- step Take the head once, or skip every copy
+6 with_first = [first] + each combination of build(the rest, target - first)
+  hint: What if you take the head?
+  why: Use it once and move past it, aiming for what is left of the target.
+7 past = 1
+  hint: How do you find where the copies of the head end?
+  why: Start a scan just after the head.
+8 while past is in range and sorted_candidates[past] == first:
+  hint: When does the scan keep going?
+  why: While it is still on a copy of the same value.
+9     past += 1
+  hint: Then?
+  why: Step over that copy.
+10 return with_first + build(sorted_candidates from past, target)
+  hint: What are the combinations that skip the head?
+  why: Skip every copy together; otherwise the same combination is rebuilt from a different copy.

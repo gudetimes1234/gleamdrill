@@ -1,0 +1,72 @@
+== pattern two-pointers
+complexity: O(n) time · O(1) space
+nudge: Keep two walkers n nodes apart. When the leading one reaches the last node, where is the trailing one?
+-- step Open the gap from a dummy
+1 dummy = new node pointing at head
+  hint: What if the node to remove is the head?
+  why: A dummy before it means there is always a node before the one removed.
+2 behind = ahead = dummy
+  hint: Where do both walkers start?
+  why: At the dummy.
+3 repeat n times:
+  hint: How far ahead does the leader go?
+  why: n nodes, which sets the gap.
+4     if ahead.next is None: return head
+  hint: What if the list runs out first?
+  why: n is longer than the list, so there is nothing to remove.
+5     ahead = ahead.next
+  hint: Then?
+  why: Step the leader forward.
+-- step Walk until the leader is at the end
+6 while ahead.next is not None:
+  hint: When do the walkers stop?
+  why: When the leader is on the last node.
+7     behind, ahead = behind.next, ahead.next
+  hint: How do they move?
+  why: Together, keeping the gap; behind ends just before the node to remove.
+-- step Unlink it
+8 behind.next = behind.next.next
+  hint: How do you remove the node after behind?
+  why: Skip over it.
+9 return dummy.next
+  hint: Where does the list start now?
+  why: After the dummy, which handles the head being removed.
+== pattern linked-list-pointers
+complexity: O(n) time · O(1) space
+nudge: Nth from the end is length minus n from the front. Count first, then walk to the node before it.
+-- step Count the list
+1 length = 0
+  hint: What do you need to know first?
+  why: How long the list is.
+2 node = head
+  hint: Where does the count start?
+  why: At the head.
+3 while node is not None:
+  hint: How far do you walk?
+  why: To the end.
+4     length, node = length + 1, node.next
+  hint: What happens at each node?
+  why: Count it and step on.
+-- step Find the position from the front
+5 index = length - n
+  hint: Which position from the front is it?
+  why: Length minus n, counting from zero.
+6 if index < 0: return head
+  hint: What if n is longer than the list?
+  why: There is no such node; leave the list alone.
+-- step Walk there and unlink
+7 dummy = new node pointing at head
+  hint: What if the head is the one removed?
+  why: A dummy gives it a node before it.
+8 before = dummy
+  hint: Where does the walk start?
+  why: At the dummy, one before the head.
+9 repeat index times: before = before.next
+  hint: How far do you walk?
+  why: index steps, which lands just before the node to remove.
+10 before.next = before.next.next
+  hint: How do you remove the next node?
+  why: Skip over it.
+11 return dummy.next
+  hint: Where does the list start now?
+  why: After the dummy.

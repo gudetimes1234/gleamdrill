@@ -1,0 +1,63 @@
+== pattern bfs
+complexity: O(V log V + E) time · O(V+E) space
+nudge: The copy is exactly the nodes reachable from the start. On a graph with cycles, what keeps the traversal from going round forever?
+-- step Guard the start
+1 if start is not a node: return []
+  hint: What if the start node does not exist?
+  why: Nothing is reachable, so the copy is the empty graph.
+-- step Breadth-first from the start
+2 reached = empty set
+  hint: What records the nodes already dealt with?
+  why: A set. It is the whole problem: without it, a cycle sends the traversal round forever.
+3 frontier = [start]
+  hint: What does the search start from?
+  why: A queue holding just the start node.
+4 while frontier:
+  hint: How long does the search run?
+  why: Until no node is waiting.
+5     node = take from the front of frontier
+  hint: Which node comes next?
+  why: The oldest one waiting, which makes the search breadth-first.
+6     if node in reached or not a valid node: continue
+  hint: Which nodes are skipped?
+  why: One already reached, and an index outside the graph.
+7     reached.add(node)
+  hint: What do you do with a new node?
+  why: Mark it, so a cycle back to it is skipped.
+8     add all of node's neighbours to frontier
+  hint: Where does the search go next?
+  why: To every neighbour; the check above drops the ones already reached.
+-- step Copy what was reached
+9 return renumber(adjacency, reached)
+  hint: What becomes the copy?
+  why: The reached nodes and their edges, renumbered in their original order.
+== pattern dfs
+complexity: O(V log V + E) time · O(V+E) space
+nudge: The copy is exactly the nodes reachable from the start. Recurse into neighbours, but when must a node be marked so that a cycle stops?
+-- step Guard the start
+1 if start is not a node: return []
+  hint: What if the start node does not exist?
+  why: Nothing is reachable, so the copy is the empty graph.
+2 reached = empty set
+  hint: What records the nodes already dealt with?
+  why: A set, so a cycle back to a node is skipped.
+-- step Visit depth-first
+3 if node in reached or not a valid node: return
+  hint: When does a visit stop at once?
+  why: When the node was already reached, or is not in the graph.
+4 reached.add(node)
+  hint: What do you do before recursing?
+  why: Mark the node first. Marking afterwards would let a cycle reach it again while it is still being visited.
+5 for neighbour in adjacency[node]:
+  hint: Where does the search go next?
+  why: To each neighbour in turn.
+6     visit(neighbour)
+  hint: What do you do with each one?
+  why: Visit it, all the way down before the next.
+-- step Copy what was reached
+7 visit(start)
+  hint: Where does it all begin?
+  why: At the start node.
+8 return renumber(adjacency, reached)
+  hint: What becomes the copy?
+  why: The reached nodes and their edges, renumbered in their original order.

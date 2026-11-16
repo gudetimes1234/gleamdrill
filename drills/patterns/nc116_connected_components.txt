@@ -1,0 +1,91 @@
+== pattern union-find
+complexity: O(E·α(V)) time · O(V) space
+nudge: Start with n components, one per node. What does an edge between two different components do to the count?
+-- step Find a node's root
+1 parents = empty map
+  hint: What records which nodes are joined?
+  why: A parent for each merged node; a node with no entry is its own root.
+2 while node's parent is not node:
+  hint: How do you find a node's component?
+  why: Follow parents up until a node is its own parent.
+3     node = parents[node]
+  hint: Then?
+  why: Step up to the parent.
+4 return node
+  hint: What names the component?
+  why: Its root.
+-- step Merge along each edge
+5 merges = 0
+  hint: What do you count?
+  why: The edges that actually joined two components.
+6 for a, b in edges:
+  hint: How do you use the edges?
+  why: One at a time, in any order.
+7     rootA, rootB = find(a), find(b)
+  hint: What do you compare?
+  why: The roots of the two ends.
+8     if rootA != rootB:
+  hint: When does an edge change anything?
+  why: Only when its ends are in different components.
+9         parents[rootA] = rootB
+  hint: How do you merge them?
+  why: Hang one root under the other.
+10         merges += 1
+  hint: What did that merge do to the count?
+  why: Two components became one.
+-- step Subtract the merges
+11 return n - merges
+  hint: How many components are left?
+  why: n to start, one fewer for every real merge.
+== pattern dfs
+complexity: O(V+E) time · O(V+E) space
+nudge: Counting islands with an adjacency list instead of a grid. Start a search from every node you have not reached; what does each search you start tell you?
+-- step Build the adjacency list
+1 adjacency = every node mapped to an empty list
+  hint: What does a traversal need?
+  why: Each node's neighbours.
+2 for a, b in edges:
+  hint: How do you fill it?
+  why: One edge at a time.
+3     add b to a's list and a to b's list
+  hint: Which way does an edge go?
+  why: Both ways: the graph is undirected.
+-- step Count the searches you start
+4 seen = empty set
+  hint: What stops a node being counted twice?
+  why: The nodes already reached by some search.
+5 count = 0
+  hint: What is the answer built from?
+  why: The components found so far.
+6 for node in range(n):
+  hint: Where can a component start?
+  why: At any node, including one with no edges.
+7     if node in seen: continue
+  hint: When is this node no new component?
+  why: When an earlier search already reached it.
+8     count += 1
+  hint: What does an unreached node mean?
+  why: A new component.
+-- step Flood the component
+9     stack = [node]
+  hint: What does the search start from?
+  why: This node, on an explicit stack.
+10     while stack:
+  hint: How long does the search run?
+  why: Until nothing is left to visit.
+11         current = stack.pop()
+  hint: Which node next?
+  why: The latest pushed, depth-first.
+12         if current in seen: continue
+  hint: Which nodes are skipped?
+  why: Ones already marked.
+13         seen.add(current)
+  hint: What do you do with a new node?
+  why: Mark it as part of this component.
+14         push all of current's neighbours
+  hint: Where does the search go next?
+  why: To every neighbour; the check above drops the ones already seen.
+-- step Return the count
+15 return count
+  hint: What is the answer?
+  why: One for every search that had to be started.

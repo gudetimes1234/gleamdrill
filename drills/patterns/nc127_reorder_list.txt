@@ -1,0 +1,105 @@
+== pattern fast-slow-pointers
+complexity: O(n) time · O(1) space
+nudge: The answer weaves the front half with the back half reversed. Can you find the middle, reverse the back, and weave, each as its own small step?
+-- step Find the middle
+1 if the list has fewer than two nodes: return head
+  hint: When is there nothing to reorder?
+  why: Zero or one node is already in order.
+2 slow, fast = head, head.next
+  hint: Where do the two pointers start?
+  why: fast one ahead, so slow stops at the end of the first half.
+3 while fast and fast.next are not None:
+  hint: When does fast stop?
+  why: When it cannot take two more steps.
+4     slow, fast = slow.next, fast.next.next
+  hint: How fast does each move?
+  why: One and two steps, so slow reaches the middle as fast reaches the end.
+-- step Cut and reverse the back half
+5 second = slow.next
+  hint: Where does the back half start?
+  why: Just after the middle.
+6 slow.next = None
+  hint: What separates the halves?
+  why: Ending the first half at the middle.
+7 previous = None
+  hint: What does the reversed back half end in?
+  why: Nothing, as in any reversal.
+8 while second is not None:
+  hint: How long do you reverse?
+  why: Until the back half runs out.
+9     following = second.next
+  hint: What must you save first?
+  why: The next node, before its link is overwritten.
+10     second.next = previous
+  hint: Which way does this node point now?
+  why: Back at the node behind it.
+11     previous, second = second, following
+  hint: How do you step on?
+  why: This node is now behind you, and the saved one is next.
+-- step Weave the halves
+12 first, second = head, previous
+  hint: Which two lists do you weave?
+  why: The front half from head, and the reversed back half from previous.
+13 while second is not None:
+  hint: Which list runs out first?
+  why: The back half, which is never longer than the front.
+14     first_next, second_next = first.next, second.next
+  hint: What do you save before relinking?
+  why: Both next nodes, since both links are about to change.
+15     first.next = second
+  hint: What follows a front node?
+  why: The matching back node.
+16     second.next = first_next
+  hint: What follows that back node?
+  why: The next front node.
+17     first, second = first_next, second_next
+  hint: How do you step on?
+  why: To the saved next nodes.
+18 return head
+  hint: What do you return?
+  why: The head, unchanged: the list was reordered in place.
+== pattern two-pointers
+complexity: O(n) time · O(n) space
+nudge: A linked list cannot be read from the back, but an array can. Collect the nodes, then relink from both ends toward the middle.
+-- step Collect the nodes
+1 nodes = []
+  hint: What gives you random access?
+  why: An array of the nodes.
+2 node = head
+  hint: Where does the walk start?
+  why: At the head.
+3 while node is not None:
+  hint: How far do you walk?
+  why: To the end of the list.
+4     append node to nodes; node = node.next
+  hint: What happens at each node?
+  why: Store it, then step on.
+-- step Relink from both ends
+5 low, high = 0, last index
+  hint: Where do the pointers start?
+  why: At the first and the last node.
+6 while low < high:
+  hint: When do they stop?
+  why: When they meet in the middle.
+7     nodes[low].next = nodes[high]
+  hint: What follows a front node?
+  why: The current back node.
+8     low += 1
+  hint: Then?
+  why: Move the front pointer in.
+9     if low == high: stop
+  hint: What if the pointers have met?
+  why: Every node is linked; stop before linking a node to itself.
+10     nodes[high].next = nodes[low]
+  hint: What follows a back node?
+  why: The next front node.
+11     high -= 1
+  hint: Then?
+  why: Move the back pointer in.
+-- step End the list
+12 if nodes: nodes[low].next = None
+  hint: What must the last node point at?
+  why: Nothing. Without this the old link survives and makes a cycle.
+13 return head
+  hint: What do you return?
+  why: The head, reordered in place.

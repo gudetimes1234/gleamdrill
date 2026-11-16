@@ -1,7 +1,7 @@
 def findKthLargest(nums, k):
-    if k < 1 or k > len(nums):
-        return None
-    return select(nums, k)
+    if k < 1 or k > len(nums):  # @1
+        return None  # @1
+    return select(nums, k)  # @2
 
 
 # Quickselect: partition around a pivot, then recurse into the side that must
@@ -9,13 +9,13 @@ def findKthLargest(nums, k):
 # halves each time instead of being repeated -- the same saving binary search
 # makes over a scan.
 def select(nums, k):
-    pivot = nums[0]
-    bigger = [n for n in nums[1:] if n > pivot]
-    equal = [n for n in nums[1:] if n == pivot]
-    smaller = [n for n in nums[1:] if n < pivot]
+    pivot = nums[0]  # @3
+    bigger = [n for n in nums[1:] if n > pivot]  # @4
+    equal = [n for n in nums[1:] if n == pivot]  # @5
+    smaller = [n for n in nums[1:] if n < pivot]  # @6
 
-    if k <= len(bigger):
-        return select(bigger, k)
-    if k <= len(bigger) + 1 + len(equal):
-        return pivot
-    return select(smaller, k - len(bigger) - 1 - len(equal))
+    if k <= len(bigger):  # @7
+        return select(bigger, k)  # @7
+    if k <= len(bigger) + 1 + len(equal):  # @8
+        return pivot  # @8
+    return select(smaller, k - len(bigger) - 1 - len(equal))  # @9

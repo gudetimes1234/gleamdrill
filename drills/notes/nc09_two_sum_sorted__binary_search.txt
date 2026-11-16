@@ -1,5 +1,6 @@
 @kind Binary Search
 @big-o O(n log n) time · O(1) space
 @order 1
+@pattern binary-search
 @shared/binary-search-halving
 Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.

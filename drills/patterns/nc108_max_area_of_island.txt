@@ -1,0 +1,104 @@
+== pattern dfs
+complexity: O(m·n) time · O(m·n) space
+nudge: The same component search as counting islands. What should each search report instead of just that it happened?
+-- step Collect the land
+1 land = set of every (r, c) whose value is 1
+  hint: Which squares are nodes of the graph?
+  why: Only the land, as a set for one-step lookups.
+-- step Search from each unreached square
+2 seen = empty set
+  hint: What stops a square being counted twice?
+  why: The squares already reached by some search.
+3 best = 0
+  hint: What is the answer if there is no land?
+  why: Zero, and it only grows from there.
+4 for at in land:
+  hint: Where can an island start?
+  why: At any land square.
+5     if at in seen: continue
+  hint: When is this square part of an island already measured?
+  why: When an earlier search reached it.
+6     area = 0
+  hint: What does this search count?
+  why: The squares of this one island, starting from none.
+-- step Flood the island, counting squares
+7     stack = [at]
+  hint: What does the search start from?
+  why: This square, on an explicit stack.
+8     while stack:
+  hint: How long does the flood run?
+  why: Until nothing is left to visit.
+9         r, c = stack.pop()
+  hint: Which square comes next?
+  why: The latest pushed, which makes the search depth-first.
+10         if (r, c) not in land or (r, c) in seen: continue
+  hint: Which squares are skipped?
+  why: Water, squares off the grid, and squares already marked.
+11         seen.add((r, c))
+  hint: What do you do with a fresh land square?
+  why: Mark it so it is counted once.
+12         area += 1
+  hint: What does it add to the island?
+  why: One square of area.
+13         push the four neighbours onto the stack
+  hint: Where can the island continue?
+  why: Up, down, left and right; the check above drops the rest.
+-- step Keep the largest
+14     best = max(best, area)
+  hint: What do you do once an island is measured?
+  why: Keep it if it is the largest so far.
+15 return best
+  hint: What is the answer?
+  why: The largest area found.
+== pattern bfs
+complexity: O(m·n) time · O(m·n) space
+nudge: Any traversal visits every square of an island once, so measure each island wave by wave. What holds the frontier if not the call stack?
+-- step Collect the land
+1 land = set of every (r, c) whose value is 1
+  hint: Which squares are nodes of the graph?
+  why: Only the land, as a set for one-step lookups.
+-- step Search from each unreached square
+2 seen = empty set
+  hint: What stops a square being counted twice?
+  why: The squares already reached by some search.
+3 best = 0
+  hint: What is the answer if there is no land?
+  why: Zero, and it only grows from there.
+4 for at in land:
+  hint: Where can an island start?
+  why: At any land square.
+5     if at in seen: continue
+  hint: When is this square part of an island already measured?
+  why: When an earlier search reached it.
+6     area = 0
+  hint: What does this search count?
+  why: The squares of this one island, starting from none.
+-- step Flood the island, counting squares
+7     frontier = queue holding at
+  hint: What does a breadth-first search start from?
+  why: A queue with this one square in it.
+8     while frontier:
+  hint: How long does the flood run?
+  why: Until the queue is empty.
+9         r, c = take from the front of frontier
+  hint: Which square comes next?
+  why: The oldest waiting, which makes the search breadth-first.
+10         if (r, c) not in land or (r, c) in seen: continue
+  hint: Which squares are skipped?
+  why: Water, squares off the grid, and squares already marked.
+11         seen.add((r, c))
+  hint: What do you do with a fresh land square?
+  why: Mark it so it is counted once.
+12         area += 1
+  hint: What does it add to the island?
+  why: One square of area.
+13         add the four neighbours to frontier
+  hint: Where can the island continue?
+  why: Up, down, left and right; the check above drops the rest.
+-- step Keep the largest
+14     best = max(best, area)
+  hint: What do you do once an island is measured?
+  why: Keep it if it is the largest so far.
+15 return best
+  hint: What is the answer?
+  why: The largest area found.

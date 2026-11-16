@@ -1,0 +1,64 @@
+== pattern bfs
+complexity: O(m·n) time · O(m·n) space
+nudge: Every rotten orange spreads at the same moment. If they all start a search together, what is one wave of that search?
+-- step Find the sources and the fresh
+1 rotten = empty queue
+  hint: What will hold the current wave?
+  why: A queue of rotten squares, starting with every orange rotten at minute zero.
+2 fresh = 0
+  hint: How will you know whether everything rotted?
+  why: Count the fresh oranges and take one off each time one turns.
+3 for every square (r, c) with its value:
+  hint: How do you take stock of the grid?
+  why: One pass over every square.
+4     if value == 2: add (r, c) to rotten
+  hint: What do you do with a rotten orange?
+  why: It is a source, so it joins the first wave.
+5     elif value == 1: fresh += 1
+  hint: And a fresh one?
+  why: Count it, so the end can tell whether any was never reached.
+-- step Spread one wave per minute
+6 seen = set of the rotten squares
+  hint: What stops a square being rotted twice?
+  why: A set of every square already rotten, starting with the sources.
+7 minutes = 0
+  hint: What does the answer count?
+  why: The waves that actually rotted something.
+8 while rotten and fresh:
+  hint: When does spreading stop?
+  why: When the wave is empty or nothing fresh is left.
+9     following = empty queue
+  hint: Where does the next wave go?
+  why: Its own queue, so this minute and the next stay separate.
+10     for r, c in rotten:
+  hint: Which oranges spread this minute?
+  why: Every one in the current wave.
+11         for each of the four neighbours (nr, nc):
+  hint: Where does rot spread?
+  why: To the squares directly next to it.
+12             if (nr, nc) is on the grid:
+  hint: Which neighbours exist?
+  why: Only those inside the bounds.
+13                 if it is fresh and not seen:
+  hint: Which neighbours turn?
+  why: Fresh oranges that no earlier orange has already reached.
+14                     mark it seen; fresh -= 1
+  hint: What do you record when one turns?
+  why: Mark it so it turns once, and count one fewer fresh.
+15                     add it to following
+  hint: What does a newly rotten orange do next minute?
+  why: Spread in its turn, so it joins the next wave.
+-- step Move to the next minute
+16     if following is empty: break
+  hint: What if this wave rotted nothing?
+  why: The rot has stopped; no more minutes pass.
+17     rotten = following
+  hint: Which wave spreads next?
+  why: The oranges that just turned.
+18     minutes += 1
+  hint: What does a wave that turned something cost?
+  why: One minute.
+-- step Report the time or failure
+19 return minutes if fresh == 0, else -1
+  hint: What if some fresh orange was never reached?
+  why: It never rots, so the answer is -1; otherwise the minutes counted.

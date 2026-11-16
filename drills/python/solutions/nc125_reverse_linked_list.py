@@ -9,10 +9,10 @@ def reverseList(head):
     # before rewriting the link, then step on. Losing the look-ahead is the
     # classic bug -- once head.next has been overwritten, the rest of the list
     # is unreachable.
-    previous = None
-    while head is not None:
-        following = head.next
-        head.next = previous
-        previous = head
-        head = following
-    return previous
+    previous = None  # @1
+    while head is not None:  # @2
+        following = head.next  # @3
+        head.next = previous  # @4
+        previous = head  # @5
+        head = following  # @6
+    return previous  # @7

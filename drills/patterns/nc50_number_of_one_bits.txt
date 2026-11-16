@@ -1,0 +1,21 @@
+== pattern bit-manipulation
+complexity: O(k) time · O(1) space
+nudge: Is there an expression that clears exactly the lowest set bit of n? Then how many times would the loop run?
+-- step Start counting
+1 count = 0
+  hint: What are you counting?
+  why: The one bits removed so far, none at the start.
+-- step Clear one set bit at a time
+2 while n is not zero:
+  hint: When are there no one bits left?
+  why: When n has become zero.
+3     n = n AND (n - 1)
+  hint: How do you remove only the lowest one bit?
+  why: Subtracting one flips the lowest set bit and the zeros below it; ANDing with n keeps everything else and drops that bit.
+4     count += 1
+  hint: What did that step remove?
+  why: Exactly one set bit, so count it.
+-- step Return the count
+5 return count
+  hint: What is the answer?
+  why: One iteration per set bit, so the count is the number of ones.

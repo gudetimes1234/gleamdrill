@@ -40,6 +40,7 @@ pub fn all_reviews(
         scheduled_days: row.scheduled_days,
         stability_after: row.stability_after,
         recall: row.recall,
+        mode: row.mode,
       ),
     )
   })
@@ -94,6 +95,7 @@ pub fn restore(
           row.auto_failed,
           row.revealed,
           row.recall,
+          wire.review_mode_to_string(row.mode),
         )
         |> done
       }),

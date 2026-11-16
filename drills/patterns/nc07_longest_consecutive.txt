@@ -1,0 +1,33 @@
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: A set makes "is num + 1 here?" one lookup. Which numbers are worth counting from, so that no run is walked twice?
+-- step Put every number in a set
+1 num_set = set of nums
+  hint: What makes the neighbour checks O(1)?
+  why: A set of every number; duplicates collapse, which is harmless.
+2 longest = 0
+  hint: What do you track across the runs?
+  why: The longest run found so far, zero for an empty input.
+-- step Count up from the start of each run
+3 for num in num_set:
+  hint: What do you walk over?
+  why: The set, so each distinct number is considered once.
+4     if num - 1 not in num_set:
+  hint: Which numbers start a run?
+  why: Those with no predecessor. Counting only from them is what keeps the whole thing O(n).
+5         length = 1
+  hint: How long is a run when it starts?
+  why: One: the number itself.
+6         while num + length in num_set:
+  hint: How do you find the end of the run?
+  why: Keep looking up the next number until it is missing.
+7             length += 1
+  hint: What changes each time the next number is there?
+  why: The run is one longer.
+8         longest = max(longest, length)
+  hint: What do you do with a finished run?
+  why: Keep it if it beats the best so far.
+-- step Return
+9 return longest
+  hint: What is the answer?
+  why: The longest run seen; every run was counted exactly once from its start.

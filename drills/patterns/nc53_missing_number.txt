@@ -1,0 +1,29 @@
+== pattern bit-manipulation
+complexity: O(n) time · O(1) space
+nudge: Pair every value with the index it should have had. Which operation makes each matched pair cancel, so only the unmatched index survives?
+-- step Start with the index no value can sit at
+1 result = len(nums)
+  hint: Which of the indices 0..n does the loop never visit?
+  why: n itself, since the indices run 0 to n - 1, so start with it already folded in.
+-- step Cancel each value against an index
+2 for i, n in enumerate(nums):
+  hint: How do you walk the array?
+  why: Once, with each index and its value.
+3     result ^= i XOR n
+  hint: What do you fold in at each position?
+  why: Both the index and the value. Every number present meets its own index somewhere and cancels.
+-- step The survivor
+4 return result
+  hint: What is left?
+  why: The one index with no matching value: the missing number.
+== pattern math
+complexity: O(n) time · O(1) space
+nudge: You know exactly what 0 through n add up to. How does the real total differ from that?
+-- step Know what the full set sums to
+1 n = len(nums)
+  hint: What is the largest number in the full range?
+  why: n, the length of the array, since one of 0..n is missing.
+-- step Subtract what is there
+2 return n * (n + 1) / 2 - sum of nums
+  hint: How does the expected total reveal the gap?
+  why: 0..n sums to n(n+1)/2 in any order; subtracting the actual total leaves the missing value.

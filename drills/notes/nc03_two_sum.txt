@@ -1,4 +1,5 @@
 @kind Hash Map
 @big-o O(n) time · O(n) space
 @order 3
+@pattern hash-map
 Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.

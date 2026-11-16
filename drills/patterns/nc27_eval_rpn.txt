@@ -1,0 +1,50 @@
+== pattern stack
+complexity: O(n) time · O(n) space
+nudge: In postfix, both operands are finished before their operator arrives, and an operator always wants the two most recent values. What structure hands those back first?
+-- step A stack of finished values
+1 stack = empty list
+  hint: Where do values wait for their operator?
+  why: On a stack: an operator always takes the two most recent values.
+-- step Read each token
+2 for token in tokens:
+  hint: How do you read the expression?
+  why: Left to right, once; postfix needs no lookahead and no precedence rules.
+3     if token is an operator and the stack holds two values:
+  hint: What makes a token an operation rather than a number?
+  why: It is one of + - * /, with two operands already waiting for it.
+4         b = pop; a = pop
+  hint: Which value is the right operand?
+  why: The one popped first: it was pushed last, so it sat nearer the operator. Getting this backwards breaks - and /.
+5         push apply(token, a, b)
+  hint: What happens to the result?
+  why: It goes back on the stack as a finished value, ready to be an operand itself.
+6     else: push the token as an integer
+  hint: What do you do with a number?
+  why: Push it; it waits until an operator needs it.
+-- step The answer is what is left
+7 return the top of the stack, or 0 if it is empty
+  hint: Where is the answer once every token is read?
+  why: A well-formed expression leaves exactly one value: the whole expression.
+== pattern dfs
+complexity: O(n) time · O(n) space
+nudge: Read the tokens from the end: the last one is the outermost operator, and its operands are whole subexpressions just before it. Can one recursive call evaluate a subexpression and say where it began?
+-- step Start at the root
+1 value, _ = take(tokens, last index); return value
+  hint: Where does the whole expression start, read backwards?
+  why: At the last token, the outermost operator (or a lone number).
+-- step Evaluate the subexpression ending at i
+2 token = tokens[i]
+  hint: What decides what kind of node this is?
+  why: The token at i: a number is a leaf, an operator has two subtrees before it.
+3 if token is not an operator: return (int(token), i - 1)
+  hint: What does a leaf give back?
+  why: Its value, and the index just before it, where the next unread token is.
+4 right, i = take(tokens, i - 1)
+  hint: Which operand do you read first when going backwards?
+  why: The right one: it sits nearer the operator, directly before it.
+5 left, i = take(tokens, i)
+  hint: Where does the left operand end?
+  why: Just before the right operand began, which is the index the first call handed back.
+6 return (apply(token, left, right), i)
+  hint: What does an operator node give back?
+  why: Its result, and the index still to be read, so its own caller can carry on.

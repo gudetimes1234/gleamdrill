@@ -1,0 +1,18 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: The cheapest way to stand on a step is its own price plus the cheaper of the two steps below it. How far back do you ever need to look?
+-- step Start for free
+1 one_back, two_back = 0, 0
+  hint: What does it cost to be on the ground before the first step?
+  why: Nothing: you may start on step 0 or step 1, and you only pay a step's price when you stand on it.
+-- step Carry the cheapest cost forward
+2 for each price in cost:
+  hint: How do you walk the steps?
+  why: Once, front to back, so the two steps below are always already priced.
+3     one_back, two_back = price + min(one_back, two_back), one_back
+  hint: What does it cost to stand on this step, and what shifts down?
+  why: This price plus the cheaper of the two below; the old one-back becomes the new two-back.
+-- step Reach the top
+4 return min(one_back, two_back)
+  hint: The top has no price. Which steps can you reach it from?
+  why: Either of the last two, so take the cheaper of the two final costs.

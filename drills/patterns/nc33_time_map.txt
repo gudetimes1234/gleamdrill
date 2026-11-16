@@ -1,0 +1,42 @@
+== pattern binary-search
+complexity: O(log n) per get · O(n) space
+nudge: Timestamps only ever increase, so each key's history is already sorted as it is written. Finding the newest entry at or before a time is then a halving question: what do you keep, and which way do you keep looking?
+-- step Store each key's history
+1 store = empty map from key to a list of (timestamp, value)
+  hint: What does the structure hold?
+  why: For every key, its versions in the order they were set.
+2 append (timestamp, value) to store[key], creating the list if needed
+  hint: How do you record a set?
+  why: Append it; timestamps only increase, so the list stays sorted without any work.
+-- step Halve the history
+3 history = store[key], or an empty list
+  hint: Which versions can answer a get?
+  why: Only that key's; an unknown key has none.
+4 low, high = 0, last index of history
+  hint: What range could hold the answer?
+  why: The whole history.
+5 best = ""
+  hint: What do you answer if no version is old enough?
+  why: The empty string, until a candidate is found.
+6 while low <= high:
+  hint: When do you stop?
+  why: When the range is empty.
+7     mid = (low + high) // 2
+  hint: Which version do you test?
+  why: The middle of the range.
+-- step Keep the candidate, look newer
+8     if history[mid]'s timestamp <= timestamp:
+  hint: When is this version allowed?
+  why: When it was set at or before the time asked about.
+9         best = history[mid]'s value
+  hint: What do you do with an allowed version?
+  why: Keep it as the answer so far.
+10         low = mid + 1
+  hint: Could a better answer exist?
+  why: A newer version that is still old enough may lie to the right, so keep looking there.
+11     else: high = mid - 1
+  hint: And when the version is too new?
+  why: It and everything after it are too new, so look left.
+12 return best
+  hint: What is the answer?
+  why: The newest version at or before the timestamp, or "" if none was.

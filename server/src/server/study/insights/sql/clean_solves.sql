@@ -1,5 +1,6 @@
 -- The last five clean solves per card in one track, oldest first: passed,
--- not revealed, not auto-failed, not a recall review, and timed. The
+-- not revealed, not auto-failed, not a recall review, not typed into Line
+-- Drill's blanks, and timed. The
 -- duration is never null here, which the "!" tells Squirrel.
 select category, subcategory, title, at, duration_ms as "duration_ms!"
   from (
@@ -16,6 +17,7 @@ select category, subcategory, title, at, duration_ms as "duration_ms!"
        and not r.revealed
        and not r.auto_failed
        and not r.recall
+       and r.mode = 'free'
        and r.duration_ms is not null
   ) latest
  where recency <= 5

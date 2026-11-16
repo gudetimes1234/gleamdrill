@@ -1,0 +1,20 @@
+== pattern math
+complexity: O(log n) time · O(log n) space
+nudge: x to the n is the square of x to the n/2, with one more x when n is odd. How does that halve the work, and what do you do with a negative exponent?
+-- step Handle the sign of the exponent
+1 if n < 0: return 1 / power(x, -n)
+  hint: What does a negative exponent mean?
+  why: The reciprocal of the positive power, so compute that and take one division at the end.
+2 return power(x, n)
+  hint: And otherwise?
+  why: The positive power directly.
+-- step Halve the exponent
+3 if n == 0: return 1.0
+  hint: Where does the recursion stop?
+  why: Anything to the power zero is one.
+4 half = power(x, n // 2)
+  hint: What smaller problem do you solve?
+  why: The power with half the exponent, computed once and reused.
+5 return half * half * x if n is odd else half * half
+  hint: How do you rebuild the full power from the half?
+  why: Square it; when n is odd, integer halving lost one factor of x, so multiply it back in.

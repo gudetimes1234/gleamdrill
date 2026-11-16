@@ -1,0 +1,33 @@
+== pattern hash-map
+complexity: O(n) per count · O(n) space
+nudge: Given the query point, which single other corner pins down the whole square? Count copies of each point so the rest is lookups.
+-- step Store the points with their copies
+1 counts = empty map from point to copies
+  hint: Two points can be added at the same spot. What must the storage remember?
+  why: How many copies sit at each point, because duplicates form separate squares.
+2 key = (x, y) of point
+  hint: What do you look the point up by?
+  why: Its coordinates as a pair, so equal points land on the same entry.
+3 counts[key] += 1
+  hint: What does add do with that key?
+  why: One more copy at that point; nothing else needs to change.
+-- step Scan for the diagonal corner
+4 x, y = point
+  hint: What do you need from the query point?
+  why: Its two coordinates, to compare against every stored point.
+5 total = 0
+  hint: What are you accumulating?
+  why: The number of squares, summed over every possible diagonal partner.
+6 for each stored (px, py) with its copies:
+  hint: Which choice of corner fixes the whole square?
+  why: The corner diagonally opposite the query, so try every stored point as that corner.
+7     if px == x or py == y or |px - x| != |py - y|: skip it
+  hint: What rules a stored point out as a diagonal partner?
+  why: Sharing a coordinate, or unequal offsets: then it cannot be the far corner of a square.
+-- step Multiply the other two corners
+8     total += copies * counts[(x, py)] * counts[(px, y)]
+  hint: Given the diagonal, where are the other two corners, and how many squares do they make?
+  why: At (x, py) and (px, y). Any copy pairs with any copy, so the three counts multiply; a missing corner counts as zero.
+9 return total
+  hint: What do you return after the scan?
+  why: Every square was counted once, through its unique diagonal partner.

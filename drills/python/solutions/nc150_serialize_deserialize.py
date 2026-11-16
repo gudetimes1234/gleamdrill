@@ -11,30 +11,30 @@ def serialize(root):
     # matches many different trees -- and it is also what lets the reader work
     # without any length information: it stops as soon as it has consumed a
     # whole subtree.
-    parts = []
-    write(root, parts)
-    return ",".join(parts)
+    parts = []  # @1
+    write(root, parts)  # @2
+    return ",".join(parts)  # @3
 
 
 def write(node, parts):
-    if node is None:
-        parts.append("#")
-        return
-    parts.append(str(node.val))
-    write(node.left, parts)
-    write(node.right, parts)
+    if node is None:  # @4
+        parts.append("#")  # @5
+        return  # @5
+    parts.append(str(node.val))  # @6
+    write(node.left, parts)  # @7
+    write(node.right, parts)  # @8
 
 
 def deserialize(data):
-    return read(data.split(","), [0])
+    return read(data.split(","), [0])  # @9
 
 
 def read(parts, at):
-    token = parts[at[0]]
-    at[0] += 1
-    if token == "#":
-        return None
-    node = TreeNode(int(token))
-    node.left = read(parts, at)
-    node.right = read(parts, at)
-    return node
+    token = parts[at[0]]  # @10
+    at[0] += 1  # @11
+    if token == "#":  # @12
+        return None  # @12
+    node = TreeNode(int(token))  # @13
+    node.left = read(parts, at)  # @14
+    node.right = read(parts, at)  # @15
+    return node  # @16

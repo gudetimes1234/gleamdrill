@@ -1,0 +1,96 @@
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: A random pointer may point at a node you have not copied yet. What if you made every copy first, and remembered which copy belongs to which original?
+-- step Copy every node
+1 copies = {None: None}
+  hint: What maps an original to its copy?
+  why: A map; seeding None means a missing link copies as missing, with no special case.
+2 node = head
+  hint: Where does the first pass start?
+  why: At the head.
+3 while node is not None:
+  hint: How far does it go?
+  why: Over every node.
+4     copies[node] = new node with node.val
+  hint: What does the first pass create?
+  why: A bare copy of each node, links left for later.
+5     node = node.next
+  hint: Then?
+  why: Step on.
+-- step Wire up the copies
+6 node = head
+  hint: Where does the second pass start?
+  why: At the head again.
+7 while node is not None:
+  hint: How far?
+  why: Over every node.
+8     copies[node].next = copies[node.next]
+  hint: Where does a copy's next point?
+  why: At the copy of the original's next, which now exists.
+9     copies[node].random = copies[node.random]
+  hint: And its random pointer?
+  why: At the copy of the original's random, looked up the same way.
+10     node = node.next
+  hint: Then?
+  why: Step on.
+-- step Return the copy
+11 return copies[head]
+  hint: Where does the copied list start?
+  why: At the copy of head, or None for an empty list.
+== pattern linked-list-pointers
+complexity: O(n) time · O(1) extra space
+nudge: If each copy sat right after its original, "the copy of X" would just be X.next. Can the list itself stand in for the map?
+-- step Splice a copy after each node
+1 node = head
+  hint: Where does the first pass start?
+  why: At the head.
+2 while node is not None:
+  hint: How far?
+  why: Over every original.
+3     node.next = new node with node.val, pointing at node.next
+  hint: Where does each copy go?
+  why: Directly after its original, keeping the rest of the list behind it.
+4     node = node.next.next
+  hint: Where is the next original?
+  why: Two steps on, past its copy.
+-- step Set the random pointers
+5 node = head
+  hint: Where does the second pass start?
+  why: At the head.
+6 while node is not None:
+  hint: How far?
+  why: Over every original.
+7     if node.random is not None:
+  hint: Which copies need a random pointer?
+  why: Those whose original has one.
+8         node.next.random = node.random.next
+  hint: Where is the copy of node.random?
+  why: Right after it, at node.random.next.
+9     node = node.next.next
+  hint: Then?
+  why: Skip the copy to the next original.
+-- step Unweave the two lists
+10 copy = head.next, or None for an empty list
+  hint: Where does the copied list start?
+  why: Right after head.
+11 node = head
+  hint: Where does the last pass start?
+  why: At the head.
+12 while node is not None:
+  hint: How far?
+  why: Over every original.
+13     original_next = node.next.next
+  hint: Which node is the next original?
+  why: The one after this node's copy.
+14     if original_next is not None: node.next.next = original_next.next
+  hint: Where does this copy's next point?
+  why: At the next copy, which sits after the next original.
+15     node.next = original_next
+  hint: How do you restore the original link?
+  why: Point the original back at the next original.
+16     node = original_next
+  hint: Then?
+  why: Step to the next original.
+17 return copy
+  hint: What do you return?
+  why: The copied list's head; the original is as it was.

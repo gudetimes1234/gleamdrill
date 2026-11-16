@@ -1,0 +1,18 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: At each house you either rob it, adding the best from two houses back, or skip it and keep the best so far. How many numbers does that choice read?
+-- step Start with nothing robbed
+1 best, previous = 0, 0
+  hint: What two values do you carry, and what are they before any house?
+  why: The best so far and the best up to the house before; both are 0 with no houses.
+-- step Rob or skip each house
+2 for each value in nums:
+  hint: How do you walk the houses?
+  why: Once, in order, so the two earlier bests are always ready.
+3     best, previous = max(best, previous + value), best
+  hint: What is the best after this house, and what becomes the two-back value?
+  why: The larger of skipping (best) and robbing (previous + value); the old best shifts down to previous.
+-- step Return the best
+4 return best
+  hint: What is the answer after the last house?
+  why: best is the most that can be robbed from the whole row.

@@ -74,7 +74,8 @@ content:
 	  src/gleamdrill/content/problems/generated/embedded_python_refactor.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_go_refactor.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_tour.gleam \
-	  src/gleamdrill/content/problems/generated/approaches.gleam
+	  src/gleamdrill/content/problems/generated/approaches.gleam \
+	  src/gleamdrill/content/problems/generated/patterns.gleam
 
 # Runs every solution variant — primaries and alternates, all five languages —
 # against its harness, then the scheduler's conformance suite, the wire format,

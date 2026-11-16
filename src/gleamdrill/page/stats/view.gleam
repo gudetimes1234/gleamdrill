@@ -110,6 +110,16 @@ fn headline(stats: Stats, analysis: Analysis) -> Element(Msg) {
     tile(int.to_string(dict_size_label(analysis)), "problems started"),
     tile(int.to_string(stats.streak_days), "day streak"),
     tile(retention(stats), "true retention"),
+    // Reviews split by how the code was written: Line Drill's blanks are
+    // the learning rung, so they are counted apart from free solves.
+    case stats.line_reviews {
+      0 -> element.none()
+      line ->
+        tile(
+          int.to_string(line) <> " / " <> int.to_string(stats.total_reviews),
+          "reviews in Line Drill",
+        )
+    },
   ])
 }
 

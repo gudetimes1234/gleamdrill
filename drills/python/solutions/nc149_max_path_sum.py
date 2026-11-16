@@ -11,18 +11,18 @@ def maxPathSum(root):
     # children. What it *records* is the best path through it, which may use
     # both. A negative branch is dropped rather than added, because a path is
     # allowed to stop.
-    if root is None:
-        return 0
-    return walk(root)[1]
+    if root is None:  # @1
+        return 0  # @1
+    return walk(root)[1]  # @2
 
 
 def walk(node):
-    if node is None:
-        return 0, -(10 ** 9)
-    leftUp, leftBest = walk(node.left)
-    rightUp, rightBest = walk(node.right)
-    leftGain, rightGain = max(leftUp, 0), max(rightUp, 0)
-    return (
-        node.val + max(leftGain, rightGain),
-        max(node.val + leftGain + rightGain, leftBest, rightBest),
+    if node is None:  # @3
+        return 0, -(10 ** 9)  # @3
+    leftUp, leftBest = walk(node.left)  # @4
+    rightUp, rightBest = walk(node.right)  # @5
+    leftGain, rightGain = max(leftUp, 0), max(rightUp, 0)  # @6
+    return (  # @7
+        node.val + max(leftGain, rightGain),  # @7
+        max(node.val + leftGain + rightGain, leftBest, rightBest),  # @8
     )

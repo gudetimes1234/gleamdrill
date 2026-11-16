@@ -12,6 +12,12 @@ pub type Diagnostic {
   Diagnostic(line: Int, column: Int, message: String)
 }
 
+/// One line of code as highlighted HTML, with the editor's tokenizer for
+/// `language`. Every character is escaped, so the result is safe to insert
+/// as markup: this is what Line Drill's code column shows.
+@external(javascript, "./editor_ffi.mjs", "highlightLine")
+pub fn highlight(language: String, text: String) -> String
+
 /// Defines the custom element; call once at startup, before the first render.
 @external(javascript, "./editor_ffi.mjs", "register")
 pub fn register() -> Nil

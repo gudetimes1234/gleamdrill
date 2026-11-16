@@ -1,0 +1,36 @@
+== pattern math
+complexity: O(n+m) time · O(n+m) space
+nudge: The digits arrive least significant first, which is the order column addition works in. What has to keep the loop going after both lists run out?
+-- step Set up the result and the carry
+1 dummy = new node; tail = dummy
+  hint: What do you attach the first digit to?
+  why: A dummy head, so every digit is attached the same way.
+2 carry = 0
+  hint: What carries from one column to the next?
+  why: The carry, which starts at zero.
+-- step Add column by column
+3 while l1 or l2 is not None, or carry is not 0:
+  hint: When does the addition stop?
+  why: When both numbers are used up and nothing is carried; 5 + 5 needs a digit neither list has.
+4     total = carry
+  hint: What does each column start with?
+  why: The carry from the column before.
+5     if l1 is not None: add l1.val to total; l1 = l1.next
+  hint: What does the first number contribute?
+  why: Its digit, if it still has one, then step on.
+6     if l2 is not None: add l2.val to total; l2 = l2.next
+  hint: And the second?
+  why: The same, for the other list.
+7     carry, digit = total divided by 10, with remainder
+  hint: How do you split the column sum?
+  why: The remainder is this column's digit, the quotient carries on.
+8     tail.next = new node with digit
+  hint: Where does the digit go?
+  why: Onto the end of the result.
+9     tail = tail.next
+  hint: Then?
+  why: Move tail onto the new node.
+-- step Return the sum
+10 return dummy.next
+  hint: Where does the result start?
+  why: After the dummy, with the least significant digit first.

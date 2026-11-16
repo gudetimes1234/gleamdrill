@@ -1,0 +1,41 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: Define the depth of a tree in one sentence, using only the depths of smaller trees. What is the depth of nothing at all?
+-- step Stop at the empty tree
+1 if root is None: return 0
+  hint: How deep is an empty tree?
+  why: Zero levels. That base case is the whole problem; the rest is the definition of depth.
+-- step One more than the deeper side
+2 return 1 + max(depth(root.left), depth(root.right))
+  hint: Given the depth of each child, how deep is this node's tree?
+  why: This node adds one level on top of whichever child goes deeper.
+== pattern bfs
+complexity: O(n) time · O(n) space
+nudge: Instead of measuring branches, count levels. If you held a whole level of nodes at once, how would you get to the next one, and when would you stop?
+-- step Start with the root as the first level
+1 depth = 0
+  hint: How many levels have you counted before you start?
+  why: None yet; each pass of the loop adds one.
+2 frontier = [root] if root is not None else []
+  hint: What is the first level, and what if the tree is empty?
+  why: Just the root, or nothing at all, so an empty tree never enters the loop and the depth stays 0.
+-- step Replace each level with the next
+3 while frontier is not empty:
+  hint: When are there no more levels to count?
+  why: When the frontier is empty: the last level had no children.
+4     depth += 1
+  hint: What does a non-empty frontier mean for the count?
+  why: It is one more level of the tree.
+5     frontier = [child
+  hint: What replaces the frontier?
+  why: A new list of the children of every node on it, which is exactly the next level.
+6         for each node in frontier, for each child in (node.left, node.right)
+  hint: Which nodes do the children come from, and in what order?
+  why: Every node on the current level, each offering its left and then its right child.
+7         if child is not None]
+  hint: Which children belong on the next level?
+  why: Only real nodes; an empty child is not part of any level.
+-- step Return the count
+8 return depth
+  hint: What is the answer once the frontier runs dry?
+  why: The number of levels counted, which is the depth.

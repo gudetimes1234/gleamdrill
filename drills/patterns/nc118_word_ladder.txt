@@ -1,0 +1,64 @@
+== pattern bfs
+complexity: O(n·k²) time · O(n·k) space
+nudge: Fewest transformations is a shortest path on an unweighted graph, so walk it breadth-first. But how do you find a word's neighbours without comparing it to every other word?
+-- step Check the end is reachable at all
+1 words = set of wordList
+  hint: How do you check membership quickly?
+  why: A set gives O(1) lookups.
+2 if endWord not in words: return 0
+  hint: What if the target is not in the list?
+  why: Every step must land on a listed word, so the end can never be reached.
+-- step Bucket words by wildcard pattern
+3 buckets = map from pattern to list of words
+  hint: What do "hot" and "dot" have in common?
+  why: The pattern "*ot". Words sharing a pattern are exactly the words one letter apart.
+4 for each word in words:
+  hint: Which words go into buckets?
+  why: Every listed word.
+5     for each position i in word:
+  hint: How many patterns does a word have?
+  why: One per position, with that letter replaced by a wildcard.
+6         add word to buckets[word with position i replaced by *]
+  hint: Where does the word go for this position?
+  why: Under the pattern with a star at i, so its neighbours can find it there.
+-- step Search level by level
+7 seen = {beginWord}
+  hint: How do you avoid revisiting a word?
+  why: Mark each word as soon as it is queued, starting with the first.
+8 frontier = queue holding beginWord
+  hint: Where does the search start?
+  why: At the begin word.
+9 steps = 1
+  hint: How long is a sequence with just the start word?
+  why: One word: the answer counts words, not moves.
+10 while frontier is not empty:
+  hint: When does the search give up?
+  why: When there are no words left to expand.
+11     for each word in the current level:
+  hint: How do you keep levels apart?
+  why: Process exactly as many words as the queue holds now; those are all one step from the last level.
+12         word = pop from front of frontier
+  hint: Which word comes next?
+  why: The oldest one in the queue, so shorter paths are expanded first.
+13         if word == endWord: return steps
+  hint: When are you done?
+  why: The first time the end word comes off the queue, breadth-first order guarantees it is by a shortest path.
+14         for each position i in word:
+  hint: How do you find this word's neighbours?
+  why: Through each of its wildcard patterns.
+15             for each neighbour in buckets[word with position i replaced by *]:
+  hint: Which words share this pattern?
+  why: The bucket lists them; they differ from word in at most position i.
+16                 if neighbour not in seen:
+  hint: Which neighbours are worth queueing?
+  why: Only unseen ones; a seen word already has a path at least as short.
+17                     mark neighbour seen and add it to frontier
+  hint: What do you do with a new neighbour?
+  why: Mark it now and queue it for the next level, so it is never queued twice.
+18     steps += 1
+  hint: What changes after a whole level?
+  why: Every word in the next level is one more step away.
+-- step No path
+19 return 0
+  hint: What if the queue empties?
+  why: The end word was never reached.

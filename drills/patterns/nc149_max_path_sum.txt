@@ -1,0 +1,30 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: A path may bend through a node and use both arms, but what can it no longer do once it continues up to the parent? There are two different bests at every node: which one is returned, and which one only recorded?
+-- step Ask the root
+1 if root is None: return 0
+  hint: What if there is no tree?
+  why: There is no path; the answer is 0 by convention.
+2 return best part of walk(root)
+  hint: Which half of the root's report is the answer?
+  why: The best path found anywhere, which may not pass through the root at all.
+-- step Hear from both children (in walk(node))
+3 if node is None: return (0, minus infinity)
+  hint: What does an empty child report?
+  why: Nothing to extend, and no path at all, so its best can never win, even against a lone negative node.
+4 leftUp, leftBest = walk(node.left)
+  hint: What do you need from the left child?
+  why: The best path that can continue up through it, and the best path found anywhere inside it.
+5 rightUp, rightBest = walk(node.right)
+  hint: And from the right?
+  why: The same two numbers for the other side.
+6 leftGain, rightGain = max(leftUp, 0), max(rightUp, 0)
+  hint: Should a path take on a branch with a negative sum?
+  why: No. A path may stop at any node, so a negative branch is dropped by counting it as 0.
+-- step Return one arm, record both
+7 return (node.val + max(leftGain, rightGain),
+  hint: What path can the parent extend?
+  why: This node plus at most one arm; a path that already bends here cannot continue upwards.
+8     max(node.val + leftGain + rightGain, leftBest, rightBest))
+  hint: What is the best path in this subtree?
+  why: The path bending here with both arms, or one already found below.

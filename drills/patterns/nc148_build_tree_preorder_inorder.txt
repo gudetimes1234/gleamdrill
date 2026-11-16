@@ -1,0 +1,56 @@
+== pattern dfs
+complexity: O(n²) time · O(n²) space
+nudge: Either traversal alone matches many trees, yet together they pin down one. What does the first entry of one list tell you outright, and what does finding that value in the other list divide in two?
+-- step Name the root
+1 if preorder is empty: return None
+  hint: What tree does an empty slice describe?
+  why: The empty tree, the base case at every leaf's children.
+2 root = preorder[0]
+  hint: What does pre-order always visit first?
+  why: The root of the subtree the list describes.
+3 split = position of root in inorder
+  hint: Where does the root sit in the in-order list?
+  why: Between its left subtree and its right, so its position is also the size of the left subtree.
+-- step Build both sides from matching slices
+4 return new node(root,
+  hint: What does this call return?
+  why: A node holding the root value, with both subtrees built recursively.
+5     build(preorder[1 .. split], inorder[before split]),
+  hint: Which parts of each list describe the left subtree?
+  why: The split values after the root in pre-order, and everything before the root in in-order.
+6     build(preorder[after split], inorder[after split]))
+  hint: And the right subtree?
+  why: Whatever is left of both lists after the left subtree and the root.
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: Slicing the lists and searching for the root hide O(n) work at every node. What could you build once so that finding the root's position is a lookup, and what could replace the slices?
+-- step Index the in-order list
+1 places = map from each value to its in-order index
+  hint: What makes finding the root's in-order position instant?
+  why: A map built once, so each lookup is O(1) instead of a scan.
+2 return take(preorder, cursor at 0, places, 0, last index)
+  hint: Which part of the in-order list does the first call own?
+  why: All of it, and the pre-order cursor starts at the first value.
+-- step Take the next root (in take(preorder, at, places, low, high))
+3 if low > high or the cursor is past the end: return None
+  hint: When does a call own no nodes?
+  why: When its in-order range is empty: this subtree is the empty tree.
+4 root = preorder[cursor]
+  hint: Which value is this subtree's root?
+  why: The next unread pre-order value: pre-order names roots in the order the recursion builds them.
+5 advance the cursor
+  hint: What must happen before the children are built?
+  why: The cursor moves past the root, so the left subtree reads the next value.
+6 split = places[root]
+  hint: Where does the root split the range?
+  why: At its in-order position, found by lookup.
+-- step Build left, then right
+7 return new node(root,
+  hint: What does this call return?
+  why: A node for the root, with both subtrees built by the same function.
+8     take(low .. split - 1),
+  hint: Which range does the left subtree own?
+  why: Everything before the root in in-order. It is built first because pre-order lists the left subtree next.
+9     take(split + 1 .. high))
+  hint: And the right subtree?
+  why: Everything after the root, read once the left subtree has consumed its values.

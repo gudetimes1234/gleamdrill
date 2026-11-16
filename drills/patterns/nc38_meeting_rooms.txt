@@ -1,0 +1,11 @@
+== pattern intervals
+complexity: O(n log n) time · O(n) space
+nudge: Put the meetings in order of start time. Which meeting is the only one a given meeting could clash with?
+-- step Sort by start
+1 ordered = intervals sorted by start
+  hint: What order makes clashes easy to find?
+  why: By start time: then a meeting can only clash with the one just before it, because anything earlier would have clashed with that one first.
+-- step Check neighbours
+2 return true if every meeting starts at or after the previous one ends
+  hint: What must hold for each adjacent pair?
+  why: The earlier meeting ends no later than the next one starts; ending exactly as the next begins is fine.

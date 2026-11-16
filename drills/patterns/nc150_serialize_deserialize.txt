@@ -1,0 +1,54 @@
+== pattern dfs
+complexity: O(n) time · O(n) space
+nudge: The format is yours to choose. A list of values alone fits many shapes, so what must the string also carry for exactly one tree to match it?
+-- step Write the tree out
+1 parts = []
+  hint: What do you collect while walking?
+  why: One token per node and one per empty child.
+2 write(root, parts)
+  hint: What fills the list?
+  why: A pre-order walk from the root.
+3 return parts joined with ","
+  hint: How do the tokens become one string?
+  why: Join them with a separator that cannot appear inside a value.
+-- step Write pre-order with markers (in write(node, parts))
+4 if node is None:
+  hint: What do you write for an empty child?
+  why: A marker. Recording the empties is what makes the format unambiguous.
+5     parts.append("#"); return
+  hint: Which marker, and is there anything below it?
+  why: A token no value can be, and nothing below, so stop.
+6 parts.append(str(node.val))
+  hint: What does pre-order write first for a real node?
+  why: Its own value, before either child.
+7 write(node.left, parts)
+  hint: Which subtree next?
+  why: The left one, in full.
+8 write(node.right, parts)
+  hint: And last?
+  why: The right subtree.
+-- step Read it back (in deserialize and read)
+9 return read(data split on ",", cursor at 0)
+  hint: How does deserialize start?
+  why: Split the string into tokens and read one tree from the first.
+10 token = parts[cursor]
+  hint: What does the reader look at?
+  why: The next unread token, in the same pre-order the writer used.
+11 advance the cursor
+  hint: What happens once a token is read?
+  why: The shared cursor moves on, so every call reads where the last left off.
+12 if token == "#": return None
+  hint: What does a marker mean?
+  why: An empty subtree, and the end of this branch.
+13 node = new node(int(token))
+  hint: And any other token?
+  why: A node with that value.
+14 node.left = read(parts, cursor)
+  hint: What follows a node's value in the stream?
+  why: Its whole left subtree, which the markers tell the reader when to stop.
+15 node.right = read(parts, cursor)
+  hint: And after that?
+  why: The right subtree, read from the same cursor.
+16 return node
+  hint: What does read hand back?
+  why: The rebuilt subtree, for its parent to attach.

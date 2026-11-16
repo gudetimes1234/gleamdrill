@@ -1,0 +1,40 @@
+== pattern binary-search
+complexity: O(log n) time · O(1) space
+nudge: After a rotation, one half around the midpoint is always properly sorted. Which half is it, and can its two ends tell you whether the target lives there?
+-- step Set the bounds
+1 left, right = 0, last index
+  hint: What range could the target be in at the start?
+  why: The whole array, both ends included.
+-- step Halve the range
+2 while left <= right:
+  hint: When do you stop searching?
+  why: When the range is empty; with inclusive bounds that is once left passes right.
+3     mid = midpoint of left and right
+  hint: Which index do you test?
+  why: The middle, written as left + (right - left) // 2 so it never overflows in a fixed-width language.
+4     if nums[mid] == target: return mid
+  hint: What if the middle is the target?
+  why: Found it; return the index straight away.
+-- step Use the sorted half
+5     if nums[left] <= nums[mid]: (left half is sorted)
+  hint: How can you tell the left half has no rotation point in it?
+  why: Its first value is no bigger than its last; a wrap would make the first value larger.
+6         if nums[left] <= target < nums[mid]: right = mid - 1
+  hint: When must the target be in the sorted left half?
+  why: When it lies between that half's two ends, so the right half can be dropped.
+7         else: left = mid + 1
+  hint: And when it is not between those ends?
+  why: Then it can only be in the right half, if anywhere.
+8     else: (right half is sorted)
+  hint: What if the left half is not sorted?
+  why: The rotation point is on the left, so the right half from mid onward must be sorted.
+9         if nums[mid] < target <= nums[right]: left = mid + 1
+  hint: When must the target be in the sorted right half?
+  why: When it lies between mid and the right end, so the left half can be dropped.
+10         else: right = mid - 1
+  hint: And otherwise?
+  why: It can only be in the left half, so drop the right.
+-- step Not found
+11 return -1
+  hint: What if the range empties?
+  why: Every place the target could be has been ruled out.

@@ -1,0 +1,76 @@
+== pattern trie
+complexity: O(k) per operation · O(total letters) space
+nudge: Give every prefix its own node, with one child per next letter. Once "app" and "apple" are both stored, what tells search apart from startsWith?
+-- step One node per prefix
+1 children = empty map from letter to child node
+  hint: What does a node need to reach the longer prefixes?
+  why: One child per letter that can follow; the node itself is the prefix spelled so far.
+2 terminal = False
+  hint: What does a node need to say about itself?
+  why: Whether its prefix is a whole word. Without the flag "app" is indistinguishable from the start of "apple".
+-- step Insert by walking and creating
+3 node = this root
+  hint: Where does every word start?
+  why: At the root, the empty prefix.
+4 for letter in word:
+  hint: How do you walk down the word?
+  why: One letter, one level.
+5     node = child for letter, created if missing
+  hint: What if no node exists for this letter yet?
+  why: Create it on the way; an existing one is shared with every word that has this prefix.
+6 node.terminal = True
+  hint: What do you record at the last letter?
+  why: That this prefix is a whole word.
+-- step Answer both questions with one walk
+7 node = walk(word)
+  hint: How does search find the word's node?
+  why: The same letter-by-letter walk that startsWith uses.
+8 return node exists and node.terminal
+  hint: When is the word really there?
+  why: The path must exist and end on a node marked as a word, not just a prefix.
+9 return walk(prefix) exists
+  hint: What does startsWith need beyond the walk?
+  why: Nothing: any node on the path means some word continues this way.
+-- step Walk the letters
+10 node = this root
+  hint: Where does the walk begin?
+  why: At the root, the empty prefix.
+11 for letter in letters:
+  hint: How do you follow the letters?
+  why: One child per letter, in order.
+12     if letter is not a child: return None
+  hint: What if the next letter has no node?
+  why: No stored word has this prefix, so the walk fails.
+13     node = that child
+  hint: Otherwise?
+  why: Step down to the child for this letter.
+14 return node
+  hint: What does a finished walk hand back?
+  why: The node for the whole string, so the caller can check its flag.
+== pattern hash-map
+complexity: O(k²) per insert · O(total prefixes) space
+nudge: Two questions, two sets. If you stored every prefix of every word as a string, how long would each answer take?
+-- step Two sets
+1 words = empty set
+  hint: What answers search in one lookup?
+  why: A set of the whole words.
+2 prefixes = set holding the empty string
+  hint: What answers startsWith in one lookup, and what is in it from the start?
+  why: A set of every prefix. The empty prefix is always there, because every word starts with it.
+-- step Insert the word and its prefixes
+3 add word to words
+  hint: What does insert record first?
+  why: The word itself, for search.
+4 for size from 0 to len(word):
+  hint: How many prefixes does a word have?
+  why: One for each length from empty to the whole word.
+5     add word[:size] to prefixes
+  hint: What do you store for each length?
+  why: That prefix, as its own string. This copying is the memory a trie saves by sharing.
+-- step Look it up
+6 return word in words
+  hint: How does search answer?
+  why: One set lookup.
+7 return prefix in prefixes
+  hint: And startsWith?
+  why: One lookup in the other set.

@@ -1,0 +1,36 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: Instead of guessing what each star should be, carry the range of open counts still possible. What happens to the lowest and the highest count at each character?
+-- step Start balanced
+1 low = high = 0
+  hint: What range of open counts is possible before any character?
+  why: Exactly zero at both ends.
+-- step Move the range with each character
+2 for c in s:
+  hint: How do you walk the string?
+  why: Once, left to right.
+3     if c == "(":
+  hint: What does an opener do?
+  why: It raises every possible count.
+4         low, high = low + 1, high + 1
+  hint: How do both ends move?
+  why: Both go up by one.
+5     elif c == ")":
+  hint: And a closer?
+  why: It lowers every possible count.
+6         low, high = max(low - 1, 0), high - 1
+  hint: How do the two ends move for a closer?
+  why: A negative count is never valid, so readings that would go below zero are dropped from the range.
+7     else:
+  hint: What can a star be?
+  why: An opener, a closer, or nothing, so it widens the range both ways.
+8         low, high = max(low - 1, 0), high + 1
+  hint: How does a star move the ends?
+  why: Low falls as if it were a closer (clamped at zero), high rises as if it were an opener.
+9     if high < 0: return False
+  hint: When can you stop with a no?
+  why: When even reading every star as an opener leaves too many closers.
+-- step Check that zero is possible
+10 return low == 0
+  hint: What must be true at the end?
+  why: A count of zero must be in the range, and since low is never negative that means low is zero.

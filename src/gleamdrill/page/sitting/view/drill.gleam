@@ -26,6 +26,7 @@ import gleamdrill/page/sitting/msg.{
 import gleamdrill/page/sitting/panes
 import gleamdrill/page/sitting/view/blitz
 import gleamdrill/page/sitting/view/board as board_view
+import gleamdrill/page/sitting/view/line_drill as line_view
 import gleamdrill/page/sitting/view/quiz
 import gleamdrill/page/sitting/view/rail
 import gleamdrill/page/sitting/view/results
@@ -165,7 +166,32 @@ fn view_drill(
               ],
               [html.text("Problem")],
             ),
-            keymap_picker(shared),
+            // Line Drill and free typing, both ways, for a thumb as for `l`.
+            case current.patterns {
+              [] -> element.none()
+              _ ->
+                html.button(
+                  [
+                    attribute.classes([
+                      #("btn-secondary", True),
+                      #("line-toggle", True),
+                      #("active", page.line_mode),
+                    ]),
+                    attribute.type_("button"),
+                    attribute.attribute("aria-pressed", case page.line_mode {
+                      True -> "true"
+                      False -> "false"
+                    }),
+                    event.on_click(msg.LineModeToggled),
+                  ],
+                  [html.text("Line drill")],
+                )
+            },
+            // The keymap is the editor's; Line Drill's blanks ignore it.
+            case page.line_mode {
+              True -> element.none()
+              False -> keymap_picker(shared)
+            },
           ])
       },
       html.div(
@@ -233,7 +259,11 @@ fn view_drill(
           // sidebar used to be: the keyed editor frame has to stay child 0 of
           // its own parent or CodeMirror remounts and drops its undo history
           // and cursor. The stylesheet puts this on the left (order: -1).
-          #("rail", rail.plan_rail(page, current)),
+          // Line Drill carries its own line card, so the rail steps aside.
+          #("rail", case page.line_mode {
+            True -> element.none()
+            False -> rail.plan_rail(page, current)
+          }),
         ])
     },
   ]
@@ -263,7 +293,10 @@ fn code_main(
       html.div([attribute.class("editor-column")], [
         keyed.div(
           [
-            attribute.class("editor-frame"),
+            attribute.class(case page.line_mode {
+              True -> "editor-frame line-mode"
+              False -> "editor-frame"
+            }),
             // The frame's top strip names the language (style.css).
             attribute.attribute(
               "data-language",
@@ -271,18 +304,27 @@ fn code_main(
             ),
           ],
           [
-            #(
-              body_key,
-              editor.view([
-                editor.doc(page.draft),
-                editor.language(problem.language_slug(current.language)),
-                editor.keymap(shared.editor_keymap),
-                editor.height(shared.editor_height),
-                editor.on_change(EditorChanged),
-                editor.on_resize(EditorResized),
-                editor.diagnostics(editor_diagnostics(shared)),
-              ]),
-            ),
+            case page.line_mode, page.line_drill {
+              // Line Drill takes the editor's place under its own key, so
+              // switching back with `l` mounts CodeMirror fresh on the
+              // lines locked so far rather than patching a stale one.
+              True, Some(state) -> #(
+                body_key <> "|line",
+                line_view.view(state, current),
+              )
+              _, _ -> #(
+                body_key,
+                editor.view([
+                  editor.doc(page.draft),
+                  editor.language(problem.language_slug(current.language)),
+                  editor.keymap(shared.editor_keymap),
+                  editor.height(shared.editor_height),
+                  editor.on_change(EditorChanged),
+                  editor.on_resize(EditorResized),
+                  editor.diagnostics(editor_diagnostics(shared)),
+                ]),
+              )
+            },
           ],
         ),
         // On a phone the prompt is the problem panel, so it is there for

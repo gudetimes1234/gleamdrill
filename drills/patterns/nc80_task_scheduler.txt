@@ -1,0 +1,21 @@
+== pattern greedy
+complexity: O(n) time · O(k) space
+nudge: The task that repeats most dictates the shape of the schedule. If you laid out only that task with its cooldowns, how long would it be, and where would everything else have to go?
+-- step Handle no tasks
+1 if there are no tasks: return 0
+  hint: What if there is nothing to run?
+  why: No tasks take no time, and the formula below needs at least one count.
+-- step Find the busiest task
+2 counts = how often each task occurs
+  hint: What about the tasks decides the minimum time?
+  why: Only how often each one occurs; their names and their order do not matter.
+3 busiest = the largest count
+  hint: Which task forces the most idling?
+  why: The most frequent one: its copies must sit n apart, so it sets the skeleton of the schedule.
+4 ties = how many tasks have the busiest count
+  hint: What goes in the last row of that skeleton?
+  why: Every task tied for busiest still has one copy left after the final full frame.
+-- step Take the larger of skeleton and task count
+5 return max(number of tasks, (busiest - 1) * (n + 1) + ties)
+  hint: Given the skeleton, what is the answer?
+  why: The skeleton is busiest - 1 frames of n + 1 slots plus the final row. If there are more tasks than slots, nothing idles and the task count wins.

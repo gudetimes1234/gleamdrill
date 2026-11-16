@@ -1,0 +1,37 @@
+== pattern intervals
+complexity: O(n) time · O(n) space
+nudge: The list is already sorted, so it falls into three runs: intervals that end before the new one starts, intervals that touch it, and intervals that start after it ends. What happens to each run?
+-- step Hold the interval being inserted
+1 start, end = newInterval
+  hint: What do you grow as you absorb overlaps?
+  why: The new interval's own ends, which widen as touching intervals merge into it.
+2 out = empty list; i = 0
+  hint: What else do you need?
+  why: The result, and one index that walks the sorted list through all three runs.
+-- step Pass the early intervals through
+3 while i < n and intervals[i] ends before start:
+  hint: Which intervals cannot touch the new one and come before it?
+  why: Those that finish before it starts.
+4     append intervals[i] to out; i += 1
+  hint: What do you do with them?
+  why: Copy them across unchanged.
+-- step Absorb the overlapping ones
+5 while i < n and intervals[i] starts at or before end:
+  hint: Which intervals touch the new one?
+  why: Those that start before it ends; the first loop already removed everything ending too early.
+6     start = min(start, intervals[i]'s start)
+  hint: How does the start change?
+  why: The merged interval begins at the earlier of the two starts.
+7     end = max(end, intervals[i]'s end)
+  hint: And the end?
+  why: It finishes at the later of the two ends.
+8     i += 1
+  hint: Then?
+  why: That interval is absorbed; move on.
+-- step Place it and pass the rest through
+9 append [start, end] to out
+  hint: When does the merged interval go in?
+  why: Now, after everything before it and before everything after it.
+10 return out + the remaining intervals
+  hint: What about the intervals left?
+  why: They all start after the merged one ends, so they follow unchanged.

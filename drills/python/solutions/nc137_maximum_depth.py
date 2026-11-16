@@ -9,6 +9,6 @@ def maxDepth(root):
     # One more than the deeper of the two children, with an empty tree at zero.
     # The whole problem is that base case: everything else is the definition of
     # depth read aloud.
-    if root is None:
-        return 0
-    return 1 + max(maxDepth(root.left), maxDepth(root.right))
+    if root is None:  # @1
+        return 0  # @1
+    return 1 + max(maxDepth(root.left), maxDepth(root.right))  # @2

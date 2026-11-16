@@ -1,0 +1,27 @@
+== pattern dp-1d
+complexity: O(n) time · O(n) space
+nudge: The circle changes one thing: the first and last houses are neighbours, so at most one of them is robbed. Can you rule each out in turn and reuse the straight-line answer?
+-- step Guard the tiny inputs
+1 if nums is empty: return 0
+  hint: What if there are no houses?
+  why: Nothing to rob.
+2 if there is one house: return its value
+  hint: What goes wrong with a single house?
+  why: Both cases below would exclude it and answer 0, so return it as itself first.
+-- step Break the circle
+3 return max(straight(all but the first), straight(all but the last))
+  hint: Which two straight rows cover every legal plan?
+  why: Every plan skips the first house or the last one, so the better of the two rows is the answer.
+-- step Solve a straight row
+4 best, previous = 0, 0
+  hint: What does the plain House Robber carry?
+  why: The best so far and the best up to the house before.
+5 for each value in nums:
+  hint: How do you walk the row?
+  why: Once, front to back.
+6     best, previous = max(best, previous + value), best
+  hint: Rob this house or skip it?
+  why: Whichever is larger: the best so far, or this value on top of the best from two back. The old best shifts down.
+7 return best
+  hint: What does the row return?
+  why: The best haul for that straight row.

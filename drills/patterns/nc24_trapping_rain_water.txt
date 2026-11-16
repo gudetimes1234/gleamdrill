@@ -1,0 +1,75 @@
+== pattern two-pointers
+complexity: O(n) time · O(1) space
+nudge: The water over any bar is bounded by the shorter of the tallest walls on each side. Walk in from both ends and let the shorter side decide.
+-- step Start at both walls
+1 left, right = first index, last index
+  hint: Where do the two pointers start?
+  why: At both ends: whichever wall is shorter bounds the water on its side.
+2 left_max = right_max = total = 0
+  hint: What do you need to carry as the pointers move?
+  why: The tallest bar seen from each side, and the water collected so far.
+-- step Move the shorter side inward
+3 while left < right:
+  hint: When do the pointers stop?
+  why: When they meet, every bar between them has been counted once.
+4     if height[left] < height[right]:
+  hint: Which side is safe to step?
+  why: The shorter one: the far side is at least as tall, so this side's own maximum fixes the water level.
+5         left_max = max(left_max, height[left])
+  hint: What changes about the left wall before you count?
+  why: The current bar may be the new tallest on the left.
+6         total += left_max - height[left]
+  hint: How much water sits above the left bar?
+  why: The tallest left wall minus the bar itself; never negative, because left_max includes this bar.
+7         left += 1
+  hint: Then?
+  why: Step the short side inward; its water is settled.
+8     else: (mirror on the right)
+  hint: What if the right bar is the shorter one?
+  why: The same three moves, mirrored: the right side's maximum now decides.
+9         right_max = max(right_max, height[right])
+  hint: What changes about the right wall?
+  why: The current bar may be the new tallest on the right.
+10         total += right_max - height[right]
+  hint: How much water above the right bar?
+  why: The tallest right wall minus the bar itself.
+11         right -= 1
+  hint: Then?
+  why: Step the right pointer inward.
+-- step Return the total
+12 return total
+  hint: What is the answer once the pointers meet?
+  why: Every bar has had its water added exactly once.
+== pattern prefix-sums
+complexity: O(n) time · O(n) space
+nudge: State the definition and compute it: water above a bar is min(tallest to its left, tallest to its right) minus its height. Precompute both running maxima.
+-- step Running maximum from the left
+1 left = running max of height, left to right
+  hint: What is the first array you need?
+  why: For each bar, the tallest bar at or before it.
+2 best = 0
+  hint: What do you carry while building it?
+  why: The tallest so far, starting from nothing.
+3 for each h in height:
+  hint: How do you walk to build the left maxima?
+  why: Left to right, one bar at a time.
+4     best = max(best, h); append best to left
+  hint: What does each step record?
+  why: The tallest so far including this bar.
+-- step Running maximum from the right
+5 right = array of zeros, one per bar
+  hint: How do you build the right maxima when you fill it backwards?
+  why: Allocate it first so each index can be written in place.
+6 best = 0
+  hint: What do you reset before the second pass?
+  why: The running maximum starts again from the right end.
+7 for i from last index down to 0:
+  hint: Which direction does this pass go?
+  why: Right to left, so each bar sees everything after it.
+8     best = max(best, height[i]); right[i] = best
+  hint: What does each step store?
+  why: The tallest bar at or after i.
+-- step Sum the water
+9 return sum of min(left[i], right[i]) - height[i] over every i
+  hint: How do the two arrays give the answer?
+  why: The lower of the two walls minus the bar is the water above it; add them all.

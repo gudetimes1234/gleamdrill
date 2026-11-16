@@ -25,6 +25,12 @@ const check = (name, ok, detail = "") => {
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? "/usr/bin/chromium" });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
+// Lustre renders asynchronously, so a check waits for what it is about.
+const appears = async (sel, timeout = 5000) => {
+  try { await page.waitForSelector(sel, { timeout }); return true; }
+  catch { return false; }
+};
+
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
@@ -64,6 +70,13 @@ const answerPickerIfShown = async () => {
 /// A drill opens with the prompt beside the editor and nothing focused.
 const startCoding = async () => {
   await page.waitForSelector(".run-bar", { timeout: 20000 });
+  // A new Python card opens in Line Drill. This suite drives the free
+  // editor, so it takes the header's toggle (a focused line input would eat
+  // the `l` key).
+  if (await page.isVisible(".line-drill")) {
+    await page.click(".line-toggle");
+    await page.waitForSelector("gleam-editor", { timeout: 20000 });
+  }
   await page.evaluate(() => document.activeElement?.blur());
 };
 
@@ -181,6 +194,85 @@ const badges = await page.$$eval(".badge", (n) => n.map((e) => e.className + "="
 check("a drilled problem now carries a schedule badge",
   badges.some((b) => b.includes("badge-learning") || b.includes("badge-due")),
   JSON.stringify(badges.slice(0, 4)));
+
+console.log("== Line Drill, end to end");
+// A problem never studied is on the learning rung, so it opens in Line
+// Drill: the code as a skeleton, one blank to type at a time. Typed by
+// keyboard alone, every line locks; the last one runs the harness by
+// itself, and the review it grades is logged as a Line Drill review.
+await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await page.click('.pane-item:text-is("Linked List")');
+await page.waitForTimeout(300);
+await page.click('.pane-item:text-is("Reverse Linked List")');
+await page.waitForTimeout(300);
+await page.waitForFunction(
+  () => { const b = document.querySelector("#startDrill"); return b && !b.disabled; },
+  { timeout: 5000 });
+await page.click("#startDrill");
+await page.waitForSelector(".run-bar", { timeout: 20000 });
+check("a new card opens in Line Drill", await appears(".line-drill"));
+check("with nothing typed yet",
+  (await page.textContent(".line-progress-text")).includes("0 of 7"),
+  await page.textContent(".line-progress-text"));
+// A drill opens with nothing focused, so keys reach the key table; `i` puts
+// the cursor in the blank, as it does in the editor.
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("i");
+await page.waitForFunction(
+  () => document.activeElement?.classList.contains("line-input"),
+  null, { timeout: 5000 }).catch(() => {});
+check("i puts the cursor in the active blank",
+  await page.evaluate(() => document.activeElement?.classList.contains("line-input")));
+const lines = [
+  "previous = None",
+  "while head is not None:",
+  "following = head.next",
+  "head.next = previous",
+  "previous = head",
+  "head = following",
+  "return previous",
+];
+// A wrong line is a miss: it stays put, counted, and nothing locks.
+await page.keyboard.type("previous = head");
+await page.keyboard.press("Enter");
+await page.waitForTimeout(300);
+check("a wrong line does not lock",
+  (await page.textContent(".line-progress-text")).includes("0 of 7"));
+check("and counts as a miss", (await page.textContent(".line-card.next")).includes("1 miss"),
+  await page.textContent(".line-card.next"));
+await page.fill(".line-input", "");
+for (const [index, line] of lines.entries()) {
+  await page.keyboard.type(line);
+  await page.keyboard.press("Enter");
+  await page.waitForFunction((n) =>
+    document.querySelector(".line-progress-text")?.textContent.includes(`${n} of 7`),
+    index + 1, { timeout: 5000 }).catch(() => {});
+}
+check("every line locks, and the count follows",
+  (await page.textContent(".line-progress-text")).includes("7 of 7"),
+  await page.textContent(".line-progress-text"));
+await page.waitForFunction(() => {
+  const s = document.querySelector(".results-summary");
+  return s && !s.classList.contains("running");
+}, null, { timeout: 120000 });
+const lineVerdict = await page.textContent(".results-summary");
+check("completion runs the harness by itself, and it passes",
+  /passed/.test(lineVerdict) && !/failed/.test(lineVerdict), lineVerdict);
+check("the grade buttons are up", (await page.$$(".grade-button")).length === 4);
+const posted = page.waitForRequest((r) =>
+  r.url().includes("/api/reviews") && r.method() === "POST", { timeout: 15000 });
+await page.click(".grade-good");
+const request = await posted;
+const review = request.postDataJSON();
+check("the review is logged as a Line Drill review", review.mode === "line",
+  JSON.stringify(review));
+check("and not as a reveal", review.revealed === false, JSON.stringify(review));
+const stored = await request.response();
+check("the server accepted it", stored?.ok() === true, String(stored?.status()));
 
 console.log("== sign out");
 await page.goto(APP, { waitUntil: "networkidle" });

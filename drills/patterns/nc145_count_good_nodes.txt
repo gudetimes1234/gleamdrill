@@ -1,0 +1,24 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: Whether a node is good depends only on the trip taken to reach it, never on anything beneath it. What single piece of that trip is enough to carry along, and what should it start as so the root judges itself correctly?
+-- step Start the walk at the root
+1 if root is None: return 0
+  hint: How many good nodes does an empty tree have?
+  why: None, and there is no root value to start the walk with.
+2 return count(root, root.val)
+  hint: What maximum does the root start with?
+  why: Its own value, so it compares equal to itself and counts as good, as the problem defines.
+-- step Judge each node by the path above it (in count(node, largest))
+3 if node is None: return 0
+  hint: What does an empty child contribute?
+  why: Nothing to count.
+4 here = 1 if node.val >= largest else 0
+  hint: What makes this node good, in terms of the number you carry?
+  why: Nothing above it is bigger. Ties count, which is why it is >= and not >.
+5 largest = max(largest, node.val)
+  hint: What must the children receive as their path maximum?
+  why: The maximum including this node, so the update happens before descending.
+-- step Add up both sides
+6 return here + count(node.left, largest) + count(node.right, largest)
+  hint: How do the counts combine?
+  why: This node's 0 or 1 plus each subtree's count. The test only looks upward, so one pass sees everything it needs.

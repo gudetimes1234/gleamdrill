@@ -125,7 +125,8 @@ returning card_id, card_before::text as \"card_before?\"
 /// Appends one review to the log. reviewed_at is epoch seconds; the
 /// nullable stability_after, difficulty_after and duration_ms arrive as
 /// zero-or-one-element arrays through the migration 10 helpers. card_before
-/// is the card as it stood, which is what an undo restores.
+/// is the card as it stood, which is what an undo restores. mode is 'free'
+/// or 'line' (Line Drill).
 ///
 /// > 🐿️ This function was generated automatically using v4.7.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -146,20 +147,22 @@ pub fn insert_review(
   arg_12: Bool,
   arg_13: Bool,
   arg_14: Json,
+  arg_15: String,
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
   "-- Appends one review to the log. reviewed_at is epoch seconds; the
 -- nullable stability_after, difficulty_after and duration_ms arrive as
 -- zero-or-one-element arrays through the migration 10 helpers. card_before
--- is the card as it stood, which is what an undo restores.
+-- is the card as it stood, which is what an undo restores. mode is 'free'
+-- or 'line' (Line Drill).
 insert into reviews (
   user_id, card_id, rating, state_before, reviewed_at,
   elapsed_days, scheduled_days, stability_after, difficulty_after,
-  duration_ms, auto_failed, revealed, recall, card_before)
+  duration_ms, auto_failed, revealed, recall, card_before, mode)
 values ($1, $2, $3, $4, to_timestamp($5::float8),
         $6, $7, float8_or_null($8), float8_or_null($9),
-        int_or_null($10), $11, $12, $13, $14)
+        int_or_null($10), $11, $12, $13, $14, $15)
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -176,6 +179,7 @@ values ($1, $2, $3, $4, to_timestamp($5::float8),
   |> pog.parameter(pog.bool(arg_12))
   |> pog.parameter(pog.bool(arg_13))
   |> pog.parameter(pog.text(json.to_string(arg_14)))
+  |> pog.parameter(pog.text(arg_15))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

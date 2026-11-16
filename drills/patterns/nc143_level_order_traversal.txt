@@ -1,0 +1,56 @@
+== pattern bfs
+complexity: O(n) time · O(n) space
+nudge: The values are easy to visit; the hard part is knowing where one level ends and the next begins. What if you never held single nodes at all, but processed a larger unit whole?
+-- step Start with the root as the first level
+1 levels = []
+  hint: What will the answer collect?
+  why: One list of values per level, top to bottom.
+2 frontier = [root] if root is not None else []
+  hint: What is the first level, and what if the tree is empty?
+  why: Just the root, or nothing, so an empty tree gives an empty answer.
+-- step Record a level, then build the next
+3 while frontier is not empty:
+  hint: When are you done?
+  why: When a level has no nodes; the previous one was the last.
+4     levels.append(values of every node in frontier)
+  hint: With the whole level in hand, what is the output for this round?
+  why: The frontier is one level by construction, so its values are one entry of the answer.
+5     frontier = [child
+  hint: What replaces the frontier?
+  why: The children of every node on it, which is the next level.
+6         for each node in frontier, for each child in (node.left, node.right)
+  hint: In what order are the children gathered?
+  why: Left to right across the level, each node's left before its right, which keeps the level in order.
+7         if child is not None]
+  hint: Which children belong on the next level?
+  why: Only real nodes.
+-- step Return the levels
+8 return levels
+  hint: What is left once the frontier runs dry?
+  why: Every level, already in order; each node was visited once.
+== pattern dfs
+complexity: O(n) time · O(n) space
+nudge: A depth-first walk visits nodes in the wrong order for this answer. What could you carry down the recursion so that each value still lands in the right group?
+-- step File values under their depth
+1 levels = empty map from depth to list of values
+  hint: Where will each value be put?
+  why: In a bucket for its depth, so the walk's order does not matter across levels.
+2 collect(root, 0, levels)
+  hint: What starts the walk?
+  why: The root, at depth 0.
+3 return [levels[depth] for depth from 0 up to the number of levels]
+  hint: How do the buckets become the answer?
+  why: Read them in depth order, top level first.
+-- step Walk and file (in collect(node, depth, levels))
+4 if node is None: return
+  hint: What does an empty child add?
+  why: Nothing; the walk stops here.
+5 append node.val to levels[depth], creating it if needed
+  hint: Where does this node's value go?
+  why: At the end of its depth's list, starting the list if this is the first node at that depth.
+6 collect(node.left, depth + 1, levels)
+  hint: Which child goes first?
+  why: The left one, so within a level values are filed left to right.
+7 collect(node.right, depth + 1, levels)
+  hint: And then?
+  why: The right child, one level deeper as well.

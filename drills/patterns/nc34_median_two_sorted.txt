@@ -1,0 +1,93 @@
+== pattern two-pointers
+complexity: O(m+n) time · O(1) space
+nudge: Merge the two arrays the usual way, one pointer in each, but stop at the middle. Which two values do you need to remember to answer both odd and even lengths?
+-- step Count the total
+1 total = length of nums1 + length of nums2
+  hint: What tells you where the middle is?
+  why: The combined length.
+2 if total == 0: return 0.0
+  hint: What if both arrays are empty?
+  why: There is no median; return 0.0 rather than index into nothing.
+-- step Merge up to the middle
+3 i = j = 0
+  hint: Where do the two pointers start?
+  why: At the front of each array, the smallest values.
+4 previous = current = 0
+  hint: What do you keep from the merge?
+  why: Only the last two values taken, since the even case needs the middle pair.
+5 for total // 2 + 1 steps:
+  hint: How many values do you need to take?
+  why: Enough to reach index total // 2 of the merged order, which is the upper middle.
+6     previous = current
+  hint: What happens to the last value before taking the next?
+  why: It becomes the one before, so the pair slides along.
+7     if nums1 has values left and (nums2 is used up or nums1[i] <= nums2[j]):
+  hint: When does the next merged value come from nums1?
+  why: When nums1 still has values and its front is no bigger than nums2's, or nums2 has none left.
+8         current = nums1[i]; i += 1
+  hint: Then?
+  why: Take nums1's front and step past it.
+9     else: current = nums2[j]; j += 1
+  hint: Otherwise?
+  why: Take nums2's front and step past it.
+-- step Read off the median
+10 if total is odd: return current as a float
+  hint: Which value is the median for an odd length?
+  why: The last one taken, at index total // 2.
+11 return (previous + current) / 2
+  hint: And for an even length?
+  why: The average of the middle pair, which are the last two values taken.
+== pattern binary-search
+complexity: O(log min(m,n)) time · O(1) space
+nudge: Do not look for the median; look for a cut through both arrays with half the elements on its left. Such a cut is right when both left values are no bigger than both right values. Which array do you halve over, and what does a wrong cut tell you?
+-- step Halve the shorter array
+1 if nums1 is longer than nums2: swap them
+  hint: Which array should the search run over?
+  why: The shorter one, so the search is O(log min(m, n)) and the other cut is always in range.
+2 m, n = their lengths; total = m + n
+  hint: What sizes do you need?
+  why: Both lengths, and the total that sets where half is.
+3 if total == 0: return 0.0
+  hint: What if both are empty?
+  why: There is no median.
+4 half = (total + 1) // 2
+  hint: How many elements belong left of the cut?
+  why: Half, rounding up, so for an odd total the median is the largest value on the left.
+5 low, high = 0, m
+  hint: Where can the cut in nums1 fall?
+  why: Anywhere from taking none of nums1 to taking all of it.
+-- step Try a cut
+6 while low <= high:
+  hint: When do you stop?
+  why: When the range of cut positions is empty, which only happens on bad input.
+7     cut1 = (low + high) // 2
+  hint: How many of nums1 go left?
+  why: The middle of the range still possible.
+8     cut2 = half - cut1
+  hint: How many of nums2 go left?
+  why: Whatever makes the left side exactly half.
+9     left1, right1 = nums1 on either side of cut1, using -inf and +inf past the ends
+  hint: Which nums1 values sit next to its cut?
+  why: The last one taken and the first one not; an infinity stands in when the cut is at an edge.
+10     left2, right2 = nums2 on either side of cut2, the same way
+  hint: And nums2's?
+  why: The same pair around its cut.
+-- step Check the cut
+11     if left1 <= right2 and left2 <= right1:
+  hint: When is the cut correct?
+  why: When every value on the left is no bigger than every value on the right; within each array that is already true.
+12         if total is odd: return max(left1, left2) as a float
+  hint: Where is the median for an odd total?
+  why: The largest value on the left side, since the left holds one extra.
+13         return (max(left1, left2) + min(right1, right2)) / 2
+  hint: And for an even total?
+  why: The average of the largest on the left and the smallest on the right.
+14     if left1 > right2: high = cut1 - 1
+  hint: nums1 gives the left side a value that is too big. Which way do you move?
+  why: Take fewer from nums1, so its cut moves left.
+15     else: low = cut1 + 1
+  hint: And when nums2's left value is the one too big?
+  why: Take more from nums1, so its cut moves right.
+16 return 0.0
+  hint: What if the search runs out?
+  why: It cannot for sorted input; this only keeps the function total.

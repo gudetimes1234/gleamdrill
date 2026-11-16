@@ -1,0 +1,64 @@
+== pattern heap
+complexity: O(n log n + q log q) time · O(n+q) space
+nudge: Answer the queries in time order, letting in every interval that has started by now. Which structure keeps the live intervals ordered by length, and how do you get rid of the ones that have already ended?
+-- step Sort both sides
+1 ordered = intervals sorted by start
+  hint: In what order do intervals become available?
+  why: By start, so each can be let in the moment the queries reach it.
+2 answers = empty map; heap = empty min-heap; i = 0
+  hint: What do you carry?
+  why: The answer per query value, the live intervals by length, and how many intervals have been let in.
+-- step Let in what has started
+3 for query in queries sorted ascending:
+  hint: In what order do you answer the queries?
+  why: Ascending, so an interval let in for one query has started for every later one too.
+4     while i < n and ordered[i] starts at or before query:
+  hint: Which intervals could contain this query?
+  why: Only ones that have started by now; the sorted order lets them in one at a time.
+5         push (length, end) of ordered[i]; i += 1
+  hint: What goes on the heap?
+  why: The interval's length first, so the shortest is on top, and its end, to tell when it expires.
+-- step Discard the expired, read the top
+6     while the heap's top ends before query: pop it
+  hint: Which intervals on the heap no longer count?
+  why: Those that ended before this query; later queries are larger, so they never count again.
+7     answers[query] = the top's length, or -1 if the heap is empty
+  hint: What is this query's answer?
+  why: The shortest live interval, which contains the query since it started before and ends after it.
+-- step Answer in the original order
+8 return answers[query] for each query as given
+  hint: The queries were answered sorted. How do you give them back?
+  why: Look each one up by value, in the order the input asked them.
+== pattern greedy
+complexity: O(n log n + n·q) time · O(n+q) space
+nudge: Take the intervals shortest first. Then the first interval to cover a query is already its answer. What do you do with a query the moment it is settled?
+-- step Every query is waiting
+1 answers = -1 for each query
+  hint: What is a query's answer before anything covers it?
+  why: -1, which stays if no interval ever does.
+2 waiting = every (index, query) pair
+  hint: Which queries still need an answer?
+  why: All of them; the index says where each answer goes.
+-- step Shortest interval first
+3 for start, end in intervals sorted by length:
+  hint: In what order do you try the intervals?
+  why: Shortest first, so the first interval to cover a query is the smallest that does.
+4     still_waiting = empty list
+  hint: What do you build during this interval's pass?
+  why: The queries it does not settle.
+5     for index, query in waiting:
+  hint: Which queries does this interval check?
+  why: Only those still unanswered.
+6         if start <= query <= end: answers[index] = end - start + 1
+  hint: What if the interval covers the query?
+  why: Its length is the answer, final, because nothing shorter is left to try.
+7         else: append (index, query) to still_waiting
+  hint: And if it does not?
+  why: The query keeps waiting for a longer interval.
+8     waiting = still_waiting
+  hint: What carries into the next interval?
+  why: Only the unsettled queries, so the pool shrinks and no query is answered twice.
+-- step Return the answers
+9 return answers
+  hint: What is the answer?
+  why: Each query's shortest covering length, or -1, in the original order.

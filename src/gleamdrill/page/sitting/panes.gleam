@@ -79,6 +79,15 @@ pub fn select(shared: Shared, page: Model, target: PaneTarget) -> Model {
 }
 
 /// The CSS name of a region, for the drill body's `active-*` class.
+/// The editor region's name for the face it shows: Line Drill lives in the
+/// code panel's region, and is called what it is.
+pub fn region_name(page: Model, region: Region) -> String {
+  case region, page.line_mode {
+    EditorRegion, True -> "line drill"
+    _, _ -> name(region)
+  }
+}
+
 pub fn name(region: Region) -> String {
   case region {
     EditorRegion -> "editor"

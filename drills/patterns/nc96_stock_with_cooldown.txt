@@ -1,0 +1,18 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: One number per day is not enough: you might be holding a share, have just sold, or be free to act. How does each of those three depend on yesterday's?
+-- step Start in three states
+1 hold, sold, rest = minus infinity, minus infinity, 0
+  hint: What are the three states worth before the first day?
+  why: Holding or having sold is impossible yet, so minus infinity; free to act with nothing is 0.
+-- step Step every state one day
+2 for price in prices:
+  hint: How do the states advance?
+  why: One day at a time, each from yesterday's values only.
+3     hold, sold, rest = max(hold, rest - price), hold + price, max(rest, sold)
+  hint: Where can each state come from?
+  why: Holding: keep holding or buy from rest. Sold: sell what you held. Rest: stay at rest or end a cooldown. Buying reads rest, never today's sold, and that is the cooldown.
+-- step Take the best ending
+4 return max(sold, rest, 0)
+  hint: Which states can end the last day?
+  why: Ones not holding a share; never less than 0, the profit of never trading.

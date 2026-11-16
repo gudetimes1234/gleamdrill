@@ -47,6 +47,7 @@ fn review(of: wire.ProblemRef, rating: fsrs.Rating) -> wire.Review {
     revealed: False,
     practice: False,
     recall: False,
+    mode: wire.Free,
   )
 }
 

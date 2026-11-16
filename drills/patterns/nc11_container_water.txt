@@ -1,0 +1,30 @@
+== pattern two-pointers
+complexity: O(n) time · O(1) space
+nudge: Start with the widest container. The water is capped by the shorter line, so which pointer is worth moving inward?
+-- step Start at both ends
+1 left, right = first index, last index
+  hint: Where do the pointers start?
+  why: At both ends, the widest container there is.
+2 best = 0
+  hint: What do you track?
+  why: The largest area seen so far.
+-- step Measure, then move the shorter line
+3 while left < right:
+  hint: When do you stop?
+  why: When the pointers meet there is no container left.
+4     area = (right - left) * min(height[left], height[right])
+  hint: How much water does this pair hold?
+  why: The width times the shorter of the two lines.
+5     best = max(best, area)
+  hint: What do you do with it?
+  why: Keep it if it is the best so far.
+6     if height[left] < height[right]: left += 1
+  hint: Which line do you give up?
+  why: The shorter one. Every narrower container with it is capped by it and narrower, so it can never do better.
+7     else: right -= 1
+  hint: And if the right line is the shorter, or they tie?
+  why: Move the right pointer in instead.
+-- step Return
+8 return best
+  hint: What is the answer?
+  why: The largest area over every pair that could have won.

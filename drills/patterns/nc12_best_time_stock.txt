@@ -1,0 +1,48 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: For any sell day, the best buy is the cheapest day before it. What single number do you carry as you walk?
+-- step Carry the cheapest price
+1 lowest = infinity
+  hint: What is the cheapest price before you have seen any?
+  why: Infinity, so the first price replaces it.
+2 profit = 0
+  hint: What is the profit if you never trade?
+  why: Zero: the answer is never negative.
+-- step Sell today against it
+3 for price in prices:
+  hint: How many passes does this take?
+  why: One, day by day.
+4     lowest = min(lowest, price)
+  hint: What do you update first?
+  why: The cheapest price so far, including today.
+5     profit = max(profit, price - lowest)
+  hint: What is the best sale today?
+  why: Today's price against the cheapest day so far; keep it if it is the best yet.
+-- step Return
+6 return profit
+  hint: What is the answer?
+  why: The best profit over every sell day.
+== pattern two-pointers
+complexity: O(n) time · O(1) space
+nudge: Keep a buy pointer and scan the sell days with a second one. When does a sell day become the better day to buy?
+-- step Start
+1 profit = 0
+  hint: What is the profit if you never trade?
+  why: Zero.
+2 buy = 0
+  hint: Where does the buy pointer start?
+  why: On the first day.
+-- step Scan the sell days
+3 for sell from 1 to last index:
+  hint: Which days can be sell days?
+  why: Every day after the first.
+4     if prices[sell] < prices[buy]: buy = sell
+  hint: What if this day is cheaper than the buy day?
+  why: Move the buy pointer here: buying cheaper beats anything before it.
+5     else: profit = max(profit, prices[sell] - prices[buy])
+  hint: Otherwise?
+  why: The spread is a candidate profit; keep the best.
+-- step Return
+6 return profit
+  hint: What is the answer?
+  why: The best spread seen.

@@ -387,6 +387,7 @@ pub fn the_guest_file_round_trips_test() -> Nil {
       revealed: False,
       practice: False,
       recall: False,
+      mode: wire.Free,
     )
   let #(local, card) =
     guest.record(local, wire.default_settings(), review, now, 20_000, 0.5)

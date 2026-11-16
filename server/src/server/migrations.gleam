@@ -28,6 +28,7 @@ pub fn all() -> List(Migration) {
     Migration(8, "tracks", tracks),
     Migration(9, "settings_is_account_wide", settings_is_account_wide),
     Migration(10, "nullable_parameters", nullable_parameters),
+    Migration(11, "review_modes", review_modes),
   ]
 }
 
@@ -227,6 +228,15 @@ const review_snapshots: List(String) = [
 /// the insight queries leave it out.
 const recall_reviews: List(String) = [
   "alter table reviews add column recall boolean not null default false",
+]
+
+/// How a review's code was written: 'free' in the editor, or 'line' into
+/// Line Drill's blanks. A Line Drill review is scheduled like any other but
+/// is an assisted attempt, so the insight queries leave it out of the clean
+/// solves. Every row from before this column was free-typed.
+const review_modes: List(String) = [
+  "alter table reviews add column mode text not null default 'free'
+     check (mode in ('free', 'line'))",
 ]
 
 /// A note the user leaves themselves on a problem -- what they missed, what

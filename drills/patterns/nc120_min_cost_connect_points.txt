@@ -1,0 +1,89 @@
+== pattern greedy
+complexity: O(n²) time · O(n) space
+nudge: Grow one tree from a single point, always adding the outside point that is cheapest to reach. What does each outside point need to remember so that choice is a single scan?
+-- step Start the tree at one point
+1 if no points: return 0
+  hint: What does connecting nothing cost?
+  why: Nothing.
+2 start = first point
+  hint: Where does the tree begin?
+  why: Any point works; every point ends up in the tree.
+3 outside = [point, distance from start] for every other point
+  hint: What does each outside point keep track of?
+  why: Its cheapest connection to the tree so far, which is just the distance to start for now.
+4 total = 0
+  hint: What do you accumulate?
+  why: The cost of every edge added to the tree.
+-- step Add the nearest point
+5 while outside is not empty:
+  hint: When is the tree finished?
+  why: When every point has joined it.
+6     best = index of the outside entry with the smallest cost
+  hint: Which point joins next?
+  why: The one cheapest to connect; the cheapest edge leaving the tree is always in some minimum spanning tree.
+7     point, cost = remove outside[best]
+  hint: What do you do with it?
+  why: Take it out of the outside list; it is in the tree now.
+8     total += cost
+  hint: What did adding it cost?
+  why: Its cheapest connection, exactly what it remembered.
+-- step Update the others
+9     for each entry in outside:
+  hint: Who might now be closer to the tree?
+  why: Every point still outside.
+10         entry cost = min(entry cost, distance(point, entry point))
+  hint: How does the new point change an entry?
+  why: It may offer a cheaper connection than anything in the tree before.
+-- step Return the cost
+11 return total
+  hint: What is the answer?
+  why: The sum of the edges that joined each point.
+== pattern union-find
+complexity: O(n² log n) time · O(n²) space
+nudge: Take every edge, cheapest first, and keep it only if it joins two pieces not already connected. What structure makes that test cheap?
+-- step List and sort every edge
+1 edges = []
+  hint: What does Kruskal work from?
+  why: The full edge list; on a complete graph, every pair of points.
+2 for every pair i < j:
+  hint: Which pairs make edges?
+  why: Each unordered pair once.
+3     add (distance(points[i], points[j]), i, j) to edges
+  hint: What does each edge record?
+  why: Its cost first, so sorting orders by cost, then its two endpoints.
+4 sort edges
+  hint: In what order are edges considered?
+  why: Cheapest first.
+-- step Find a point's root
+5 parents = empty map
+  hint: How do you track which piece each point is in?
+  why: Each point points at a parent; one with no entry is its own root.
+6     while node's parent is not node: node = parent of node
+  hint: How does find reach the root?
+  why: Follow parent links until a node is its own parent.
+7     return node
+  hint: What does find hand back?
+  why: The root, which names the piece.
+-- step Keep edges that join pieces
+8 total = 0
+  hint: What do you accumulate?
+  why: The cost of every edge kept.
+9 for each (cost, i, j) in edges:
+  hint: How do you walk the edges?
+  why: In sorted order, cheapest first.
+10     rootI, rootJ = find(i), find(j)
+  hint: What do you look up for each end?
+  why: The piece each endpoint is in.
+11     if rootI != rootJ:
+  hint: When is an edge worth keeping?
+  why: Only when it joins two different pieces; otherwise it would close a cycle.
+12         parent of rootI = rootJ
+  hint: How do you join the pieces?
+  why: Hang one root under the other.
+13         total += cost
+  hint: What did the join cost?
+  why: This edge's cost.
+-- step Return the cost
+14 return total
+  hint: What is the answer?
+  why: The sum of the kept edges, which form the minimum spanning tree.

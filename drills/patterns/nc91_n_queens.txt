@@ -1,0 +1,36 @@
+== pattern backtracking
+complexity: O(n!) time · O(n²) space
+nudge: Place one queen per row, so the only choice is the column. How can you tell in O(1) whether a square shares a column or a diagonal with a queen already placed?
+-- step Collect boards
+1 boards = empty list
+  hint: Where do finished boards go?
+  why: Into one list the recursion appends to.
+-- step Place a queen in each row
+2 if row == n:
+  hint: When is a board complete?
+  why: When every row has a queen.
+3     add the board drawn from chosen columns; return
+  hint: What do you record?
+  why: One string per row, with Q at its chosen column and dots elsewhere.
+4 for column from 0 to n - 1:
+  hint: What choices does this row have?
+  why: Every column.
+5     if column, row - column or row + column is taken: continue
+  hint: When is a square attacked?
+  why: When its column, its diagonal (row - column) or its anti-diagonal (row + column) already holds a queen.
+6     place(row + 1,
+  hint: What do you do with a safe square?
+  why: Put a queen there and move to the next row.
+7         chosen plus column,
+  hint: What do you remember about this row?
+  why: Its column, to draw the board at the end.
+8         columns, diagonals and anti-diagonals, each with this square added)
+  hint: What must the next rows avoid?
+  why: This queen's column and both of its diagonals. New sets per call mean nothing needs undoing.
+-- step Start from the top row
+9 place(0, nothing chosen, empty sets)
+  hint: Where does the search begin?
+  why: At row 0 with no queens placed.
+10 return boards
+  hint: What is the answer?
+  why: Every board the search completed.

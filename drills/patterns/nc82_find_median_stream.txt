@@ -1,0 +1,36 @@
+== pattern heap
+complexity: O(log n) per operation · O(n) space
+nudge: Split the values into a smaller half and a larger half; the median sits at the inner end of one or both. Which structure gives up its extreme value cheaply, and what rules keep the halves honest?
+-- step Keep two halves
+1 lower = empty max-heap (store negatives)
+  hint: Where does the smaller half live?
+  why: In a max-heap, so its largest value is on top; heapq is a min-heap, so store negatives.
+2 upper = empty min-heap
+  hint: And the larger half?
+  why: In a min-heap, so its smallest value is on top.
+-- step Add a number and rebalance
+3 push value onto lower
+  hint: Where does a new value go first?
+  why: Into the smaller half, always; the next line corrects it if it belongs above.
+4 move lower's largest onto upper
+  hint: How do you keep everything in lower below everything in upper?
+  why: Pass lower's top across. Whatever was largest in the smaller half now sits in the larger half.
+5 if upper is bigger than lower:
+  hint: Which size rule might that break?
+  why: lower may hold one more than upper, never fewer.
+6     move upper's smallest back onto lower
+  hint: How do you restore the sizes?
+  why: Return upper's top; it is the smallest of the larger half, so the order still holds.
+-- step Read the median
+7 if lower is empty: return 0.0
+  hint: What if nothing has been added?
+  why: There is no median, and the roots below would not exist.
+8 if lower is bigger than upper:
+  hint: How do you tell an odd count from an even one?
+  why: Only an odd count leaves lower one larger.
+9     return lower's largest, as a float
+  hint: Where is the median then?
+  why: The middle value is the top of the smaller half.
+10 return the average of lower's largest and upper's smallest
+  hint: And with an even count?
+  why: The two middle values are the two roots; the median is their mean.

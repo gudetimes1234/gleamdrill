@@ -33,11 +33,11 @@ import simplifile
 
 const out_path = "../src/gleamdrill/content/problems/generated/embedded.gleam"
 
-const python_out_path =
-  "../src/gleamdrill/content/problems/generated/embedded_python.gleam"
+const python_out_path = "../src/gleamdrill/content/problems/generated/embedded_python.gleam"
 
 pub fn main() {
   generate_approaches()
+  generate_patterns()
   generate_gleam()
   generate_python()
   generate_typescript()
@@ -490,8 +490,7 @@ fn refactor_sources(
 /// after passes every case; the before passes every behaviour case and fails
 /// at least one `style:` case, so the drill's checks are what tell the two
 /// apart. Python source, shared by the Python and Go verifiers.
-const refactor_verdict =
-  "def verdict(side, cases):
+const refactor_verdict = "def verdict(side, cases):
     style = [c for c in cases if c[0].startswith(\"style:\")]
     plain = [c for c in cases if not c[0].startswith(\"style:\")]
     if not cases:
@@ -1293,8 +1292,7 @@ fn strip_brace(line: String) -> String {
   }
 }
 
-const approaches_out_path =
-  "../src/gleamdrill/content/problems/generated/approaches.gleam"
+const approaches_out_path = "../src/gleamdrill/content/problems/generated/approaches.gleam"
 
 /// The approach hint ladders: drills/approaches/<slug>.txt, sections split by
 /// `== nudge` / `== walk` / `== pseudocode`, emitted as a generated module
@@ -1747,7 +1745,7 @@ fn generate_python() {
         simplifile.read("python/harnesses/" <> module <> ".py")
       let assert Ok(primary) =
         simplifile.read("python/solutions/" <> module <> ".py")
-      let #(sig, stub) = python_surface(primary)
+      let #(sig, stub) = python_surface(strip_line_tags(primary, ".py"))
       drill_function(module, sources, sig, stub, string.trim_end(harness))
     })
 
@@ -1903,7 +1901,15 @@ const default_order = 999
 /// Python"); `complexity` is the Big-O line shown beside it; `order` places
 /// the variant worst-to-best. All optional: prose-only notes still work.
 type Meta {
-  Meta(kind: String, complexity: String, order: Int, note: String)
+  Meta(
+    kind: String,
+    complexity: String,
+    order: Int,
+    note: String,
+    /// The Line Drill pattern this variant is the canonical solution for
+    /// (`@pattern two-pointers`), or "" when it is a reference solution only.
+    pattern: String,
+  )
 }
 
 /// The prose for one variant, keyed by its file stem so all four language
@@ -1923,7 +1929,13 @@ fn note_meta(stem: String, extension: String) -> Meta {
     Error(_) ->
       case simplifile.read("notes/" <> stem <> ".txt") {
         Error(_) ->
-          Meta(kind: "", complexity: "", order: default_order, note: "")
+          Meta(
+            kind: "",
+            complexity: "",
+            order: default_order,
+            note: "",
+            pattern: "",
+          )
         Ok(text) -> parse_note(text)
       }
   }
@@ -1937,6 +1949,7 @@ fn parse_note(text: String) -> Meta {
       string.starts_with(line, "@kind ")
       || string.starts_with(line, "@big-o ")
       || string.starts_with(line, "@order ")
+      || string.starts_with(line, "@pattern ")
     })
   let value = fn(prefix: String) {
     directives
@@ -1953,6 +1966,7 @@ fn parse_note(text: String) -> Meta {
     complexity: value("@big-o "),
     order: value("@order ") |> int.parse |> result.unwrap(default_order),
     note: resolve_note(string.join(prose, "\n")),
+    pattern: value("@pattern "),
   )
 }
 
@@ -2024,6 +2038,9 @@ fn variant_sources(
   |> list.map(fn(entry) {
     let #(label, complexity, stem) = entry
     let assert Ok(code) = simplifile.read(directory <> stem <> extension)
+    // Line Drill tags (`# @3`) are authoring marks, never part of the code a
+    // learner reads.
+    let code = strip_line_tags(code, extension)
     #(label, complexity, note_meta(stem, extension).note, string.trim_end(code))
   })
 }
@@ -2247,10 +2264,696 @@ fn escape(source: String) -> String {
   |> string.replace("\"", "\\\"")
 }
 
+// --- Line Drill patterns ----------------------------------------------------
+
+const patterns_out_path = "../src/gleamdrill/content/problems/generated/patterns.gleam"
+
+/// The languages whose solutions carry Line Drill tags, as
+/// #(language slug, solutions directory, extension, line-comment marker).
+/// A language joins this list once its pattern solutions exist; until then
+/// its drills keep the old step rail, and its files are never checked for
+/// tags.
+const pattern_languages: List(#(String, String, String, String)) = [
+  #("python", "python/solutions/", ".py", "#"),
+]
+
+/// One pseudocode line of a pattern: its number, the step it sits under, the
+/// line itself (indentation kept), and the prose every language shares.
+type PseudoLine {
+  PseudoLine(id: Int, step: Int, text: String, hint: String, why: String)
+}
+
+type PatternDoc {
+  PatternDoc(
+    slug: String,
+    complexity: String,
+    nudge: String,
+    steps: List(String),
+    lines: List(PseudoLine),
+  )
+}
+
+/// One line of a language solution, as Line Drill sees it.
+type CodeLine {
+  GivenLine(text: String)
+  BlankLine(text: String, indent: Int, ids: List(Int))
+}
+
+/// drills/patterns/<stem>.txt -> generated/patterns.gleam.
+///
+/// A pattern file holds every pattern a problem can be solved with, each as
+/// numbered pseudocode lines with a hint and a why. A language solution whose
+/// note says `@pattern <slug>` is that pattern's canonical code in its
+/// language, and tags each line that should be a blank with the pseudocode
+/// lines it implements (`# @3`, `# @3,4`). Untagged lines are given; full-line
+/// comments are dropped.
+///
+/// Every rule below fails the build rather than the app: a Line Drill that
+/// cannot explain a line, or has a line nothing types, is not written yet.
+fn generate_patterns() {
+  let #(source, docs, arms_and_functions) = pattern_source([])
+  let assert Ok(Nil) = simplifile.write(patterns_out_path, source)
+  io.println(
+    "patterns.gleam: "
+    <> int.to_string(list.length(docs))
+    <> " pattern files -> "
+    <> patterns_out_path,
+  )
+  pattern_census(docs, arms_and_functions)
+}
+
+/// Every Line Drill check `make content` runs, writing nothing: the pattern
+/// files parse, every tag lands, every claimed pattern is fully tagged. Run
+/// as `gleam run -m check_patterns` in drills/; safe beside another run.
+pub fn check_patterns(only: List(String)) {
+  let #(_, docs, arms_and_functions) = pattern_source(only)
+  pattern_census(docs, arms_and_functions)
+  io.println("Line Drill content OK")
+}
+
+/// The patterns module's source, from every problem or only the stems in
+/// `only` when it is not empty.
+fn pattern_source(only: List(String)) {
+  let wanted = fn(stem: String) {
+    only == []
+    || list.contains(only, case string.split_once(stem, "__") {
+      Ok(#(module, _)) -> module
+      Error(Nil) -> stem
+    })
+  }
+  let vocab = pattern_vocab()
+  let assert Ok(entries) = simplifile.read_directory("patterns")
+  let stems =
+    entries
+    |> list.filter(string.ends_with(_, ".txt"))
+    |> list.map(string.drop_end(_, 4))
+    |> list.filter(wanted)
+    |> list.sort(string.compare)
+  let docs =
+    list.map(stems, fn(stem) {
+      let assert Ok(text) = simplifile.read("patterns/" <> stem <> ".txt")
+      #(stem, parse_patterns(stem, text, vocab))
+    })
+
+  let arms_and_functions =
+    list.flat_map(pattern_languages, fn(language) {
+      let #(slug, directory, extension, marker) = language
+      let assert Ok(files) = simplifile.read_directory(directory)
+      let modules =
+        files
+        |> list.filter(string.ends_with(_, extension))
+        |> list.map(string.drop_end(_, string.length(extension)))
+        |> list.filter(fn(stem) { !string.contains(stem, "__") })
+        |> list.filter(wanted)
+      check_unclaimed_tags(
+        list.filter(files, fn(file) {
+          wanted(string.drop_end(file, string.length(extension)))
+        }),
+        directory,
+        extension,
+        marker,
+      )
+      list.filter_map(modules, fn(module) {
+        let claims =
+          variant_entries(module, files, extension)
+          |> list.filter_map(fn(entry) {
+            let stem = entry.2
+            case note_meta(stem, extension).pattern {
+              "" -> Error(Nil)
+              pattern -> Ok(#(pattern, stem))
+            }
+          })
+        case list.key_find(docs, module), claims {
+          Error(Nil), [] -> Error(Nil)
+          Error(Nil), [#(pattern, stem), ..] ->
+            fail_patterns(
+              stem,
+              "claims @pattern "
+                <> pattern
+                <> " but drills/patterns/"
+                <> module
+                <> ".txt does not exist",
+            )
+          Ok(patterns), _ ->
+            Ok(language_patterns(
+              module,
+              slug,
+              patterns,
+              claims,
+              directory,
+              extension,
+              marker,
+              vocab,
+            ))
+        }
+      })
+    })
+
+  let arms =
+    arms_and_functions
+    |> list.map(fn(entry) {
+      let #(module, language, function, _) = entry
+      "    \""
+      <> language
+      <> "\", \""
+      <> module
+      <> "\" -> "
+      <> function
+      <> "()\n"
+    })
+    |> string.concat
+  let functions =
+    arms_and_functions
+    |> list.map(fn(entry) { entry.3 })
+    |> string.join("\n")
+
+  let source =
+    "//// GENERATED by `gleam run -m generate` in drills/ — do not edit.\n"
+    <> "//// Source of truth: drills/patterns/*.txt and the `@pattern` solutions\n"
+    <> "//// tagged under drills/<language>/solutions/.\n\n"
+    <> "import gleamdrill/content/problem.{\n"
+    <> "  type Pattern, Blank, Given, LineNote, Pattern,\n}\n\n"
+    <> "/// Every pattern a drill can be line-drilled with in one language,\n"
+    <> "/// primary (canonical) first. Empty: no Line Drill yet.\n"
+    <> "pub fn for_stem(stem: String, language: String) -> List(Pattern) {\n"
+    <> "  case language, stem {\n"
+    <> arms
+    <> "    _, _ -> []\n  }\n}\n\n"
+    <> functions
+  #(source, docs, arms_and_functions)
+}
+
+fn pattern_vocab() -> List(#(String, String)) {
+  let assert Ok(text) = simplifile.read("patterns/VOCAB")
+  text
+  |> string.trim
+  |> string.split("\n")
+  |> list.map(fn(line) {
+    case string.split(line, "\t") {
+      [slug, name] -> #(slug, name)
+      _ -> {
+        io.println("bad VOCAB line: " <> line)
+        panic as "patterns/VOCAB lines are slug<TAB>Display name"
+      }
+    }
+  })
+}
+
+fn fail_patterns(where: String, problem: String) -> a {
+  io.println("LINE DRILL: " <> where <> ": " <> problem)
+  panic as "drills/patterns content is malformed (see the line above)"
+}
+
+/// Parses `== pattern <slug>` sections: `complexity:` and `nudge:` first,
+/// then `-- step <title>` headers, each followed by numbered pseudocode lines
+/// (`3 while left < right:`) and that line's indented `hint:` and `why:`.
+fn parse_patterns(
+  stem: String,
+  text: String,
+  vocab: List(#(String, String)),
+) -> List(PatternDoc) {
+  let sections =
+    { "\n" <> string.trim(text) }
+    |> string.split("\n== pattern ")
+    |> list.filter(fn(part) { string.trim(part) != "" })
+  case sections {
+    [] -> fail_patterns(stem, "no `== pattern <slug>` section")
+    _ -> Nil
+  }
+  let docs =
+    list.map(sections, fn(section) {
+      let assert [header, ..body] = string.split(section, "\n")
+      let slug = string.trim(header)
+      case list.key_find(vocab, slug) {
+        Ok(_) -> Nil
+        Error(Nil) ->
+          fail_patterns(stem, "unknown pattern slug '" <> slug <> "'")
+      }
+      parse_pattern(stem <> " [" <> slug <> "]", slug, body)
+    })
+  let slugs = list.map(docs, fn(doc) { doc.slug })
+  case list.length(list.unique(slugs)) == list.length(slugs) {
+    True -> docs
+    False -> fail_patterns(stem, "a pattern is written twice")
+  }
+}
+
+fn parse_pattern(
+  where: String,
+  slug: String,
+  body: List(String),
+) -> PatternDoc {
+  let empty = PatternDoc(slug:, complexity: "", nudge: "", steps: [], lines: [])
+  let doc =
+    list.fold(body, empty, fn(doc, line) {
+      let trimmed = string.trim(line)
+      case trimmed {
+        "" -> doc
+        _ ->
+          case string.starts_with(line, "complexity:") {
+            True ->
+              PatternDoc(
+                ..doc,
+                complexity: string.trim(string.drop_start(line, 11)),
+              )
+            False ->
+              case string.starts_with(line, "nudge:") {
+                True ->
+                  PatternDoc(
+                    ..doc,
+                    nudge: string.trim(string.drop_start(line, 6)),
+                  )
+                False -> pattern_body_line(where, doc, line, trimmed)
+              }
+          }
+      }
+    })
+  let doc =
+    PatternDoc(
+      ..doc,
+      steps: list.reverse(doc.steps),
+      lines: list.reverse(doc.lines),
+    )
+  case doc.complexity == "" || doc.nudge == "" {
+    True -> fail_patterns(where, "needs a `complexity:` and a `nudge:`")
+    False -> Nil
+  }
+  case doc.lines {
+    [] -> fail_patterns(where, "has no pseudocode lines")
+    _ -> Nil
+  }
+  list.each(doc.lines, fn(line) {
+    case line.hint == "" || line.why == "" {
+      True ->
+        fail_patterns(
+          where,
+          "line " <> int.to_string(line.id) <> " is missing its hint or why",
+        )
+      False -> Nil
+    }
+  })
+  let ids = list.map(doc.lines, fn(line) { line.id })
+  case
+    list.index_map(ids, fn(id, index) { id == index + 1 })
+    |> list.all(fn(ok) { ok })
+  {
+    True -> doc
+    False -> fail_patterns(where, "lines must be numbered 1, 2, 3... in order")
+  }
+}
+
+fn pattern_body_line(
+  where: String,
+  doc: PatternDoc,
+  line: String,
+  trimmed: String,
+) -> PatternDoc {
+  case string.starts_with(line, "-- step ") {
+    True ->
+      PatternDoc(..doc, steps: [
+        string.trim(string.drop_start(line, 8)),
+        ..doc.steps
+      ])
+    False ->
+      case
+        string.starts_with(trimmed, "hint:"),
+        string.starts_with(trimmed, "why:"),
+        doc.lines
+      {
+        True, _, [last, ..rest] ->
+          PatternDoc(..doc, lines: [
+            PseudoLine(..last, hint: string.trim(string.drop_start(trimmed, 5))),
+            ..rest
+          ])
+        _, True, [last, ..rest] ->
+          PatternDoc(..doc, lines: [
+            PseudoLine(..last, why: string.trim(string.drop_start(trimmed, 4))),
+            ..rest
+          ])
+        _, _, _ ->
+          case string.split_once(line, " "), doc.steps {
+            Ok(#(number, text)), [_, ..] ->
+              case int.parse(number) {
+                Ok(id) ->
+                  PatternDoc(..doc, lines: [
+                    PseudoLine(
+                      id:,
+                      step: list.length(doc.steps) - 1,
+                      text: string.trim_end(text),
+                      hint: "",
+                      why: "",
+                    ),
+                    ..doc.lines
+                  ])
+                Error(Nil) -> fail_patterns(where, "stray line: " <> line)
+              }
+            _, [] ->
+              fail_patterns(
+                where,
+                "a line comes before any `-- step`: " <> line,
+              )
+            _, _ -> fail_patterns(where, "stray line: " <> line)
+          }
+      }
+  }
+}
+
+/// A file with tags but no `@pattern` is a half-finished port: the tags
+/// would be stripped from the display and silently do nothing.
+fn check_unclaimed_tags(
+  files: List(String),
+  directory: String,
+  extension: String,
+  marker: String,
+) -> Nil {
+  files
+  |> list.filter(string.ends_with(_, extension))
+  |> list.each(fn(file) {
+    let stem = string.drop_end(file, string.length(extension))
+    let assert Ok(source) = simplifile.read(directory <> file)
+    let tagged =
+      source
+      |> string.split("\n")
+      |> list.any(fn(line) { line_tag(line, marker) != Error(Nil) })
+    case tagged, note_meta(stem, extension).pattern {
+      True, "" ->
+        fail_patterns(stem, "has `@N` tags but its note has no @pattern")
+      _, _ -> Nil
+    }
+  })
+}
+
+/// One drill's patterns in one language: the emitted function's name, and
+/// its source.
+fn language_patterns(
+  module: String,
+  language: String,
+  docs: List(PatternDoc),
+  claims: List(#(String, String)),
+  directory: String,
+  extension: String,
+  marker: String,
+  vocab: List(#(String, String)),
+) -> #(String, String, String, String) {
+  let claimed = list.map(claims, fn(claim) { claim.0 })
+  case list.length(list.unique(claimed)) == list.length(claimed) {
+    True -> Nil
+    False ->
+      fail_patterns(
+        module,
+        "two " <> language <> " solutions claim one pattern",
+      )
+  }
+  list.each(docs, fn(doc) {
+    case list.contains(claimed, doc.slug) {
+      True -> Nil
+      False ->
+        fail_patterns(
+          module,
+          "pattern "
+            <> doc.slug
+            <> " has no "
+            <> language
+            <> " solution claiming it",
+        )
+    }
+  })
+  // variant_entries orders worst-to-best, so the last claim is canonical.
+  let ordered = list.reverse(claims)
+  let patterns =
+    list.map(ordered, fn(claim) {
+      let #(slug, stem) = claim
+      let assert Ok(doc) = list.find(docs, fn(doc) { doc.slug == slug })
+      let assert Ok(source) = simplifile.read(directory <> stem <> extension)
+      let lines = code_lines(stem, source, marker)
+      check_tags(stem, doc, lines)
+      let assert Ok(name) = list.key_find(vocab, slug)
+      pattern_literal(doc, name, lines)
+    })
+  let function = module <> "__" <> language
+  #(
+    module,
+    language,
+    function,
+    "fn "
+      <> function
+      <> "() -> List(Pattern) {\n  [\n"
+      <> string.concat(patterns)
+      <> "  ]\n}\n",
+  )
+}
+
+/// A solution file as given and blank lines: full-line comments dropped, runs
+/// of empty lines squeezed to one, and none at either end.
+fn code_lines(stem: String, source: String, marker: String) -> List(CodeLine) {
+  source
+  |> string.split("\n")
+  |> list.map(string.trim_end)
+  |> list.filter(fn(line) {
+    !string.starts_with(string.trim_start(line), marker)
+  })
+  |> list.map(fn(line) {
+    case line_tag(line, marker) {
+      Error(Nil) -> GivenLine(line)
+      Ok(#(code, ids)) -> {
+        let text = string.trim_start(code)
+        case text, string.contains(text, "  " <> marker <> " ") {
+          "", _ -> fail_patterns(stem, "a tag on an empty line")
+          _, True ->
+            fail_patterns(
+              stem,
+              "tagged line keeps a trailing comment, which the learner would have to type: "
+                <> text
+                <> " (move the comment onto its own line above)",
+            )
+          _, False ->
+            BlankLine(
+              text:,
+              indent: string.length(code) - string.length(text),
+              ids:,
+            )
+        }
+      }
+    }
+  })
+  |> squeeze_empty([])
+}
+
+fn squeeze_empty(lines: List(CodeLine), acc: List(CodeLine)) -> List(CodeLine) {
+  case lines, acc {
+    [], [GivenLine(""), ..rest] -> squeeze_empty([], rest)
+    [], _ -> list.reverse(acc)
+    [GivenLine(""), ..rest], [] -> squeeze_empty(rest, [])
+    [GivenLine(""), ..rest], [GivenLine(""), ..] -> squeeze_empty(rest, acc)
+    [line, ..rest], _ -> squeeze_empty(rest, [line, ..acc])
+  }
+}
+
+/// `    total += x  # @6,7` -> Ok(#("    total += x", [6, 7])).
+fn line_tag(line: String, marker: String) -> Result(#(String, List(Int)), Nil) {
+  let opener = marker <> " @"
+  case string.split(line, opener) |> list.reverse {
+    [tag, before, ..earlier] -> {
+      let code =
+        [before, ..earlier]
+        |> list.reverse
+        |> string.join(opener)
+        |> string.trim_end
+      case
+        string.trim(tag)
+        |> string.split(",")
+        |> list.try_map(fn(part) { int.parse(string.trim(part)) })
+      {
+        Ok(ids) if ids != [] -> Ok(#(code, ids))
+        _ -> Error(Nil)
+      }
+    }
+    _ -> Error(Nil)
+  }
+}
+
+/// Removes every Line Drill tag from a source, for the copies a learner reads.
+fn strip_line_tags(source: String, extension: String) -> String {
+  case list.find(pattern_languages, fn(language) { language.2 == extension }) {
+    Error(Nil) -> source
+    Ok(#(_, _, _, marker)) ->
+      source
+      |> string.split("\n")
+      |> list.map(fn(line) {
+        case line_tag(line, marker) {
+          Ok(#(code, _)) -> code
+          Error(Nil) -> line
+        }
+      })
+      |> string.join("\n")
+  }
+}
+
+fn check_tags(stem: String, doc: PatternDoc, lines: List(CodeLine)) -> Nil {
+  let tagged =
+    list.flat_map(lines, fn(line) {
+      case line {
+        BlankLine(ids:, ..) -> ids
+        GivenLine(_) -> []
+      }
+    })
+  case tagged {
+    [] ->
+      fail_patterns(stem, "claims @pattern " <> doc.slug <> " but has no tags")
+    _ -> Nil
+  }
+  let known = list.map(doc.lines, fn(line) { line.id })
+  list.each(tagged, fn(id) {
+    case list.contains(known, id) {
+      True -> Nil
+      False ->
+        fail_patterns(
+          stem,
+          "tag @"
+            <> int.to_string(id)
+            <> " points at no line of pattern "
+            <> doc.slug,
+        )
+    }
+  })
+  list.each(known, fn(id) {
+    case list.contains(tagged, id) {
+      True -> Nil
+      False ->
+        fail_patterns(
+          stem,
+          "pseudocode line "
+            <> int.to_string(id)
+            <> " of "
+            <> doc.slug
+            <> " is never tagged",
+        )
+    }
+  })
+}
+
+fn pattern_literal(
+  doc: PatternDoc,
+  name: String,
+  lines: List(CodeLine),
+) -> String {
+  let step_of = fn(ids: List(Int)) {
+    let first = list.fold(ids, 999_999, int.min)
+    list.find(doc.lines, fn(line) { line.id == first })
+    |> result.map(fn(line) { line.step })
+    |> result.unwrap(0)
+  }
+  let notes =
+    doc.lines
+    |> list.map(fn(line) {
+      "        LineNote(id: "
+      <> int.to_string(line.id)
+      <> ", step: "
+      <> int.to_string(line.step)
+      <> ", pseudo: \""
+      <> escape(line.text)
+      <> "\", hint: \""
+      <> escape(line.hint)
+      <> "\", why: \""
+      <> escape(line.why)
+      <> "\"),\n"
+    })
+    |> string.concat
+  let code =
+    lines
+    |> list.map(fn(line) {
+      case line {
+        GivenLine(text) -> "        Given(\"" <> escape(text) <> "\"),\n"
+        BlankLine(text:, indent:, ids:) ->
+          "        Blank(text: \""
+          <> escape(text)
+          <> "\", indent: "
+          <> int.to_string(indent)
+          <> ", step: "
+          <> int.to_string(step_of(ids))
+          <> ", ids: ["
+          <> { ids |> list.map(int.to_string) |> string.join(", ") }
+          <> "]),\n"
+      }
+    })
+    |> string.concat
+  let pseudocode =
+    doc.lines
+    |> list.map(fn(line) { line.text })
+    |> string.join("\n")
+  "    Pattern(\n      slug: \""
+  <> doc.slug
+  <> "\",\n      name: \""
+  <> escape(name)
+  <> "\",\n      complexity: \""
+  <> escape(doc.complexity)
+  <> "\",\n      nudge: \""
+  <> escape(doc.nudge)
+  <> "\",\n      steps: ["
+  <> {
+    doc.steps
+    |> list.map(fn(step) { "\"" <> escape(step) <> "\"" })
+    |> string.join(", ")
+  }
+  <> "],\n      notes: [\n"
+  <> notes
+  <> "      ],\n      pseudocode: \""
+  <> escape(pseudocode)
+  <> "\",\n      lines: [\n"
+  <> code
+  <> "      ],\n    ),\n"
+}
+
+/// Per-language Line Drill coverage, printed after the module is written. A
+/// report, not a gate, for the same reason as the approach census: a drill
+/// with no patterns yet keeps the old rail.
+fn pattern_census(
+  docs: List(#(String, List(PatternDoc))),
+  emitted: List(#(String, String, String, String)),
+) -> Nil {
+  let pattern_count =
+    list.fold(docs, 0, fn(total, entry) { total + list.length(entry.1) })
+  let lines =
+    list.fold(docs, 0, fn(total, entry) {
+      list.fold(entry.1, total, fn(total, doc) {
+        total + list.length(doc.lines)
+      })
+    })
+  io.println(
+    "patterns: "
+    <> int.to_string(list.length(docs))
+    <> " problems, "
+    <> int.to_string(pattern_count)
+    <> " patterns, "
+    <> int.to_string(lines)
+    <> " pseudocode lines",
+  )
+  list.each(pattern_languages, fn(language) {
+    let #(slug, directory, extension, _) = language
+    let assert Ok(files) = simplifile.read_directory(directory)
+    let problems =
+      files
+      |> list.filter(fn(file) {
+        string.starts_with(file, "nc")
+        && string.ends_with(file, extension)
+        && !string.contains(file, "__")
+      })
+      |> list.length
+    let covered = list.count(emitted, fn(entry) { entry.1 == slug })
+    io.println(
+      "  "
+      <> string.pad_end(slug, 11, " ")
+      <> string.pad_start(int.to_string(covered), 5, " ")
+      <> " of "
+      <> int.to_string(problems)
+      <> " NeetCode problems line-drillable",
+    )
+  })
+}
+
 // --- The Gleam Language Tour ------------------------------------------------
 
-const tour_out_path =
-  "../src/gleamdrill/content/problems/generated/embedded_tour.gleam"
+const tour_out_path = "../src/gleamdrill/content/problems/generated/embedded_tour.gleam"
 
 /// The vendored lessons of tour.gleam.run, one card each. Unlike every other
 /// emitter this one derives no signature or starter: the lesson's program is
