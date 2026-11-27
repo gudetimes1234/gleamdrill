@@ -1,0 +1,33 @@
+== pattern binary-search
+complexity: O(n) average time · O(n) space
+nudge: You need one position in sorted order, not the whole order. After partitioning around a pivot, which side can you throw away, as binary search throws away half?
+-- step Guard k
+1 if k < 1 or k > len(nums): return None
+  hint: Which inputs have no kth largest at all?
+  why: k below 1 or above the length; checking first keeps the recursion's arithmetic honest.
+2 return select(nums, k)
+  hint: What does the main function hand off?
+  why: The search for the kth largest over the whole array.
+-- step Partition around a pivot
+3 pivot = nums[0]
+  hint: What do you split around?
+  why: Any element works; the first is simplest, though a bad pivot is what makes the worst case quadratic.
+4 bigger = values above pivot
+  hint: Which values outrank the pivot?
+  why: Everything larger; they are the top len(bigger) of the order.
+5 equal = values equal to pivot, after it
+  hint: What about duplicates of the pivot?
+  why: They share its rank, and duplicates count separately, so keep how many there are.
+6 smaller = values below pivot
+  hint: And the rest?
+  why: Everything smaller ranks after the pivot and its copies.
+-- step Keep only the side holding k
+7 if k <= len(bigger): return select(bigger, k)
+  hint: When is the answer among the bigger values?
+  why: When k reaches no further than them; the other side is thrown away.
+8 if k <= len(bigger) + 1 + len(equal): return pivot
+  hint: When is the answer the pivot itself?
+  why: When k falls within the pivot and its copies.
+9 return select(smaller, k - len(bigger) - 1 - len(equal))
+  hint: Otherwise, which kth are you looking for among the smaller values?
+  why: k minus everything ranked above them: the bigger values, the pivot and its copies.

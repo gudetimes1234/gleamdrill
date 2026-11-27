@@ -1,0 +1,68 @@
+== pattern two-pointers
+complexity: O(n²) time · O(1) space
+nudge: The same 2n centres as finding the longest palindrome, but now every successful widening is an answer of its own. What do you count instead of measuring?
+-- step Visit every centre
+1 total = 0
+  hint: What are you accumulating?
+  why: The number of palindromic substrings found so far.
+2 for each index i:
+  hint: How do you reach every centre?
+  why: Each index is an odd centre itself and the left side of an even one.
+3     total += grow(s, i, i) + grow(s, i, i + 1)
+  hint: Which two centres does each index contribute?
+  why: The character (odd lengths) and the gap after it (even lengths); each reports how many palindromes it holds.
+4 return total
+  hint: What is the answer?
+  why: Every palindrome has exactly one centre, so summing over centres counts each once.
+-- step Count the widenings
+5 count = 0
+  hint: What does one centre report?
+  why: How many palindromes are centred here, starting from none.
+6 while left >= 0 and right < len(s) and s[left] == s[right]:
+  hint: When is the current window a palindrome?
+  why: While it stays inside the string and its two ends match, given that everything inside already did.
+7     count += 1
+  hint: What does each successful check mean?
+  why: The window from left to right is one more palindromic substring.
+8     left -= 1; right += 1
+  hint: Then?
+  why: Widen by one on each side and test the next ring out.
+9 return count
+  hint: What does the centre report?
+  why: How many times it widened successfully, which is how many palindromes it centres.
+== pattern dp-2d
+complexity: O(n²) time · O(n²) space
+nudge: s[i..j] is a palindrome when its ends match and the span inside it already was. Which order of filling the table guarantees the inside is known first?
+-- step Set up the table
+1 n = len(s)
+  hint: What size are the spans?
+  why: From one character up to the whole string, so you need its length.
+2 table = empty map from span (i, j) to is-palindrome
+  hint: What do you store per span?
+  why: Whether s[i..j] is a palindrome, so longer spans can look up the one inside them.
+3 total = 0
+  hint: What are you counting?
+  why: The spans that turn out to be palindromes.
+-- step Fill shortest spans first
+4 for length from 0 to n - 1 (j - i):
+  hint: Which spans must be known before a longer one?
+  why: The one inside it, which is two shorter; going by length makes sure it is already filled.
+5     for each start i that fits:
+  hint: Which starts fit a span of this length?
+  why: Every i with i + length still inside the string.
+6         j = i + length
+  hint: Where does the span end?
+  why: length characters after i.
+7         inside = True if j - i < 2 else table[(i + 1, j - 1)]
+  hint: What is the inside of a span of one or two characters?
+  why: Empty or a single character, both palindromes; anything longer is looked up.
+8         table[(i, j)] = s[i] == s[j] and inside
+  hint: When is this span a palindrome?
+  why: Its ends match and what lies between them already is one.
+9         if table[(i, j)]: total += 1
+  hint: What do you do with a palindrome span?
+  why: Count it; spans at different positions count separately.
+-- step Return the count
+10 return total
+  hint: What is the answer?
+  why: Every span was checked once.

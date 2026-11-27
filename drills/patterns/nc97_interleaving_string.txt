@@ -1,0 +1,33 @@
+== pattern dp-2d
+complexity: O(m·n) time · O(m·n) space
+nudge: How much of each source has been used is the whole state; the position in s3 is their sum. From there, which source can supply the next character?
+-- step Rule out the wrong length
+1 if len(s1) + len(s2) != len(s3): return False
+  hint: What must be true of the lengths?
+  why: An interleaving uses every character of both, so the lengths must add up.
+2 memo = empty map from (i, j) to a result
+  hint: Where do you cache answers?
+  why: Keyed by how much of s1 and of s2 is used; the s3 index is just i + j.
+-- step Try each source for the next character
+3 if i == len(s1) and j == len(s2): return True
+  hint: When has it worked?
+  why: When both sources are used up, s3 is used up too.
+4 if (i, j) is not in memo:
+  hint: When do you compute?
+  why: Only the first time this pair is reached.
+5     target = s3[i + j]
+  hint: Which character must come next?
+  why: The one at the sum of the two positions.
+6     memo[(i, j)] = (s1 has more and s1[i] == target and works(i + 1, j)) or
+  hint: Can s1 supply it?
+  why: If s1 is not used up and its next character matches, take it and continue.
+7         (s2 has more and s2[j] == target and works(i, j + 1))
+  hint: And if not, can s2?
+  why: The same test on the other source. Either route succeeding is enough.
+8 return memo[(i, j)]
+  hint: What does the call return?
+  why: The cached answer for this pair.
+-- step Start with nothing used
+9 return works(0, 0)
+  hint: Where does the search begin?
+  why: With no characters taken from either source.

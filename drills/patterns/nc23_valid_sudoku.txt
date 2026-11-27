@@ -1,0 +1,34 @@
+== pattern hash-map
+complexity: O(9²) time · O(9²) space
+nudge: A filled cell breaks the rules when its value already appears in its row, its column or its box. Could one set of signatures, one per constraint, catch all three in a single pass?
+-- step One set for every constraint
+1 seen = empty set
+  hint: What do you remember as you scan the board?
+  why: Every (value, unit) signature met so far, so a repeat is one lookup.
+-- step Visit every filled cell
+2 for r, row in enumerate(board):
+  hint: How do you walk the board?
+  why: Row by row, keeping the row number, because it is part of a signature.
+3     for c, value in enumerate(row):
+  hint: And within a row?
+  why: Cell by cell, keeping the column number for the same reason.
+4         if value == ".": skip it
+  hint: Which cells cannot break a rule?
+  why: Empty ones; only filled cells are constrained.
+-- step Build its three signatures
+5         keys = (value, "row", r), (value, "col", c),
+  hint: How do you name "this value in this row" and "in this column"?
+  why: A tuple of the value, the kind of unit and its index, so rows and columns never collide.
+6             (value, "box", r // 3, c // 3)
+  hint: Which box is the cell in?
+  why: Integer division by 3 on both coordinates names one of the nine boxes.
+-- step Check, then record
+7         if any key is already in seen: return False
+  hint: What does a signature already in the set mean?
+  why: The same value is already in that row, column or box: a duplicate.
+8         add all three keys to seen
+  hint: What happens when none is there yet?
+  why: Record all three, so a later cell with the same value in the same unit is caught.
+9 return True
+  hint: What if the scan finishes?
+  why: No filled cell repeated a value in any unit, so the board is valid.

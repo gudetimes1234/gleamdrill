@@ -1,0 +1,80 @@
+== pattern hash-map
+complexity: O(log n) time · O(log n) space
+nudge: Sums of squared digits are bounded, so the sequence must eventually repeat a value. What could you remember so that repeating is one lookup?
+-- step Walk the sequence until it settles
+1 seen = empty set
+  hint: What do you remember as you go?
+  why: Every value already visited, so a repeat is spotted in O(1).
+2 while n != 1 and n not in seen:
+  hint: When do you stop walking?
+  why: At 1, which is happy, or at a value seen before, which means a cycle that will never reach 1.
+3     add n to seen
+  hint: What do you record before stepping?
+  why: The current value, so arriving at it again is a detected loop.
+4     n = squareDigits(n)
+  hint: How do you take one step?
+  why: Replace n with the sum of the squares of its digits.
+5 return n == 1
+  hint: What decides the answer?
+  why: Whether the walk stopped at 1 rather than at a repeat.
+-- step Sum the squared digits
+6 total = 0
+  hint: What does the helper build?
+  why: The running sum of squared digits, starting empty.
+7 while n is not zero:
+  hint: When are the digits used up?
+  why: When n reaches zero.
+8     digit = n % 10
+  hint: How do you get the bottom digit?
+  why: The remainder after dividing by ten.
+9     total += digit * digit
+  hint: What does each digit add?
+  why: Its square.
+10     n //= 10
+  hint: How do you drop that digit?
+  why: Integer-divide by ten.
+11 return total
+  hint: What does the helper return?
+  why: The next value in the sequence.
+== pattern fast-slow-pointers
+complexity: O(log n) time · O(1) space
+nudge: The sequence ends in a cycle either way. Can two walkers at different speeds find that cycle without remembering anything, and how do you tell the happy cycle from the rest?
+-- step Start the two walkers
+1 slow = n
+  hint: Where does the slow walker start?
+  why: At n itself.
+2 fast = squareDigits(n)
+  hint: Where does the fast walker start?
+  why: One step ahead, so the loop condition is not true before anyone moves.
+-- step Run until they meet
+3 while slow != fast:
+  hint: When do you stop?
+  why: When the walkers meet, which must happen inside the cycle the sequence falls into.
+4     slow = squareDigits(slow)
+  hint: How far does the slow walker step?
+  why: One step.
+5     fast = squareDigits(squareDigits(fast))
+  hint: And the fast walker?
+  why: Two steps, so it gains one step per round and must catch the slow walker inside the cycle.
+6 return slow == 1
+  hint: What does the meeting point tell you?
+  why: If they meet at 1, the cycle is the fixed point 1 and n is happy; anywhere else it is not.
+-- step Sum the squared digits
+7 total = 0
+  hint: What does the helper build?
+  why: The running sum of squared digits, starting empty.
+8 while n is not zero:
+  hint: When are the digits used up?
+  why: When n reaches zero.
+9     digit = n % 10
+  hint: How do you get the bottom digit?
+  why: The remainder after dividing by ten.
+10     total += digit * digit
+  hint: What does each digit add?
+  why: Its square.
+11     n //= 10
+  hint: How do you drop that digit?
+  why: Integer-divide by ten.
+12 return total
+  hint: What does the helper return?
+  why: The next value in the sequence.

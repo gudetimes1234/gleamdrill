@@ -5,16 +5,16 @@ KEYPAD = {
 
 
 def letterCombinations(digits):
-    if not digits:
-        return []
-    return build(digits)
+    if not digits:  # @1
+        return []  # @1
+    return build(digits)  # @2
 
 
 # One choice per digit, independently -- so the answer is the cross product of
 # the letter sets. Written as a recursion here: pick a letter for the first
 # digit, then every combination of the rest.
 def build(digits):
-    if not digits:
-        return [""]
-    tails = build(digits[1:])
-    return [letter + tail for letter in KEYPAD.get(digits[0], "") for tail in tails]
+    if not digits:  # @3
+        return [""]  # @3
+    tails = build(digits[1:])  # @4
+    return [letter + tail for letter in KEYPAD.get(digits[0], "") for tail in tails]  # @5

@@ -5,7 +5,7 @@ select rating, count(*)::int as total,
   from (
     select r.rating,
            lead(r.rating > 1 and not r.revealed and not r.auto_failed
-                and not r.recall)
+                and not r.recall and r.mode = 'free')
              over (partition by r.card_id order by r.reviewed_at)
              as next_pass
       from reviews r

@@ -1,0 +1,34 @@
+== pattern monotonic-stack
+complexity: O(1) per operation · O(n) space
+nudge: The minimum has to come back in O(1), even after pops, so it cannot be computed on demand. What could you carry alongside every value you push?
+-- step Construct two stacks side by side
+1 stack = []
+  hint: Where do the values live?
+  why: An ordinary stack for push, pop and top.
+2 mins = []
+  hint: What do you keep next to it?
+  why: A second stack whose top is always the minimum of everything in the first.
+-- step push records the running minimum
+3 stack.append(val)
+  hint: What happens to the value itself?
+  why: It goes on the main stack.
+4 current_min = val if mins is empty, else min(val, top of mins)
+  hint: What is the minimum once val is in?
+  why: The smaller of val and the minimum below it; val alone if the stack was empty.
+5 mins.append(current_min)
+  hint: Where does that minimum go?
+  why: On mins, so both stacks always have the same height.
+-- step pop keeps them in step
+6 stack.pop()
+  hint: What does pop remove first?
+  why: The top value.
+7 mins.pop()
+  hint: And?
+  why: The minimum recorded with it; what is below is the minimum of what is left.
+-- step top and getMin are peeks
+8 return top of stack
+  hint: What does top return?
+  why: The last value of the main stack.
+9 return top of mins
+  hint: What does getMin return?
+  why: The top of mins, which is the minimum of the whole stack.

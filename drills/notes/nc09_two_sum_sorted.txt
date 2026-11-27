@@ -1,5 +1,6 @@
 @kind Two Pointers
 @big-o O(n) time · O(1) space
 @order 2
+@pattern two-pointers
 @shared/two-pointer-convergence
 Positions are 1-based here, which is the only trap.

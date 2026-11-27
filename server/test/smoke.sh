@@ -380,6 +380,19 @@ check "and bumped the card" 5 "$(curl -s "$B/api/state" -H "$AUTH" | j "next(c['
 I=$(curl -s "$B/api/insights" -H "$AUTH")
 check "a recall pass is not a clean solve" 1 "$(echo "$I" | j "len(d['cleanSolves'])")"
 check "nor a reveal" 1 "$(echo "$I" | j "['reveals'][0]['count']")"
+# A Line Drill review: typed into the blanks, so an assisted attempt. It is
+# stored with its mode, counted on the stats, and never a clean solve however
+# clean it looks. A review that names no mode is a free one.
+check "a line review is accepted" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":3,\"durationMs\":30000,\"mode\":\"line\"}")"
+H=$(curl -s "$B/api/history?category=NeetCode%20150&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
+check "each row keeps its mode" "['free', 'free', 'free', 'free', 'free', 'line']" \
+  "$(echo "$H" | j "list(r['mode'] for r in d['reviews'])")"
+I=$(curl -s "$B/api/insights" -H "$AUTH")
+check "a line review is not a clean solve" 1 "$(echo "$I" | j "len(d['cleanSolves'])")"
+check "the stats count it" 1 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['lineReviews']")"
+check "an unknown mode is read as free" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":3,\"mode\":\"sideways\"}")"
+check "and stored as one" "free" \
+  "$(curl -s "$B/api/history?category=NeetCode%20150&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH" | j "d['reviews'][-1]['mode']")"
 check "history without a token is 401" 401 "$(status "$B/api/history?category=x&subcategory=y&title=z")"
 check "history without the key is 422" 422 "$(status "$B/api/history" -H "$AUTH")"
 
@@ -410,7 +423,8 @@ echo "== export and restore"
 X=$(curl -s "$B/api/export" -H "$AUTH")
 check "the export is a versioned archive" 3 "$(echo "$X" | j "['gleamdrill']")"
 check "carrying the queues" 2 "$(echo "$X" | j "len(d['queues'])")"
-check "with every review" 5 "$(echo "$X" | j "len(d['reviews'])")"
+check "with every review" 7 "$(echo "$X" | j "len(d['reviews'])")"
+check "each with its mode" 1 "$(echo "$X" | j "sum(1 for r in d['reviews'] if r['mode'] == 'line')")"
 check "each naming its problem" "Contains Duplicate" "$(echo "$X" | j "['reviews'][0]['title']")"
 check "the account's settings" "America/New_York" "$(echo "$X" | j "['account']['timezone']")"
 check "and the cards" 1 "$(echo "$X" | j "len(d['cards'])")"
@@ -422,7 +436,8 @@ check "no reviews remain" 0 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalRev
 check "restoring the export brings it all back" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$X")"
 check "the card is back" 1 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
 check "with its scheduling" "$(echo "$X" | j "['cards'][0]['stability']")" "$(curl -s "$B/api/state" -H "$AUTH" | j "['cards'][0]['stability']")"
-check "every review is back" 5 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalReviews']")"
+check "every review is back" 7 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalReviews']")"
+check "the line review still a line review" 1 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['lineReviews']")"
 check "and the queues" 2 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
 Y=$(curl -s "$B/api/export" -H "$AUTH")
 check "and exporting again gives the same file" "$(echo "$X" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")" "$(echo "$Y" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")"

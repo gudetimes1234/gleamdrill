@@ -79,6 +79,7 @@ test_name: stats_screen_test
         true retention
       </span>
     </div>
+
   </div>
   <section class="stats-section">
     <h2 class="study-section-title">

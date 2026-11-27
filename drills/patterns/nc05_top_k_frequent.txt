@@ -1,0 +1,35 @@
+== pattern hash-map
+complexity: O(n) time · O(n) space
+nudge: Count first, then pick. No frequency can exceed n, so could you file the numbers by how often they occur instead of sorting them?
+-- step Count and bucket by frequency
+1 counts = how many times each number occurs
+  hint: What do you need to know about each number first?
+  why: How often it appears; the rest of the problem is choosing from these counts.
+2 buckets = n + 1 empty lists, one per possible frequency
+  hint: How can you order by frequency without sorting?
+  why: A frequency is between 1 and n, so a list indexed by frequency puts them in order for free.
+3 for num, freq in counts:
+  hint: How do you fill the buckets?
+  why: Go through every distinct number with its count.
+4     buckets[freq].append(num)
+  hint: Where does each number go?
+  why: In the bucket for its frequency.
+-- step Collect from the most frequent down
+5 result = []
+  hint: What do you collect into?
+  why: An empty list that grows until it holds k numbers.
+6 for freq from n down to 1:
+  hint: Which bucket do you read first?
+  why: The highest frequency, so the most frequent numbers come out first.
+7     for num in buckets[freq]:
+  hint: What is in each bucket?
+  why: Every number with exactly that frequency.
+8         result.append(num)
+  hint: What do you do with each one?
+  why: Take it: nothing in a lower bucket is more frequent.
+9         if result has k numbers: return result
+  hint: When do you stop?
+  why: As soon as you have k; the rest are less frequent.
+10 return result
+  hint: What if the buckets run out first?
+  why: Return what you have; with a valid k this is never reached.

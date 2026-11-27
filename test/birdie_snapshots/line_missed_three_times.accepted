@@ -1,0 +1,220 @@
+---
+version: 2.0.2
+title: line: missed three times
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: line_missed_three_times_screen_test
+---
+<div class="line-drill">
+  <div aria-label="Line Drill" class="line-code">
+    <div class="line-rows">
+      <div data-lustre-key="0" class="line-row given">
+        <span class="line-no">
+          1
+        </span>
+        <code class="line-text"><span class="tok-keyword">class</span> <span class="tok-variableName tok-definition">ListNode</span>:</code>
+      </div>
+      <div data-lustre-key="1" class="line-row given">
+        <span class="line-no">
+          2
+        </span>
+        <code class="line-text">    <span class="tok-keyword">def</span> <span class="tok-variableName tok-definition">__init__</span>(<span class="tok-keyword">self</span>, <span class="tok-variableName">val</span><span class="tok-operator">=</span><span class="tok-number">0</span>, <span class="tok-variableName">next</span><span class="tok-operator">=</span><span class="tok-keyword">None</span>):</code>
+      </div>
+      <div data-lustre-key="2" class="line-row given">
+        <span class="line-no">
+          3
+        </span>
+        <code class="line-text">        <span class="tok-keyword">self</span>.<span class="tok-propertyName">val</span> <span class="tok-operator">=</span> <span class="tok-variableName">val</span></code>
+      </div>
+      <div data-lustre-key="3" class="line-row given">
+        <span class="line-no">
+          4
+        </span>
+        <code class="line-text">        <span class="tok-keyword">self</span>.<span class="tok-propertyName">next</span> <span class="tok-operator">=</span> <span class="tok-variableName">next</span></code>
+      </div>
+      <div data-lustre-key="4" class="line-row given">
+        <span class="line-no">
+          5
+        </span>
+        <code class="line-text"></code>
+      </div>
+      <div data-lustre-key="5" class="line-row given">
+        <span class="line-no">
+          6
+        </span>
+        <code class="line-text"><span class="tok-keyword">def</span> <span class="tok-variableName tok-definition">reverseList</span>(<span class="tok-variableName">head</span>):</code>
+      </div>
+      <div data-lustre-key="6" class="line-row locked ">
+        <span class="line-no">
+          7
+        </span>
+        <span style="padding-left:4ch;"></span>
+        <span class="line-box" title="Recalled">
+          <code class="line-text"><span class="tok-variableName">previous</span> <span class="tok-operator">=</span> <span class="tok-keyword">None</span></code>
+        </span>
+      </div>
+      <div data-lustre-key="active-7-3" class="line-row active missed ">
+        <span class="line-no">
+          8
+        </span>
+        <span style="padding-left:4ch;"></span>
+        <div class="line-active">
+          <input aria-label="Line 8" autocapitalize="off" autocomplete="off" autocorrect="off" class="line-input" spellcheck="false" style="width:26ch;" type="text" value>
+          <div class="line-card-inline">
+            <div class="line-card next">
+              <div class="line-card-head">
+                Line 8
+                <span class="line-misses">
+                   · 3 misses
+                </span>
+              </div>
+              <div class="walk-layer line-layer">
+                <div class="line-way">
+                  <span class="walk-layer-label">
+                    Hint
+                  </span>
+                  <p>
+                    How long do you keep walking?
+                  </p>
+                </div>
+              </div>
+              <button class="btn-secondary walk-reveal line-layer-button" type="button">
+                Why
+                <kbd>
+                  y
+                </kbd>
+              </button>
+              <div class="line-reveal">
+                <button class="btn-secondary line-reveal-button urgent " type="button">
+                  Reveal line
+                  <kbd>
+                    c
+                  </kbd>
+                </button>
+                <span class="hint-warning">
+                  logged as a reveal
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-lustre-key="8" class="line-row blank">
+        <span class="line-no">
+          9
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:26ch;"></span>
+      </div>
+      <div data-lustre-key="9" class="line-row blank">
+        <span class="line-no">
+          10
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:22ch;"></span>
+      </div>
+      <div data-lustre-key="10" class="line-row blank">
+        <span class="line-no">
+          11
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:18ch;"></span>
+      </div>
+      <div data-lustre-key="11" class="line-row blank">
+        <span class="line-no">
+          12
+        </span>
+        <span style="padding-left:8ch;"></span>
+        <span class="line-box empty" style="width:18ch;"></span>
+      </div>
+      <div data-lustre-key="12" class="line-row blank">
+        <span class="line-no">
+          13
+        </span>
+        <span style="padding-left:4ch;"></span>
+        <span class="line-box empty" style="width:18ch;"></span>
+      </div>
+    </div>
+  </div>
+  <aside class="line-side">
+    <div class="line-progress">
+      <div aria-valuemax="7" aria-valuenow="1" class="line-progress-bar" role="progressbar">
+        <div class="line-progress-fill" style="width:14%;"></div>
+      </div>
+      <span class="line-progress-text">
+        1 of 7 blanks complete
+      </span>
+    </div>
+    <div class="line-step">
+      <span class="line-step-count">
+        Step 2 of 3
+      </span>
+      <h3 class="line-step-title">
+        Reverse each link
+      </h3>
+    </div>
+    <div class="line-card explained">
+      <div class="line-card-head">
+        <span class="line-card-mark">
+          ✓
+        </span>
+        Line 7 recalled
+      </div>
+      <div class="line-note">
+        <p class="line-note-hint">
+          What does the first node point at once it is reversed?
+        </p>
+        <div class="line-note-why">
+          <span class="walk-layer-label">
+            Why this works
+          </span>
+          <p>
+            Nothing: the old head becomes the tail, so the node behind it starts as None.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="line-card next">
+      <div class="line-card-head">
+        Line 8
+        <span class="line-misses">
+           · 3 misses
+        </span>
+      </div>
+      <div class="walk-layer line-layer">
+        <div class="line-way">
+          <span class="walk-layer-label">
+            Hint
+          </span>
+          <p>
+            How long do you keep walking?
+          </p>
+        </div>
+      </div>
+      <button class="btn-secondary walk-reveal line-layer-button" type="button">
+        Why
+        <kbd>
+          y
+        </kbd>
+      </button>
+      <div class="line-reveal">
+        <button class="btn-secondary line-reveal-button urgent " type="button">
+          Reveal line
+          <kbd>
+            c
+          </kbd>
+        </button>
+        <span class="hint-warning">
+          logged as a reveal
+        </span>
+      </div>
+    </div>
+    <div class="line-foot">
+      <button class="link-button" type="button">
+        Type it freely instead
+        <kbd>
+          l
+        </kbd>
+      </button>
+    </div>
+  </aside>
+</div>

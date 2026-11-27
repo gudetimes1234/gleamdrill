@@ -1,0 +1,40 @@
+== pattern monotonic-stack
+complexity: O(n) time · O(n) space
+nudge: Keep the bars whose rectangles are still growing on a stack, heights increasing. When a shorter bar arrives, which rectangles are finished, and how far back can the new bar reach?
+-- step Start empty
+1 stack = empty list of (start index, height); best = 0
+  hint: What do you carry while scanning?
+  why: The bars still able to extend right, each with the earliest index it reaches back to, and the best area so far.
+-- step Close off the taller bars
+2 for i, h in enumerate(heights):
+  hint: How do you walk the histogram?
+  why: Left to right, once; each bar is pushed and popped at most once.
+3     start = i
+  hint: Where does the new bar's rectangle begin, before you look back?
+  why: At its own index.
+4     while stack is not empty and the top's height > h:
+  hint: Which bars can no longer extend?
+  why: Any taller than the new one: their rectangle cannot pass this bar.
+5         from_index, tall = pop the top
+  hint: What do you take off?
+  why: The finished bar, with where its rectangle starts and how tall it is.
+6         best = max(best, tall * (i - from_index))
+  hint: How big is its rectangle?
+  why: Its height times its width, from where it started up to just before i.
+7         start = from_index
+  hint: How far back can the new bar reach?
+  why: At least as far as the taller bar it just closed, since everything there was at least as tall as h.
+-- step Push the new bar
+8     push (start, h)
+  hint: What goes on the stack?
+  why: The new bar with the earliest start it reaches; the stack stays increasing in height.
+-- step Finish the survivors
+9 for from_index, tall in stack:
+  hint: What about the bars still on the stack at the end?
+  why: None was ever cut off, so each runs to the right edge.
+10     best = max(best, tall * (n - from_index))
+  hint: How wide is a survivor's rectangle?
+  why: From its start to the end of the histogram.
+11 return best
+  hint: What is the answer?
+  why: The largest rectangle measured, whether closed early or at the end.

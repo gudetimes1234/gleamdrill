@@ -1,0 +1,39 @@
+== pattern trie
+complexity: O(total letters) per search · O(total letters) space
+nudge: Store the words in a trie, so a plain letter is one step down. A dot can be any letter, so what does it do to the walk?
+-- step One node per prefix
+1 children = empty map from letter to child node
+  hint: What does each node hold?
+  why: One child per letter that can follow this prefix.
+2 terminal = False
+  hint: What does a node say about itself?
+  why: Whether its prefix is a whole word that was added.
+-- step Add by walking and creating
+3 node = this root
+  hint: Where does every word start?
+  why: At the root, the empty prefix.
+4 for letter in word:
+  hint: How do you walk down the word?
+  why: One letter, one level.
+5     node = child for letter, created if missing
+  hint: What if the letter has no node yet?
+  why: Create it; shared prefixes share their nodes.
+6 node.terminal = True
+  hint: What do you record at the end?
+  why: That a whole word ends here.
+-- step Search, branching on a dot
+7 if word is empty: return terminal
+  hint: When the pattern is used up, what decides the answer?
+  why: Whether a word ends exactly at this node.
+8 letter, rest = first character, the remainder
+  hint: How do you split the pattern for one step?
+  why: Match the first character here, and hand the rest to the child.
+9 if letter == ".":
+  hint: Which character can't be followed down one path?
+  why: A dot matches any letter, so there is no single child to follow.
+10     return any child matches rest
+  hint: What does a dot try?
+  why: Every child, recursively. A branch that cannot match is abandoned at its first letter.
+11 return letter is a child and that child matches rest
+  hint: And a plain letter?
+  why: Its child must exist, and the rest must match from there.

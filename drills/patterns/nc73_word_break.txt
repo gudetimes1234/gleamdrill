@@ -1,0 +1,24 @@
+== pattern dp-1d
+complexity: O(n³) time · O(n) space
+nudge: Think of positions in the string as places you can reach. Position 0 is free; when does a later position become reachable?
+-- step Make lookups cheap
+1 words = set of wordDict
+  hint: How will you test whether a slice is a dictionary word?
+  why: A set makes each membership test one lookup instead of a scan of the list.
+-- step Grow the reachable positions
+2 reached = {0}
+  hint: Which position can you stand on before reading anything?
+  why: The start: an empty prefix always breaks.
+3 for end from 1 to len(s):
+  hint: In what order do you decide positions?
+  why: Left to right, so every earlier position is already settled when a word could bridge from it.
+4     if some start in reached has s[start:end] in words:
+  hint: When is end reachable?
+  why: When a dictionary word runs from a position already reached up to end.
+5         add end to reached
+  hint: Then?
+  why: Record it, so later positions can bridge from here.
+-- step Is the end reachable?
+6 return len(s) in reached
+  hint: What is the answer?
+  why: The whole string breaks exactly when its end position was reached.

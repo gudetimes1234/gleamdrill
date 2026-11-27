@@ -1,0 +1,56 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: A negative number turns the best running product into the worst and the worst into the best. What do you have to carry besides the best?
+-- step Guard and seed
+1 if nums is empty: return 0
+  hint: What if there is nothing to multiply?
+  why: No subarray exists, so answer 0 before reading nums[0].
+2 high = low = best = nums[0]
+  hint: What do the running values start as?
+  why: The first element is the only subarray ending there, so it is the highest, the lowest and the best so far.
+-- step Carry the highest and lowest product
+3 for each n after the first:
+  hint: How do you walk the rest?
+  why: Once, extending the subarrays that end at the previous element.
+4     candidates = (n, high * n, low * n)
+  hint: Which products can end at this element?
+  why: Starting fresh at n, or extending the highest or the lowest; a negative n makes the lowest the new highest, and starting fresh is how a zero resets.
+5     high, low = max(candidates), min(candidates)
+  hint: What becomes the new highest and lowest?
+  why: The largest and smallest of those three, computed together so neither update sees the other's new value.
+6     best = max(best, high)
+  hint: Has the answer improved?
+  why: The highest product ending here may beat every earlier one.
+-- step Return the best
+7 return best
+  hint: What is the answer?
+  why: The best product over every ending position.
+== pattern prefix-sums
+complexity: O(n) time · O(n) space
+nudge: Between zeros, the best subarray always runs to one end of its block. Would running products swept from both directions cover every candidate?
+-- step Sweep both ways
+1 if nums is empty: return 0
+  hint: What if there is nothing to multiply?
+  why: No subarray exists, so answer 0.
+2 return max(sweep(nums), sweep(reversed nums))
+  hint: Which two sweeps together see every candidate?
+  why: Left to right sees every prefix of a block, right to left every suffix, and the best subarray is one of those.
+-- step Running product from one end
+3 running = 1
+  hint: What does the running product start as?
+  why: One, the empty product, so the first element passes through unchanged.
+4 best = -infinity
+  hint: What does the best start as?
+  why: Lower than any product, because the answer may be negative.
+5 for each n in nums:
+  hint: How do you walk the array?
+  why: Once, extending the running product by each element.
+6     running = n if running == 0 else running * n
+  hint: How does the running product grow, and what happens after a zero?
+  why: Multiply in the next element, but after a zero start again from this element, since nothing can extend through a zero.
+7     best = max(best, running)
+  hint: What do you compare at every step?
+  why: Each running product is a prefix of the current block, so any of them may be the answer.
+8 return best
+  hint: What does the sweep report?
+  why: The best prefix product it saw.

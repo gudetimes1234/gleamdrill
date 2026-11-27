@@ -1,0 +1,24 @@
+== pattern greedy
+complexity: O(n) time · O(1) space
+nudge: Do you need to track every index you could land on, or does the reachable set compress to a single number? What does it mean when the walk steps past it?
+-- step Track the furthest reach
+1 reach = 0
+  hint: What single number describes everything reachable so far?
+  why: The furthest reachable index. Reachable indices always form a prefix, so that one number is the whole set.
+-- step Walk forward and extend it
+2 for i, jump in enumerate(nums):
+  hint: How do you walk the array?
+  why: Left to right once, with each index and its jump length.
+3     if i > reach:
+  hint: When can you stop with a no?
+  why: When the current index lies beyond the reach: no earlier index can jump here, so nothing further is reachable.
+4         return False
+  hint: What do you answer then?
+  why: The last index is out of reach.
+5     reach = max(reach, i + jump)
+  hint: How does standing on index i change the reach?
+  why: From i you can get as far as i + jump; keep the larger of that and the old reach.
+-- step Check the last index
+6 return reach >= last index
+  hint: What is the success condition after the walk?
+  why: The reach covers the last index.

@@ -9,21 +9,21 @@ def reorderList(head):
     # ends. O(n) extra space against the in-place version's O(1) -- but random
     # access is exactly what a linked list lacks, so this makes visible what the
     # midpoint-and-reverse dance is buying.
-    nodes = []
-    node = head
-    while node is not None:
-        nodes.append(node)
-        node = node.next
+    nodes = []  # @1
+    node = head  # @2
+    while node is not None:  # @3
+        nodes.append(node)  # @4
+        node = node.next  # @4
 
-    low, high = 0, len(nodes) - 1
-    while low < high:
-        nodes[low].next = nodes[high]
-        low += 1
-        if low == high:
-            break
-        nodes[high].next = nodes[low]
-        high -= 1
+    low, high = 0, len(nodes) - 1  # @5
+    while low < high:  # @6
+        nodes[low].next = nodes[high]  # @7
+        low += 1  # @8
+        if low == high:  # @9
+            break  # @9
+        nodes[high].next = nodes[low]  # @10
+        high -= 1  # @11
 
-    if nodes:
-        nodes[low].next = None
-    return head
+    if nodes:  # @12
+        nodes[low].next = None  # @12
+    return head  # @13

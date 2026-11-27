@@ -1,0 +1,34 @@
+== pattern hash-map
+complexity: O(n) time · O(1) space
+nudge: Anagrams use every character the same number of times. Could you count one string's characters and then spend them on the other?
+-- step Rule out different lengths
+1 if len(s) != len(t): return False
+  hint: What cheap check rules most pairs out at once?
+  why: Strings of different lengths cannot use the same characters the same number of times.
+-- step Count the first string
+2 count = empty map from character to count
+  hint: What do you build from s?
+  why: How many times each character occurs. With at most 26 letters the map stays O(1) in size.
+3 for char in s:
+  hint: How do you fill the counts?
+  why: One pass over s, one character at a time.
+4     count[char] = count of char so far + 1
+  hint: What does each character do to its count?
+  why: Adds one, starting from zero the first time it is seen.
+-- step Spend the counts on the second
+5 for char in t:
+  hint: How do you check t against the counts?
+  why: Walk t and take each character out of the counts built from s.
+6     if char not in count: return False
+  hint: What if t has a character s never had?
+  why: Then t cannot be a rearrangement of s.
+7     count[char] -= 1
+  hint: What does each character of t do to its count?
+  why: Spends one occurrence of it.
+8     if count[char] < 0: return False
+  hint: How do you notice t using a character too often?
+  why: Its count drops below zero: t has more copies than s.
+-- step Everything balanced
+9 return True
+  hint: What if t is spent without a failure?
+  why: The lengths match and no count went negative, so every count ended at exactly zero.

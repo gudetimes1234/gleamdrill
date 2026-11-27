@@ -29,6 +29,7 @@ pub type AllReviewsRow {
     scheduled_days: Int,
     stability_after: Option(Float),
     recall: Bool,
+    mode: String,
   )
 }
 
@@ -55,6 +56,7 @@ pub fn all_reviews(
     use scheduled_days <- decode.field(9, decode.int)
     use stability_after <- decode.field(10, decode.optional(decode.float))
     use recall <- decode.field(11, decode.bool)
+    use mode <- decode.field(12, decode.string)
     decode.success(AllReviewsRow(
       category:,
       subcategory:,
@@ -68,6 +70,7 @@ pub fn all_reviews(
       scheduled_days:,
       stability_after:,
       recall:,
+      mode:,
     ))
   }
 
@@ -76,7 +79,7 @@ pub fn all_reviews(
 select c.category, c.subcategory, c.title,
        extract(epoch from r.reviewed_at)::float8 as at, r.rating,
        r.duration_ms, r.revealed, r.auto_failed, r.state_before,
-       r.scheduled_days, r.stability_after, r.recall
+       r.scheduled_days, r.stability_after, r.recall, r.mode
   from reviews r
   join cards c on c.id = r.card_id
  where r.user_id = $1
@@ -145,6 +148,7 @@ pub fn restore_review(
   arg_11: Bool,
   arg_12: Bool,
   arg_13: Bool,
+  arg_14: String,
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
@@ -156,9 +160,9 @@ pub fn restore_review(
 insert into reviews (
   user_id, card_id, rating, state_before, reviewed_at,
   elapsed_days, scheduled_days, stability_after, difficulty_after,
-  duration_ms, auto_failed, revealed, recall)
+  duration_ms, auto_failed, revealed, recall, mode)
 select $1, id, $5, $6, to_timestamp($7::float8),
-       0, $8, float8_or_null($9), null, int_or_null($10), $11, $12, $13
+       0, $8, float8_or_null($9), null, int_or_null($10), $11, $12, $13, $14
   from cards
  where user_id = $1 and category = $2 and subcategory = $3 and title = $4
 "
@@ -176,6 +180,7 @@ select $1, id, $5, $6, to_timestamp($7::float8),
   |> pog.parameter(pog.bool(arg_11))
   |> pog.parameter(pog.bool(arg_12))
   |> pog.parameter(pog.bool(arg_13))
+  |> pog.parameter(pog.text(arg_14))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

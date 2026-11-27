@@ -1,0 +1,58 @@
+== pattern intervals
+complexity: O(n log n) time · O(n) space
+nudge: Sort by start, and an interval can only ever overlap the one you are currently building. So each interval either extends it or begins a new one: how do you tell which?
+-- step Sort, then build
+1 out = empty list
+  hint: Where do the merged intervals go?
+  why: Into a list whose last entry is the one still being built.
+2 for start, end in intervals sorted by start:
+  hint: In what order do you visit them?
+  why: By start, so anything that overlaps the current interval comes right after it.
+-- step Extend or begin
+3     if out is not empty and start <= out's last end:
+  hint: When does this interval overlap the one being built?
+  why: When it starts at or before that one ends; touching counts as overlapping.
+4         out's last end = max(out's last end, end)
+  hint: How do you absorb it?
+  why: Stretch the end to the later of the two; the start is already the earlier one.
+5     else: append [start, end] to out
+  hint: And when it does not overlap?
+  why: Nothing later can reach back past it, so the last one is finished and this one begins.
+6 return out
+  hint: What is the answer?
+  why: The merged intervals, already in order.
+== pattern prefix-sums
+complexity: O(n log n) time · O(n) space
+nudge: Forget the intervals and keep only their edges: +1 where one opens, -1 where one closes. Running the sum along the sorted edges, where does a merged interval begin and end?
+-- step Turn intervals into edges
+1 edges = empty list
+  hint: What do you record instead of intervals?
+  why: Their edges, each with how it changes the count of open intervals.
+2 for start, end in intervals:
+  hint: How do you build the edges?
+  why: Two per interval.
+3     add (start, +1) and (end, -1)
+  hint: What does each edge contribute?
+  why: An opening raises the count by one, a closing lowers it by one.
+4 sort edges by position, opens before closes at the same position
+  hint: What order must the edges be in, and how are ties broken?
+  why: By position; putting +1 first at a tie keeps the count above zero, so touching intervals join.
+-- step Run the count
+5 out = empty list; depth = 0; start = 0
+  hint: What do you carry along the sweep?
+  why: The merged intervals, how many intervals are open, and where the current merged one began.
+6 for position, delta in edges:
+  hint: How do you sweep?
+  why: Through the edges in sorted order.
+7     if depth == 0: start = position
+  hint: When does a merged interval begin?
+  why: At an edge reached while nothing is open: it lifts the count off zero.
+8     depth += delta
+  hint: What does the edge do to the count?
+  why: Adds its +1 or -1, the running sum.
+9     if depth == 0: append [start, position] to out
+  hint: When does a merged interval end?
+  why: When the count drops back to zero: every interval it covered has closed.
+10 return out
+  hint: What is the answer?
+  why: One interval per stretch where the count stayed above zero.

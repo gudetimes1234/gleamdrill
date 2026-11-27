@@ -1,0 +1,33 @@
+== pattern linked-list-pointers
+complexity: O(n+m) time · O(1) space
+nudge: The smaller of the two heads is smaller than everything still to come. What placeholder lets you attach the very first node the same way as the rest?
+-- step A dummy to attach to
+1 dummy = new node
+  hint: What removes the special case for the first node?
+  why: A dummy head: there is always something to attach to.
+2 tail = dummy
+  hint: Where does the next node go?
+  why: After tail, the end of the merged list so far.
+-- step Splice the smaller head
+3 while list1 and list2 are both not None:
+  hint: How long do you compare?
+  why: While both lists have nodes.
+4     if list1.val <= list2.val:
+  hint: Which head goes next?
+  why: The smaller one; taking list1 on ties keeps the merge stable.
+5         tail.next = list1; list1 = list1.next
+  hint: How do you take list1's head?
+  why: Link it after tail and advance list1.
+6     else: tail.next = list2; list2 = list2.next
+  hint: And otherwise?
+  why: Take list2's head the same way.
+7     tail = tail.next
+  hint: What moves after splicing?
+  why: tail, onto the node just attached.
+-- step Attach the rest
+8 tail.next = whichever list is not None
+  hint: What about the leftovers?
+  why: The remaining list is already sorted and linked; attach it whole.
+9 return dummy.next
+  hint: Where does the merged list start?
+  why: After the dummy.

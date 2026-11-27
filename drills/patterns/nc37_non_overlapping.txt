@@ -1,0 +1,24 @@
+== pattern greedy
+complexity: O(n log n) time · O(n) space
+nudge: Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for what comes next. So in what order should you meet them, and what do you remember about the ones you kept?
+-- step Nothing kept yet
+1 removed = 0
+  hint: What are you counting?
+  why: The intervals you have to drop.
+2 last_end = minus infinity
+  hint: Where does the last kept interval end before you have kept one?
+  why: Before everything, so the first interval always fits.
+-- step Keep or drop, earliest end first
+3 for start, end in intervals sorted by end:
+  hint: In what order do you consider them?
+  why: By end time: the earliest finisher is always safe to keep, an exchange argument shows it is never worse.
+4     if start >= last_end: last_end = end
+  hint: When does an interval fit after the ones kept?
+  why: When it starts at or after the last kept one ends; touching is not overlapping. Keep it and its end is the new bar.
+5     else: removed += 1
+  hint: And when it overlaps?
+  why: Drop it: it ends no earlier than the kept one, so keeping it could only leave less room.
+-- step Count
+6 return removed
+  hint: What is the answer?
+  why: The fewest intervals whose removal leaves no overlaps.

@@ -130,6 +130,11 @@ checked by hand.
 Add a solution + harness under `drills/<language>/`, a note in `drills/notes/`,
 its approach steps (the rail) in `drills/approaches/`, run `make verify`, open a PR.
 
+Line Drill content is a pseudocode file in `drills/patterns/<stem>.txt`, an
+`@pattern` line in the variant's note, and `# @N` tags on the solution lines
+that become blanks. The format and the checks are in
+[docs/design.md](docs/design.md#line-drill); `make content` enforces them.
+
 ## Support
 
 Free, open source, no account wall. Server costs:

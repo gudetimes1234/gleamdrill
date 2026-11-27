@@ -1,0 +1,39 @@
+== pattern backtracking
+complexity: O(m·n·4ᴸ) time · O(L²) space
+nudge: Try every square as a start and walk the word one letter at a time through neighbours. Which squares must a path avoid, and why can that set not be shared between attempts?
+-- step Handle empty inputs
+1 if word is empty: return True
+  hint: Is an empty word always found?
+  why: Yes, trivially, before looking at the board at all.
+2 if board is empty: return False
+  hint: And a non-empty word on an empty board?
+  why: Nothing to match, so no.
+-- step Match one square, then its neighbours
+3 if nothing remains: return True
+  hint: When has the walk succeeded?
+  why: When every letter of the word has been matched.
+4 if (r, c) is used or off the board: return False
+  hint: Which squares can a path never step on?
+  why: Squares off the grid, and squares already on this path, since a letter may not be reused.
+5 if board[r][c] != remaining[0]: return False
+  hint: What must this square hold?
+  why: The next letter of the word; anything else ends this path.
+6 if this was the last letter: return True
+  hint: Can you stop before exploring neighbours?
+  why: If this square matched the final letter, the word is complete.
+7 used = used plus (r, c)
+  hint: What must the deeper calls know about this square?
+  why: That it is taken. A new set per path means a square rejected here is still free on other routes.
+8 return any walk(neighbour, rest of the word, used)
+  hint: Where does the word continue?
+  why: From any neighbour, matching the rest of the word.
+9     over the four directions up, down, left, right
+  hint: Which neighbours count?
+  why: Only the four orthogonal ones, not diagonals.
+-- step Try every starting square
+10 return any walk(r, c, word, empty set)
+  hint: Where can the word start?
+  why: Anywhere, with nothing used yet.
+11     over every row r and column c
+  hint: Which squares do you try?
+  why: Every square on the board; any stops at the first success.

@@ -1796,6 +1796,7 @@ fn grade(m: Model, s: Sitting, rating: fsrs.Rating) -> Step {
           revealed: s.revealed || s.peeked,
           practice: !s.studying,
           recall: False,
+          mode: wire.Free,
         )
       case m.shared.mode {
         web.Guest -> {

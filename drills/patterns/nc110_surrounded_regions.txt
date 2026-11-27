@@ -1,0 +1,40 @@
+== pattern dfs
+complexity: O(m·n) time · O(m·n) space
+nudge: Finding the surrounded regions is hard; finding the ones that are not is easy. What does a region need to escape, and where would a single search start?
+-- step Guard and measure
+1 if the board is empty: return board
+  hint: What if there is nothing to flip?
+  why: An empty board is its own answer.
+2 rows, columns = board size
+  hint: What do the border and bounds checks need?
+  why: The number of rows and columns.
+-- step Start from every O on the border
+3 safe = empty set
+  hint: What does the search collect?
+  why: Every O that is connected to the border, and so is not surrounded.
+4 stack = every border square holding "O"
+  hint: Where can an escaping region be found?
+  why: Only through an O on the edge, so every such square is a start.
+-- step Flood inward from the border
+5 while stack:
+  hint: How long does the search run?
+  why: Until no square is waiting.
+6     r, c = stack.pop()
+  hint: Which square comes next?
+  why: The latest pushed, depth-first.
+7     if (r, c) is off the board: continue
+  hint: Which squares are out of range?
+  why: Neighbours of edge squares can fall off the board.
+8     if (r, c) in safe or it is not "O": continue
+  hint: Which squares are skipped?
+  why: Ones already marked, and X squares, which the region cannot pass through.
+9     safe.add((r, c))
+  hint: What do you record for a new O?
+  why: It is connected to the border, so it stays.
+10     push the four neighbours onto the stack
+  hint: Where can the region continue?
+  why: Up, down, left and right.
+-- step Flip what was not reached
+11 return board with every "O" not in safe turned to "X"
+  hint: Which squares become X?
+  why: Every O the border search did not reach: surrounded by definition.

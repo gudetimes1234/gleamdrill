@@ -16,6 +16,7 @@ import gleam/result
 import gleam/string
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/content/problems
+import gleamdrill/domain/line_drill.{type LineState}
 import gleamdrill/domain/walk
 import gleamdrill/model as shared_model
 import wire
@@ -165,6 +166,10 @@ pub type UndoPoint {
     /// back the steps that were open rather than folding them all away.
     walk: walk.WalkState,
     walk_code_seen: Bool,
+    /// Line Drill as it stood: every locked line, miss and reveal.
+    line_drill: Option(LineState),
+    line_mode: Bool,
+    rail_pattern: Option(String),
     duration_ms: Int,
     /// None when the grade is what put the card in the queue.
     card_before: Option(wire.CardState),
@@ -287,6 +292,15 @@ pub type Model {
     walk: walk.WalkState,
     /// Whether any step's code slice has been shown. A reveal.
     walk_code_seen: Bool,
+    /// Line Drill's state on this problem, once it has been opened in it.
+    /// Kept when `l` switches to free typing, so switching back resumes and
+    /// a revealed line still counts.
+    line_drill: Option(LineState),
+    /// Whether the code panel is Line Drill (True) or the free editor.
+    line_mode: Bool,
+    /// The pattern the free-type rail follows, for a problem with patterns.
+    /// Guessed once when the problem opens, then changed only by hand.
+    rail_pattern: Option(String),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question or board has been submitted.
@@ -332,6 +346,9 @@ pub fn new(problems: List(ProblemRef)) -> Model {
     whole_thing_shown: False,
     walk: walk.fresh_walk(),
     walk_code_seen: False,
+    line_drill: None,
+    line_mode: False,
+    rail_pattern: None,
     choice: None,
     graded: False,
     board_picks: [],
@@ -388,6 +405,9 @@ pub fn open_problem_view(
     whole_thing_shown: False,
     walk: walk.fresh_walk(),
     walk_code_seen: False,
+    line_drill: None,
+    line_mode: False,
+    rail_pattern: None,
     // Reset here rather than at each call site, so a board cannot open
     // carrying the last one's picks.
     board_picks: [],
@@ -411,16 +431,21 @@ pub fn pseudocode_revealed(
   stages: List(problem.ApproachStage),
 ) -> Bool {
   page.whole_thing_shown
-  && list.any(stages, fn(stage) {
-    case stage {
-      problem.Pseudocode(_) -> True
-      _ -> False
-    }
-  })
+  && {
+    list.any(stages, fn(stage) {
+      case stage {
+        problem.Pseudocode(_) -> True
+        _ -> False
+      }
+    })
+    // The pattern rail has a whole pseudocode of its own.
+    || current_patterns(page) != []
+  }
 }
 
 /// The one definition of "the answer was seen": a flipped solution, a code
-/// slice, or the pseudocode. Feeds the review's `revealed` flag.
+/// slice, the pseudocode, or a line revealed in Line Drill. Feeds the
+/// review's `revealed` flag.
 pub fn answer_revealed(
   page: Model,
   stages: List(problem.ApproachStage),
@@ -428,6 +453,74 @@ pub fn answer_revealed(
   page.revealed_solution != None
   || page.walk_code_seen
   || pseudocode_revealed(page, stages)
+  || line_revealed(page)
+}
+
+/// A line was revealed in Line Drill rather than typed.
+pub fn line_revealed(page: Model) -> Bool {
+  case page.line_drill {
+    Some(state) -> line_drill.any_revealed(state)
+    None -> False
+  }
+}
+
+/// A hint or a why was opened in Line Drill before its line was typed. Not a
+/// reveal, but not a clean solve either. The explanation of a line already
+/// typed is free and never counts.
+pub fn line_help_used(page: Model) -> Bool {
+  case page.line_drill {
+    Some(state) -> line_drill.help_used(state)
+    None -> False
+  }
+}
+
+/// Whether this attempt was assisted by Line Drill: the review is logged as
+/// `mode = 'line'` when it was open at grading or any line was locked in it.
+pub fn line_assisted(page: Model) -> Bool {
+  page.line_mode
+  || case page.line_drill {
+    Some(state) -> line_drill.position(state) > 0
+    None -> False
+  }
+}
+
+/// Whether a card is on the learning rung, where Line Drill is the default:
+/// never reviewed, still in its learning steps, or relearning after a lapse.
+/// A card in Review opens free-typed.
+pub fn on_learning_rung(
+  shared: shared_model.Model,
+  problem: ProblemRef,
+) -> Bool {
+  case shared_model.card_for(shared, problem) {
+    None -> True
+    Some(state) ->
+      case state.card.state {
+        fsrs.Learning(_) | fsrs.Relearning(_) -> True
+        fsrs.Review -> False
+      }
+  }
+}
+
+/// The patterns of the problem on screen; empty when it has no Line Drill.
+pub fn current_patterns(page: Model) -> List(problem.Pattern) {
+  case current_problem(page) {
+    Ok(found) -> found.patterns
+    Error(Nil) -> []
+  }
+}
+
+/// The pattern the free-type rail is following, for a problem with
+/// patterns: the one picked, else the canonical one.
+pub fn rail_pattern(page: Model) -> Result(problem.Pattern, Nil) {
+  let patterns = current_patterns(page)
+  case page.rail_pattern {
+    Some(slug) ->
+      case list.find(patterns, fn(p) { p.slug == slug }) {
+        Ok(found) -> Ok(found)
+        Error(Nil) -> list.first(patterns)
+      }
+    None -> list.first(patterns)
+  }
 }
 
 /// Milliseconds the current problem has been open, with paused time taken

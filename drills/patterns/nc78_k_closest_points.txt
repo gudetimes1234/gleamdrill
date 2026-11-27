@@ -1,0 +1,20 @@
+== pattern heap
+complexity: O(n log k) time · O(k) space
+nudge: You only ever need k candidates. Which heap lets you throw out the farthest of them each time a new point arrives, and do you need the square root to compare distances?
+-- step Keep the k nearest so far
+1 heap = empty
+  hint: What do you keep as you scan the points?
+  why: At most k candidates, with the farthest of them on top so it is the first to go.
+2 for each point in points:
+  hint: How many passes do you need?
+  why: One; every point gets a chance to enter the heap.
+3     push (-(x² + y²), point)
+  hint: What do you push so the farthest point sits on top of a min-heap?
+  why: The negated squared distance. The square root cannot change the order, so skip it, and negating turns the min-heap into a max-heap on distance.
+4     if the heap holds more than k: pop the top
+  hint: How do you keep the heap at size k?
+  why: Pop the farthest; it cannot be among the k closest.
+-- step Return the points
+5 return the point from every entry
+  hint: What do you hand back?
+  why: The k points left in the heap, without their distances; any order is allowed.

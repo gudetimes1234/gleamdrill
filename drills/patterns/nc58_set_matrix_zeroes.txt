@@ -1,0 +1,26 @@
+== pattern hash-map
+complexity: O(m·n) time · O(m·n) space
+nudge: Writing zeros as you find them makes new zeros indistinguishable from original ones. What could you record first, so the clearing happens in a second pass?
+-- step Record the doomed rows and columns
+1 rows = empty set
+  hint: What do you need to remember about the rows?
+  why: Which ones hold an original zero.
+2 columns = empty set
+  hint: And about the columns?
+  why: The same: which ones hold an original zero.
+3 for r, row in enumerate(matrix):
+  hint: How do you visit every cell?
+  why: Row by row, keeping the row index.
+4     for c, value in enumerate(row):
+  hint: And within a row?
+  why: Cell by cell, keeping the column index.
+5         if value == 0:
+  hint: Which cells matter in this pass?
+  why: Only the original zeros.
+6             add r to rows; add c to columns
+  hint: What does a zero doom?
+  why: Its whole row and its whole column, so remember both indices.
+-- step Clear in a second pass
+7 return matrix with each cell 0 if its row is in rows or its column is in columns, else its value
+  hint: How do you decide each cell's final value?
+  why: A cell becomes zero exactly when its row or column held an original zero; the sets answer that in O(1) without being fooled by new zeros.

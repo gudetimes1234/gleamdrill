@@ -1,0 +1,103 @@
+== pattern hash-map
+complexity: O(1) per operation · O(capacity) space
+nudge: You need lookup by key and the oldest key, both in O(1). A Python dict remembers insertion order; how can deleting and reinserting a key make it the newest?
+-- step Construct
+1 capacity = capacity
+  hint: What must the cache remember about its size?
+  why: The capacity, to know when to evict.
+2 entries = empty map
+  hint: What one structure holds the keys in order?
+  why: A dict: it maps keys to values and keeps insertion order, which is the recency order.
+-- step get: read and refresh
+3 if key not in entries: return -1
+  hint: What if the key is missing?
+  why: The problem asks for -1.
+4 value = remove key from entries
+  hint: How do you make the key the newest?
+  why: Take it out first.
+5 entries[key] = value
+  hint: And then?
+  why: Put it back; reinsertion moves it to the end, the newest place.
+6 return value
+  hint: What does get return?
+  why: The value it found.
+-- step put: insert, then evict the oldest
+7 if key in entries: delete entries[key]
+  hint: What if the key is already there?
+  why: Remove it so the new insertion counts as the newest.
+8 entries[key] = value
+  hint: How do you store it?
+  why: Insert it at the newest end.
+9 if size of entries > capacity:
+  hint: When do you evict?
+  why: When the cache has grown past its capacity.
+10     oldest = first key in entries
+  hint: Which key is least recently used?
+  why: The first in insertion order.
+11     delete entries[oldest]
+  hint: Then?
+  why: Drop it.
+== pattern linked-list-pointers
+complexity: O(1) per operation · O(capacity) space
+nudge: A map finds a key's node in O(1); a doubly linked list unlinks it and moves it to the front in O(1). How do sentinel nodes keep the list operations free of special cases?
+-- step Construct with two sentinels
+1 capacity = capacity
+  hint: What must the cache remember about its size?
+  why: The capacity, to know when to evict.
+2 nodes = empty map from key to node
+  hint: How do you find a key's node in O(1)?
+  why: A map from key to node.
+3 head, tail = two empty sentinel nodes
+  hint: What removes the empty-list special cases?
+  why: Sentinels at both ends, so every real node has a neighbour on each side.
+4 link head and tail to each other
+  hint: What does an empty cache look like?
+  why: head points forward to tail and tail back to head.
+-- step get: find and move to the front
+5 if key not in nodes: return -1
+  hint: What if the key is missing?
+  why: The problem asks for -1.
+6 node = nodes[key]
+  hint: Where is its node?
+  why: The map gives it directly.
+7 unlink(node); push(node)
+  hint: How do you mark it as just used?
+  why: Take it out of its place and put it at the front.
+8 return node's value
+  hint: What does get return?
+  why: The stored value.
+-- step put: insert, then evict the oldest
+9 if key in nodes: unlink and forget its old node
+  hint: What if the key already exists?
+  why: Remove its old node so only the new one remains.
+10 node = new node with key and value
+  hint: What do you create?
+  why: A node holding the key, so eviction can find its map entry.
+11 nodes[key] = node; push(node)
+  hint: Where does the new node go?
+  why: Into the map, and to the front of the list as the newest.
+12 if size of nodes > capacity:
+  hint: When do you evict?
+  why: When the cache has grown past its capacity.
+13     oldest = node before tail
+  hint: Which node is least recently used?
+  why: The last real node, just before the tail sentinel.
+14     unlink(oldest); delete nodes[oldest's key]
+  hint: How do you evict it?
+  why: Out of the list and out of the map.
+-- step push and unlink
+15 node.prev, node.next = head, node after head
+  hint: Where does push put a node?
+  why: Between head and the current first node.
+16 node after head's prev = node
+  hint: What must the old first node point back at?
+  why: The new node.
+17 head.next = node
+  hint: And head?
+  why: Forward to the new node, now the newest.
+18 node.prev.next = node.next
+  hint: How does unlink bypass a node going forward?
+  why: Its previous node skips to its next.
+19 node.next.prev = node.prev
+  hint: And going backward?
+  why: Its next node points back past it. Sentinels mean both neighbours always exist.

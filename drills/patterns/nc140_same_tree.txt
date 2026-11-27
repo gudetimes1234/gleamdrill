@@ -1,0 +1,14 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: Two trees are the same when their roots agree and what else, exactly? Spell out every way a pair of positions can disagree, including the ways that involve nothing at all.
+-- step Settle the empty cases
+1 if p is None and q is None: return True
+  hint: What if both positions are empty?
+  why: Two empty trees are the same tree, so the walk ends here in agreement.
+2 if p is None or q is None: return False
+  hint: And if exactly one is empty?
+  why: A node never matches nothing. After the first check, one None here means only one side is empty.
+-- step Compare the nodes and both pairs of children
+3 return p.val == q.val and same(p.left, q.left) and same(p.right, q.right)
+  hint: When do two real nodes match?
+  why: Their values are equal and the left pair and the right pair match too. The and stops at the first mismatch.

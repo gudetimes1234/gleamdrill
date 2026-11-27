@@ -1,0 +1,36 @@
+== pattern union-find
+complexity: O(n·α(n)) time · O(n) space
+nudge: n nodes and n edges make exactly one cycle. Adding the edges one at a time, how do you notice the edge that closes it?
+-- step Find a node's root
+1 parents = empty map
+  hint: What records which nodes are joined?
+  why: A parent for each node that has been merged under another; a node with no entry is its own root.
+2 while node's parent is not node:
+  hint: How do you find a node's component?
+  why: Follow parents up until a node is its own parent.
+3     node = parents[node]
+  hint: Then?
+  why: Step up to the parent.
+4 return node
+  hint: What names the component?
+  why: Its root.
+-- step Add the edges in order
+5 found = None
+  hint: What holds the answer?
+  why: The edge that closed a cycle, if one does.
+6 for a, b in edges:
+  hint: In what order are edges added?
+  why: In the order given, so the last edge that could be removed is the one found.
+7     rootA, rootB = find(a), find(b)
+  hint: What do you compare for each edge?
+  why: The roots of its two ends.
+8     if rootA == rootB: found = (a, b)
+  hint: What if both ends are already connected?
+  why: This edge closes the cycle, so it is redundant.
+9     else: parents[rootA] = rootB
+  hint: Otherwise?
+  why: Merge the two components by hanging one root under the other.
+-- step Return the edge
+10 return found as a list, or [] if none
+  hint: What is the answer?
+  why: The edge that joined two already-connected nodes.

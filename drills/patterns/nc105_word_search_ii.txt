@@ -1,0 +1,60 @@
+== pattern trie
+complexity: O(m·n·4ᴸ) time · O(total letters) space
+nudge: Searching for each word separately re-walks every shared prefix. What if one structure held all the words and you walked it alongside the board?
+-- step Build one trie of the words
+1 if the board is empty: return []
+  hint: What if there are no squares at all?
+  why: No word can be found, and the board's first row does not exist to measure.
+2 trie = empty map
+  hint: What holds every word at once?
+  why: A trie of nested maps, letter to child.
+3 for word in words:
+  hint: How do the words get in?
+  why: One at a time.
+4     node = trie
+  hint: Where does each word start?
+  why: At the root.
+5     for letter in word:
+  hint: How do you walk down the word?
+  why: One letter, one level.
+6         node = child for letter, created if missing
+  hint: What if the letter has no child yet?
+  why: Create it; shared prefixes share nodes.
+7     node["$"] = word
+  hint: How does the last node remember which word ends there?
+  why: Store the word itself under a marker key, so a walk that reaches it can report it directly.
+-- step Walk the board alongside the trie
+8 found = empty set
+  hint: What collects the answers?
+  why: A set, since the same word can be spelled from more than one start.
+9 if (r, c) is off the board: return
+  hint: When does a step leave the board?
+  why: When a row or column is out of range.
+10 if (r, c) is used or its letter is not a child of node: return
+  hint: When should a square be abandoned?
+  why: When it is already on this path, or no word continues with its letter. That second test is the whole saving.
+11 child = node[letter at (r, c)]
+  hint: Where does the trie walk move?
+  why: Down to the child for this square's letter.
+12 if child marks a word: add it to found
+  hint: How do you notice a complete word?
+  why: The child carries the marker key, holding the word.
+13 used = used plus (r, c)
+  hint: What must the deeper steps not reuse?
+  why: This square; a new set keeps each path's squares separate.
+14 for each of the four directions:
+  hint: Where can the path go next?
+  why: Up, down, left or right.
+15     walk(neighbour, child, used)
+  hint: What do you search from there?
+  why: The neighbour square, against the child node.
+-- step Start from every square
+16 for every square (r, c):
+  hint: Where can a word begin?
+  why: On any square of the board.
+17     walk(r, c, trie, empty set)
+  hint: What does each start search?
+  why: The whole trie from the root, with nothing used yet.
+18 return found as a list
+  hint: What do you return?
+  why: Every word reached, once each.

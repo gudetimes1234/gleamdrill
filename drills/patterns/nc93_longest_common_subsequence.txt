@@ -1,0 +1,27 @@
+== pattern dp-2d
+complexity: O(m·n) time · O(n) space
+nudge: Compare one character from each string. Equal means both are used; different means drop one or the other and take the better. Filling row by row, which row do you need to keep?
+-- step Start with an empty first string
+1 previous = zeros, one per prefix of text2 including the empty one
+  hint: What is the answer when text1 contributes nothing?
+  why: Zero for every prefix of text2.
+-- step Fill a row for each character of text1
+2 for a in text1:
+  hint: What do the rows run over?
+  why: One row per character of text1, each meaning one more character of it is available.
+3     row = zeros, same length
+  hint: What do you start each new row with?
+  why: Zeros; entry 0 stands for the empty prefix of text2 and stays 0.
+4     for j, b over text2, counting from 1:
+  hint: What do the columns run over?
+  why: Each character of text2; j counts it as a prefix length, so j - 1 is the shorter prefix.
+5         row[j] = previous[j - 1] + 1 if a == b, else max(previous[j], row[j - 1])
+  hint: What is the best for these two prefixes?
+  why: A match extends the best without either character by one; otherwise drop a's character (above) or b's (left).
+6     previous = row
+  hint: What becomes the row above?
+  why: The row just filled; nothing older is needed.
+-- step Read the last entry
+7 return previous's last entry
+  hint: Where is the answer?
+  why: Both whole strings, the final entry of the final row.

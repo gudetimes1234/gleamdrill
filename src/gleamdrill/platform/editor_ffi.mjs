@@ -49,7 +49,7 @@ import {
   completeAnyWord,
 } from "@codemirror/autocomplete";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import { tags } from "@lezer/highlight";
+import { tags, highlightTree, classHighlighter } from "@lezer/highlight";
 import {
   cursorCharLeft,
   cursorCharRight,
@@ -1384,6 +1384,46 @@ function litLines(text, lit) {
     .sort((x, y) => x - y)
     .map((index) => mark.range(doc.line(index + 1).from));
   return EditorView.decorations.of(Decoration.set(ranges));
+}
+
+// Line Drill's code column is plain DOM, not an editor: a column of short
+// lines, most of them blanks. Rather than give CodeMirror widgets and atomic
+// ranges it has none of, each line is highlighted once into HTML with the
+// same StreamLanguage tokenizer the editor runs, using @lezer/highlight's
+// stable tok-* class names (style.css colours them like the editor theme).
+// Every byte of the text is escaped here, which is what makes the result
+// safe to insert as markup.
+const highlightLanguages = new Map();
+
+function languageFor(language) {
+  if (!highlightLanguages.has(language))
+    highlightLanguages.set(language, languageExtension(language)[0]);
+  return highlightLanguages.get(language);
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function highlightLine(language, text) {
+  let html = "";
+  let at = 0;
+  try {
+    const tree = languageFor(language).parser.parse(text);
+    highlightTree(tree, classHighlighter, (from, to, classes) => {
+      if (from > at) html += escapeHtml(text.slice(at, from));
+      html += `<span class="${classes}">${escapeHtml(text.slice(from, to))}</span>`;
+      at = to;
+    });
+  } catch {
+    // A tokenizer that cannot read a fragment leaves it plain.
+    return escapeHtml(text);
+  }
+  return html + escapeHtml(text.slice(at));
 }
 
 export function register() {

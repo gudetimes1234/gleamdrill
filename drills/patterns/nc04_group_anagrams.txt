@@ -1,0 +1,27 @@
+== pattern hash-map
+complexity: O(n·k) time · O(n·k) space
+nudge: Anagrams share their letter counts. What key could you compute for each word so that all its anagrams land in the same bucket?
+-- step Group by a key
+1 groups = map from key to list of words, an empty list by default
+  hint: Where do the groups live while you build them?
+  why: A map from each word's key to the words with that key; a default of an empty list saves checking for new keys.
+-- step Tally each word's letters
+2 for s in strs:
+  hint: How do you go through the words?
+  why: Once each: every word's key is computed on its own.
+3     key = 26 zeros
+  hint: What does the tally start as?
+  why: One slot per letter a to z, all zero.
+4     for c in s:
+  hint: How do you fill the tally?
+  why: Walk the word's letters.
+5         key[position of c in the alphabet] += 1
+  hint: Which slot does each letter bump?
+  why: Its offset from 'a'. Two words are anagrams exactly when their tallies are equal.
+-- step File the word and return the groups
+6     groups[key as a tuple].append(s)
+  hint: How does the tally become a map key?
+  why: As a tuple, since a list cannot be hashed. Anagrams build the same tuple and share a list.
+7 return list of the groups' values
+  hint: What is the answer?
+  why: The lists themselves; the keys were only for grouping.

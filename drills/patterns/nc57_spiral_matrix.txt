@@ -1,0 +1,72 @@
+== pattern math
+complexity: O(m·n·min(m,n)) time · O(m·n) space
+nudge: Taking the top row is easy. What could you do to what is left so that the next stretch of the spiral is a top row too?
+-- step Start an empty walk
+1 out = []
+  hint: What do you collect?
+  why: The values in spiral order.
+-- step Take the top row, then rotate the rest
+2 while matrix is not empty:
+  hint: When is the spiral finished?
+  why: When no rows are left.
+3     append the top row to out
+  hint: What is the next stretch of the spiral?
+  why: The whole top row, left to right.
+4     matrix = remaining rows rotated a quarter turn anticlockwise
+  hint: How do you make the next stretch a top row again?
+  why: Rotate what is left anticlockwise (transpose, then reverse the row order); the column you would walk down next now lies along the top.
+-- step Return the walk
+5 return out
+  hint: What is the answer?
+  why: Every value, collected one top row at a time.
+== pattern two-pointers
+complexity: O(m·n) time · O(1) space
+nudge: Keep four boundaries and walk the outer ring: top row, right column, bottom row, left column, then pull every boundary in. What goes wrong when only one row or one column is left?
+-- step Set up four boundaries
+1 if matrix is empty: return []
+  hint: What if there is nothing to walk?
+  why: An empty matrix has no first row to measure, so answer straight away.
+2 top, bottom = first row, last row
+  hint: Which rows bound the unvisited part?
+  why: All of them at first: the first and the last.
+3 left, right = first column, last column
+  hint: Which columns bound it?
+  why: The first and the last.
+4 out = []
+  hint: What do you collect?
+  why: The values in spiral order.
+-- step Walk one ring
+5 while top <= bottom and left <= right:
+  hint: When is there still a ring to walk?
+  why: While the boundaries have not crossed in either direction.
+6     for c from left to right:
+  hint: Which side comes first?
+  why: The top row, left to right.
+7         append matrix[top][c]
+  hint: What do you take along it?
+  why: Each cell of the top row.
+8     for r from top + 1 to bottom:
+  hint: Then which side?
+  why: The right column, downwards, starting below the corner already taken.
+9         append matrix[r][right]
+  hint: What do you take along it?
+  why: Each cell of the right column.
+10     if top < bottom:
+  hint: When is there a separate bottom row?
+  why: Only when more than one row remains; otherwise the bottom row is the top row you already walked.
+11         for c from right - 1 down to left: append matrix[bottom][c]
+  hint: How do you walk the bottom row?
+  why: Right to left, skipping the corner the right column already took.
+12     if left < right:
+  hint: When is there a separate left column?
+  why: Only when more than one column remains; otherwise it is the right column again.
+13         for r from bottom - 1 down to top + 1: append matrix[r][left]
+  hint: How do you walk the left column?
+  why: Upwards, stopping short of both corners already taken.
+14     top, bottom, left, right = top + 1, bottom - 1, left + 1, right - 1
+  hint: How do you retire the ring?
+  why: Pull every boundary one step inward.
+-- step Return the walk
+15 return out
+  hint: What is the answer once the boundaries cross?
+  why: Every cell, collected ring by ring.

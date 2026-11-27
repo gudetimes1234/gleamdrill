@@ -1,0 +1,21 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: Comparing each node with its parent feels sufficient, but a node can be larger than its parent and still sit on the wrong side of something higher up. What would have to travel down the tree with you to catch that?
+-- step Start with no bounds
+1 return within(root, None, None)
+  hint: What range may the root's value fall in?
+  why: Any at all, so both bounds start open.
+-- step Check the node against its range (in within(node, low, high))
+2 if node is None: return True
+  hint: Is an empty subtree valid?
+  why: Yes, trivially; it is where every branch ends.
+3 if low is set and node.val <= low: return False
+  hint: When does a node fail the lower bound?
+  why: When it is at or below it; equal values break a search tree too.
+4 if high is set and node.val >= high: return False
+  hint: And the upper bound?
+  why: At or above it fails, for the same reason.
+-- step Tighten the range on each side
+5 return within(node.left, low, node.val) and within(node.right, node.val, high)
+  hint: How do the bounds change going left and going right?
+  why: Everything on the left must be below this node, so it becomes their upper bound; on the right it becomes the lower bound. Each node inherits a range from all its ancestors.

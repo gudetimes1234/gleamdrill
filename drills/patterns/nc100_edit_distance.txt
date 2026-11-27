@@ -1,0 +1,27 @@
+== pattern dp-2d
+complexity: O(m·n) time · O(n) space
+nudge: Let cell (i, j) be the cost of turning the first i letters of word1 into the first j of word2. Replace, delete and insert each come from one neighbouring cell; which three, and do you need more than the row above?
+-- step Start from the empty prefix
+1 previous = 0, 1, 2, ... len(word2)
+  hint: What does it cost to build each prefix of word2 from nothing?
+  why: Its length, one insert per letter. That is the row for the empty prefix of word1.
+-- step Fill each row from the one above
+2 for i, a over word1, counting from 1:
+  hint: How do you walk the first word?
+  why: One row per letter, numbered from 1 so that row i covers the first i letters.
+3     row = i, then zeros for every letter of word2
+  hint: What goes in the first column of row i?
+  why: Turning i letters into the empty string takes i deletes; the rest is filled in next.
+4     for j, b over word2, counting from 1:
+  hint: How do you fill the rest of the row?
+  why: Left to right, so the cell to the left is ready before it is needed.
+5         row[j] = diagonal if a == b, else 1 + min(diagonal, above, left)
+  hint: What does cell j cost when the letters match, and when they do not?
+  why: Equal letters cost nothing and take the diagonal. Otherwise pay one edit: replace from the diagonal, delete from above, insert from the left.
+6     previous = row
+  hint: What does the next row need?
+  why: Only this row, so it becomes the row above and the older one can go.
+-- step Read the corner
+7 return previous[len(word2)]
+  hint: Which cell is the answer?
+  why: The last cell of the last row: all of word1 turned into all of word2.

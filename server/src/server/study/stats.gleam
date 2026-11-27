@@ -32,11 +32,12 @@ pub fn stats(
   use history <- result.try(review_history(db, user_id, track, account))
   use forecast <- result.try(due_forecast(db, user_id, track, account))
 
-  let #(total_reviews, mature_reviews, mature_correct) = totals
+  let #(total_reviews, mature_reviews, mature_correct, line_reviews) = totals
   Ok(wire.Stats(
     total_reviews:,
     mature_reviews:,
     mature_correct:,
+    line_reviews:,
     state_counts:,
     history:,
     forecast:,
@@ -77,12 +78,12 @@ fn review_totals(
   db: pog.Connection,
   user_id: Uuid,
   track: String,
-) -> Result(#(Int, Int, Int), StudyError) {
+) -> Result(#(Int, Int, Int, Int), StudyError) {
   sql.review_totals(db, user_id, track)
   |> first(fn(row: sql.ReviewTotalsRow) {
-    #(row.total, row.mature, row.correct)
+    #(row.total, row.mature, row.correct, row.line)
   })
-  |> result.map(option.unwrap(_, #(0, 0, 0)))
+  |> result.map(option.unwrap(_, #(0, 0, 0, 0)))
 }
 
 fn state_counts(

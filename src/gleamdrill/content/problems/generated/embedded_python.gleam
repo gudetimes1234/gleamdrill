@@ -6769,7 +6769,8 @@ For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack 
         "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).",
         "def dailyTemperatures(temperatures):
     result = [0] * len(temperatures)
-    stack = []  # (index, temp) — monotonically decreasing
+    # (index, temp) — monotonically decreasing
+    stack = []
 
     for i, temp in enumerate(temperatures):
         while stack and temp > stack[-1][1]:
@@ -6970,12 +6971,14 @@ The twist: after a rotation, one half around the midpoint is always sorted. Work
         if nums[mid] == target:
             return mid
 
-        if nums[left] <= nums[mid]:  # left half sorted
+        # left half sorted
+        if nums[left] <= nums[mid]:
             if nums[left] <= target < nums[mid]:
                 right = mid - 1
             else:
                 left = mid + 1
-        else:  # right half sorted
+        # right half sorted
+        else:
             if nums[mid] < target <= nums[right]:
                 left = mid + 1
             else:

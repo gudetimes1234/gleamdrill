@@ -258,7 +258,7 @@ const setCode = async (code) => {
 /// Opens one problem by hand. `language` names the *track*, which is a switch
 /// rather than a click in Browse: the first pane used to choose a language and
 /// the track switcher is where that happens now.
-const openByHand = async (language, subcategory, title) => {
+const openByHand = async (language, subcategory, title, { line = false } = {}) => {
   exercises("browse.UserClickedStartDrill", "UserClickedStartDrill");
   await page.click('.nav-link:text-is("Tracks")');
   await page.waitForSelector(".tracks-screen", { timeout: 10000 });
@@ -277,15 +277,22 @@ const openByHand = async (language, subcategory, title) => {
     { timeout: 5000 },
   );
   await page.click("#startDrill");
-  await startCoding();
+  await startCoding({ line });
 };
 
 /// A drill opens with the prompt beside the editor. Every code sitting in
 /// the tour comes through here, so the run bar is what the next line finds.
 /// Nothing has focus on the way in; blurring is belt and braces so the next
 /// key goes to the table.
-const startCoding = async () => {
+const startCoding = async ({ line = false } = {}) => {
   await page.waitForSelector(".run-bar", { timeout: 30000 });
+  // A new Python card opens in Line Drill. Every act but Line Drill's own
+  // drives the free editor, so it takes the header's toggle -- a focused
+  // line input would eat the `l` key.
+  if (!line && await page.isVisible(".line-drill")) {
+    await page.click(".line-toggle");
+    await page.waitForSelector("gleam-editor", { timeout: 20000 });
+  }
   await page.evaluate(() => document.activeElement?.blur());
 };
 
@@ -322,13 +329,15 @@ check("a browser with no preferences lands on the track switcher",
   await page.isVisible(".tracks-screen"));
 check("and not on a study screen it has no track for",
   (await page.$(".study-screen")) === null);
+// Seven languages, three refactoring decks, and the two System Design tracks.
+const TRACKS = 12;
 check("every track in the catalogue is offered",
-  (await page.$$(".track-card")).length === 8,
+  (await page.$$(".track-card")).length === TRACKS,
   String((await page.$$(".track-card")).length));
 check("none is pre-selected", (await page.$$(".track-card.current")).length === 0);
 check("each says it has nothing yet, and offers a way to start",
-  (await page.$$(".track-card-empty")).length === 8
-    && (await page.$$(".track-card-starter")).length === 8);
+  (await page.$$(".track-card-empty")).length === TRACKS
+    && (await page.$$(".track-card-starter")).length === TRACKS);
 await capture("tracks-empty", "First run: which track, nothing assumed",
   "Tracks: one at a time, nothing mixed");
 
@@ -632,7 +641,7 @@ check("Esc leaves it",
   !(await page.evaluate(() => document.activeElement?.classList.contains("search"))));
 
 await page.keyboard.press("d");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 check("d starts the drill", true);
 // The prompt is a block above the editor, never over it: reading the
 // problem and typing the attempt are the same activity, so the prompt
@@ -650,7 +659,9 @@ check("and the rail has the left, always",
 // offered from the open, those eight are the grades, the two run keys, the
 // editor and the solution -- `prompt` and `note` fall past the cut, and the
 // rail advertises its keys on its own buttons rather than here.
-const drillHints = await page.textContent(".statusbar");
+// The hints, not the whole bar: the window list on its left always names
+// every screen, `0:study` included.
+const drillHints = await page.textContent(".statusbar-hints");
 check("the status bar shows the drill's keys, not the study screen's",
   drillHints.includes("edit") && drillHints.includes("solution")
     && !drillHints.includes("study"),
@@ -706,6 +717,9 @@ const tmux = async (...keys) => {
 };
 const tmuxWindow = async () => (await page.textContent(".status-window-current"))?.trim();
 const drillBody = async () => (await page.getAttribute(".drill-body", "class")) ?? "";
+// From the study window, with no last window yet: leaving the drill above
+// hands back to Browse, where it was opened, and `C-b l` would go there.
+await goHome();
 await page.evaluate(() => document.activeElement?.blur());
 await tmux("2");
 check("C-b 2 is the queue window", await appears(".queue-screen")
@@ -742,7 +756,7 @@ await page.waitForTimeout(200);
 check("Escape closes the prompt", !(await page.isVisible(".command-prompt")));
 
 await page.keyboard.press("Enter");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 await page.click(".cm-content");
 const typed = await page.evaluate(() => document.querySelector("gleam-editor").doc);
 await tmux("z");
@@ -798,6 +812,8 @@ check("a paused clock does not advance",
   (await page.textContent(".drill-clock")).includes(frozenAt),
   await page.textContent(".drill-clock"));
 await page.click(".clock-pause");
+await page.waitForSelector(".drill-clock.clock-paused", { state: "detached", timeout: 5000 })
+  .catch(() => {});
 check("resuming lifts the dim", !(await page.isVisible(".drill-clock.clock-paused")));
 await capture("timer-paused-resumed", "The drill clock after a pause and resume");
 // A first encounter is the learning step: every grade is available before a
@@ -1356,7 +1372,7 @@ await page.evaluate(() => {
 await onTrack();
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 check("the clock shows your median on this problem",
   (await page.textContent(".drill-median").catch(() => "")).includes("median 3m10s"),
   await page.textContent(".drill-median").catch(() => ""));
@@ -1656,6 +1672,10 @@ check("four presets, one marked as the default",
   (await page.$$(".blitz-option")).length === 4 && (await page.$$(".blitz-option-default")).length === 1);
 await capture("chooser", "Blitz: how many problems, how long each", "A timed Blitz mode, two clicks from the study screen");
 await page.click(".blitz-cancel");
+// Waited for, not read the same tick: pressing `z` while it is still up
+// would toggle it shut again instead of reopening it.
+await page.waitForSelector(".blitz-chooser", { state: "detached", timeout: 5000 })
+  .catch(() => {});
 check("Not now closes it", !(await page.isVisible(".blitz-chooser")));
 await page.keyboard.press("z");
 await page.waitForSelector(".blitz-chooser", { timeout: 5000 });
@@ -1669,7 +1689,8 @@ check("the header clock counts down while the problem is read",
   await page.textContent(".drill-countdown"));
 await startCoding();
 check("the status bar says it is a Blitz",
-  (await page.textContent(".statusbar")).startsWith("BLITZ"));
+  (await page.textContent(".statusbar-context")).startsWith("BLITZ"),
+  await page.textContent(".statusbar-context"));
 check("no grade is offered before a run: the score is the run",
   (await page.$$(".grade-button")).length === 0);
 await capture("countdown", "A Blitz card: the clock counts down beside the card count");
@@ -2946,8 +2967,12 @@ await startCoding();
 await cheatsheet("sitting");
 exercises("sitting.UserToggledHelp");
 await page.locator(".rail-step-title").nth(1).click();
+// The second step overall: a pattern rail groups its lines under step
+// headings, so this need not be its list's second child.
 check("a rail step takes focus from its title",
-  await appears(".rail-step:nth-child(2).current"));
+  await page.waitForFunction(() =>
+    document.querySelectorAll(".rail-step")[1]?.classList.contains("current"),
+    null, { timeout: 5000 }).then(() => true, () => false));
 exercises("sitting.WalkFocused");
 await page.waitForSelector(".grade-bar", { timeout: 30000 });
 await page.click(".grade-good");
@@ -3059,6 +3084,111 @@ check("the lesson's editor resizes by its handle", (await tourEditor()) >= tourB
 exercises("tour.EditorResized");
 await page.keyboard.press("Escape");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
+
+
+// ---------------------------------------------------------------- Line Drill
+// The learning rung: a problem never studied opens as a skeleton of blanks.
+// Every key here is the line card's or the status bar's, and the pattern
+// switch is asked about before it drops a typed line.
+act = "line-drill";
+console.log(act);
+await freshGuest();
+await openByHand("Python", "Linked List", "Reverse Linked List", { line: true });
+check("a new card opens in Line Drill", await appears(".line-drill"));
+check("the context says LINE", (await page.textContent("body")).includes("LINE"));
+await page.click(".line-input");
+await page.keyboard.type("previous = None");
+await page.keyboard.press("Enter");
+exercises("sitting.LineInputChanged", "sitting.LineSubmitted");
+await page.waitForFunction(() =>
+  document.querySelector(".line-progress-text")?.textContent.includes("1 of 7"),
+  null, { timeout: 5000 }).catch(() => {});
+check("Enter locks a matching line", (await page.textContent(".line-progress-text")).includes("1 of 7"),
+  await page.textContent(".line-progress-text"));
+check("and explains it for free once it is in", await page.isVisible(".line-card.explained"));
+await capture("locked", "Line Drill: one line in, explained; the next blank waiting", "Line Drill: type the solution one line at a time");
+// Escape leaves the input for the key table.
+await page.keyboard.press("Escape");
+await page.keyboard.press("h");
+exercises("sitting.LineHintShown");
+await page.keyboard.press("y");
+exercises("sitting.LineWhyShown");
+await page.waitForTimeout(200);
+check("h and y open the next line's hint and why",
+  (await page.$$(".line-side .line-card.next .line-way")).length === 2,
+  String((await page.$$(".line-side .line-card.next .line-way")).length));
+await page.keyboard.press("c");
+exercises("sitting.LineRevealed");
+await page.waitForFunction(() =>
+  document.querySelector(".line-progress-text")?.textContent.includes("2 of 7"),
+  null, { timeout: 5000 }).catch(() => {});
+check("c reveals the line", (await page.textContent(".line-card.explained")).includes("revealed"),
+  await page.textContent(".line-card.explained"));
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("i");
+exercises("sitting.LineFocusRequested");
+check("i puts the cursor back in the blank",
+  await page.waitForFunction(() => document.activeElement?.classList.contains("line-input"),
+    null, { timeout: 3000 }).then(() => true, () => false));
+await page.keyboard.press("Escape");
+await page.keyboard.press("l");
+exercises("sitting.LineModeToggled");
+check("l carries the lines into the free editor", await appears("gleam-editor"));
+check("with what was locked already typed",
+  (await page.$eval("gleam-editor", (el) => el.doc)).includes("while head is not None:"));
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("l");
+check("and l brings Line Drill back where it was", await appears(".line-drill")
+  && (await page.textContent(".line-progress-text")).includes("2 of 7"));
+await page.keyboard.press("Escape");
+await exitDrill();
+await page.waitForSelector(".study-screen, .menu-container", { timeout: 10000 });
+await goHome();
+
+// Two ways to trap the rain: typing a line only one of them has, then asking
+// for the other, is a question before it is a switch.
+await openByHand("Python", "Two Pointers", "Trapping Rain Water", { line: true });
+await page.click(".line-input");
+await page.keyboard.type("left, right = 0, len(height) - 1");
+await page.keyboard.press("Enter");
+await page.waitForTimeout(300);
+await page.keyboard.press("Escape");
+await page.keyboard.press("o");
+exercises("sitting.LinePatternCycled");
+check("o asks before a switch would drop a typed line",
+  await appears(".line-pattern.picking"));
+await capture("pattern-switch", "Line Drill: switching patterns is asked about first");
+await page.keyboard.press("Escape");
+exercises("sitting.LinePatternCancelled");
+await page.waitForSelector(".line-pattern.picking", { state: "detached", timeout: 5000 })
+  .catch(() => {});
+check("Escape keeps the pattern", !(await page.isVisible(".line-pattern.picking"))
+  && (await page.textContent(".line-progress-text")).includes("1 of"),
+  `${await page.isVisible(".line-pattern.picking")} ${await page.textContent(".line-progress-text")}`);
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("o");
+await appears(".line-pattern.picking");
+await page.keyboard.press("Enter");
+exercises("sitting.LinePatternConfirmed");
+await page.waitForTimeout(300);
+check("Enter switches, and the typed line goes",
+  (await page.textContent(".line-progress-text")).includes("0 of"),
+  await page.textContent(".line-progress-text"));
+await page.keyboard.press("Escape");
+await page.keyboard.press("l");
+await appears("gleam-editor");
+await page.evaluate(() => document.activeElement?.blur());
+// The free editor's rail teaches the same patterns, and its picker chooses.
+const railBefore = await page.textContent(".rail-pattern.active");
+await page.click(".rail-pattern:not(.active)");
+exercises("sitting.RailPatternPicked");
+await page.waitForTimeout(200);
+check("the rail's picker changes the pattern it teaches",
+  (await page.textContent(".rail-pattern.active")) !== railBefore);
+await capture("rail-patterns", "The free editor's rail, teaching a picked pattern");
+await page.evaluate(() => document.activeElement?.blur());
+await exitDrill();
+await page.waitForSelector(".study-screen, .menu-container", { timeout: 10000 });
 
 
 // Nothing is allowed to have thrown along the way, and no user-initiated

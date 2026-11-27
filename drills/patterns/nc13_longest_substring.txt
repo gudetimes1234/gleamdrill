@@ -1,0 +1,36 @@
+== pattern sliding-window
+complexity: O(n) time · O(n) space
+nudge: Grow a window to the right and keep it free of repeats. When the new character is already inside, what has to leave?
+-- step An empty window
+1 window = empty set
+  hint: What do you need to know about the window?
+  why: Which characters are in it, as a set for O(1) checks.
+2 left = 0
+  hint: Where does the window start?
+  why: At the beginning of the string.
+3 longest = 0
+  hint: What do you track?
+  why: The widest repeat-free window seen.
+-- step Grow right, shrink past repeats
+4 for right from 0 to last index:
+  hint: How does the window grow?
+  why: One character at a time on the right.
+5     while s[right] in window:
+  hint: What if the new character is already inside?
+  why: Shrink from the left until its earlier copy has gone.
+6         window.remove(s[left])
+  hint: What leaves first?
+  why: The leftmost character.
+7         left += 1
+  hint: Then?
+  why: The window's start moves past it.
+8     window.add(s[right])
+  hint: Now that it is repeat-free, what joins?
+  why: The new character.
+9     longest = max(longest, right - left + 1)
+  hint: What do you measure?
+  why: The window's width; keep the widest.
+-- step Return
+10 return longest
+  hint: What is the answer?
+  why: The widest window, which never held a repeat.

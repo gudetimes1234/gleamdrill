@@ -10,14 +10,14 @@ def goodNodes(root):
     # above it is bigger, so the check needs no knowledge of the tree below --
     # which is what makes one pass enough. The root is always good, and passing
     # its own value down as the initial maximum is what says so.
-    if root is None:
-        return 0
-    return count(root, root.val)
+    if root is None:  # @1
+        return 0  # @1
+    return count(root, root.val)  # @2
 
 
 def count(node, largest):
-    if node is None:
-        return 0
-    here = 1 if node.val >= largest else 0
-    largest = max(largest, node.val)
-    return here + count(node.left, largest) + count(node.right, largest)
+    if node is None:  # @3
+        return 0  # @3
+    here = 1 if node.val >= largest else 0  # @4
+    largest = max(largest, node.val)  # @5
+    return here + count(node.left, largest) + count(node.right, largest)  # @6

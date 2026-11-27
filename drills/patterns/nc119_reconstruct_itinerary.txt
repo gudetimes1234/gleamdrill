@@ -1,0 +1,81 @@
+== pattern dfs
+complexity: O(E log E) time · O(E) space
+nudge: Take the smallest unused ticket every time and never look back. When you are stuck at an airport with no tickets left, where in the route must that airport go?
+-- step Sort each airport's tickets
+1 destinations = empty map from airport to list
+  hint: What do you need to look up at each airport?
+  why: The tickets leaving it.
+2 for each ticket (origin, destination): add destination to destinations[origin]
+  hint: How do you fill the map?
+  why: One entry per ticket, under the airport it leaves from.
+3 sort every destination list
+  hint: How do you make the smallest ticket the first one?
+  why: Sort each list once, so the lexically smallest choice is always at the front.
+-- step Walk, recording dead ends
+4 route = []
+  hint: What do you build as airports run out of tickets?
+  why: The itinerary, but backwards.
+5 stack = ["JFK"]
+  hint: Where does every itinerary start?
+  why: At JFK.
+6 while stack is not empty:
+  hint: When is the walk over?
+  why: When every airport on the stack has been recorded.
+7     airport = top of stack
+  hint: Where are you now?
+  why: At the airport on top of the stack, without removing it yet.
+8     options = destinations of airport
+  hint: What can you do from here?
+  why: Use one of its remaining tickets, if any.
+9     if options: push the first option, removing it from options
+  hint: What if a ticket is left?
+  why: Take the smallest one and fly there. The ticket is used up for good.
+10     else: pop the airport and append it to route
+  hint: What if this airport has no tickets left?
+  why: It is a dead end, so it is where the route ends from here. Record it.
+-- step Reverse the record
+11 return route reversed
+  hint: Why is the route backwards?
+  why: Airports are recorded as they run out, the last stop first, so reversing puts JFK at the front.
+== pattern backtracking
+complexity: O(E!) time · O(E²) space
+nudge: Try the smallest ticket first, and undo the choice if it strands you before every ticket is used. With the options sorted, which complete itinerary will you find first?
+-- step Sort each airport's tickets
+1 destinations = empty map from airport to list
+  hint: What do you need to look up at each airport?
+  why: The tickets leaving it.
+2 for each ticket (origin, destination): add destination to destinations[origin]
+  hint: How do you fill the map?
+  why: One entry per ticket, under the airport it leaves from.
+3 sort every destination list
+  hint: How do you make sure the first complete route found is the smallest?
+  why: Try the options in sorted order, so the first success is lexically smallest.
+-- step Extend the route one ticket at a time
+4     if remaining == 0: return route
+  hint: When is a route complete?
+  why: When every ticket has been used.
+5     options = destinations of airport, or empty
+  hint: What can you try from here?
+  why: The tickets still unused at this airport.
+6     for each index i in options:
+  hint: How do you try every choice?
+  why: In order, smallest first.
+7         next_stop = remove options[i]
+  hint: What do you do to choose a ticket?
+  why: Take it out, so deeper calls cannot use it again.
+8         found = extend(next_stop, route + [next_stop], remaining - 1)
+  hint: What happens after choosing?
+  why: Fly there and try to finish from that airport with one ticket fewer.
+9         put next_stop back at index i
+  hint: What must happen before trying the next option?
+  why: Undo the choice, so the ticket is available again and the list stays sorted.
+10         if found: return found
+  hint: What if the choice worked?
+  why: Stop: options are tried in order, so this is already the smallest itinerary.
+11     return None
+  hint: What if no ticket here leads to a full route?
+  why: Report failure so the caller undoes its own choice.
+-- step Start from JFK
+12 return extend("JFK", ["JFK"], number of tickets), or []
+  hint: How do you start the search?
+  why: At JFK, with JFK already in the route and every ticket still to use.

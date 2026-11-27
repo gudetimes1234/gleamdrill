@@ -1,0 +1,30 @@
+== pattern two-pointers
+complexity: O(n) time · O(n) space
+nudge: The decoder has to know where each piece stops, whatever characters the pieces hold. What could the encoder write in front of each string so the decoder never has to scan inside one?
+-- step Frame every string
+1 return the concatenation of length(s) + "#" + s for each s
+  hint: What does the encoder write before each string?
+  why: Its length and a marker. The decoder can trust a count even when the string itself contains the marker.
+-- step Read a length
+2 out = empty list; i = 0
+  hint: What does the decoder start with?
+  why: No strings yet, and a read position at the very start.
+3 while i < length of s:
+  hint: How long do you keep decoding?
+  why: Until the read position reaches the end; every piece is consumed whole.
+4     hash_at = position of "#" at or after i
+  hint: Where does the length end?
+  why: At the first marker from here. Only digits come before it, so the marker cannot be part of the data.
+5     length = the number written in s[i .. hash_at)
+  hint: How many characters belong to this piece?
+  why: The digits between the read position and the marker say so.
+-- step Take exactly that many
+6     start = hash_at + 1; append s[start .. start + length) to out
+  hint: Which characters are the piece itself?
+  why: The next length characters after the marker, taken by count, so a marker inside them is harmless.
+7     i = start + length
+  hint: Where does the next piece begin?
+  why: Just past this one: the decoder jumps rather than scans.
+8 return out
+  hint: What is left when the input runs out?
+  why: Every piece, in the order it was encoded.

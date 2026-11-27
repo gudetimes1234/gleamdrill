@@ -1,4 +1,5 @@
 @kind Two Pointers
 @big-o O(n) time · O(1) space
 @order 2
+@pattern two-pointers
 Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.

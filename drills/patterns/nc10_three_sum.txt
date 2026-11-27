@@ -1,0 +1,49 @@
+== pattern two-pointers
+complexity: O(n²) time · O(1) extra space
+nudge: Fix the first number, and the other two must sum to its negation: Two Sum on a sorted array. How does sorting let you step past duplicate triples?
+-- step Sort and fix the first number
+1 sort nums
+  hint: What makes both the two-pointer scan and the duplicate skipping possible?
+  why: Sorted order: the sum moves predictably with the pointers, and equal values sit next to each other.
+2 result = []
+  hint: Where do the triples go?
+  why: An empty list of answers.
+3 for i, a in enumerate(nums):
+  hint: What do you fix in turn?
+  why: Each number as the smallest of the triple.
+4     if i > 0 and a == nums[i - 1]: continue
+  hint: What if this number equals the one before it?
+  why: Skip it: it would find exactly the same triples again.
+-- step Two pointers over the rest
+5     left, right = i + 1, last index
+  hint: Where do the pointers start?
+  why: Just after a, and at the end of the array.
+6     while left < right:
+  hint: When does the scan for this a end?
+  why: When the pointers meet.
+7         total = a + nums[left] + nums[right]
+  hint: What do you compare against zero?
+  why: The sum of all three.
+8         if total < 0: left += 1
+  hint: The sum is too small. Which pointer moves?
+  why: The left one, towards larger values.
+9         else if total > 0: right -= 1
+  hint: And when it is too large?
+  why: The right one, towards smaller values.
+-- step Record a hit and skip its repeats
+10         else:
+  hint: What is left when the sum is neither too small nor too large?
+  why: It is zero: a triple.
+11             result.append([a, nums[left], nums[right]])
+  hint: What do you keep?
+  why: The triple, already in ascending order.
+12             left += 1
+  hint: Then how does the scan continue?
+  why: Move the left pointer on to look for another pair.
+13             while left < right and nums[left] == nums[left - 1]: left += 1
+  hint: What if the next left value is the same as the one just used?
+  why: Step past every copy, or the same triple is recorded twice.
+-- step Return
+14 return result
+  hint: What is the answer?
+  why: Every distinct triple that sums to zero.

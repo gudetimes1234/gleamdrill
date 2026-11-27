@@ -1,0 +1,66 @@
+== pattern heap
+complexity: O(E log V) time · O(V+E) space
+nudge: The answer is when the last node hears the signal, so you need every node's earliest arrival. Which tentative arrival can you safely call final?
+-- step Build the edges
+1 edges = empty map from node to list
+  hint: What do you look up at each node?
+  why: The edges leaving it, with their weights.
+2 for each (origin, destination, weight): add (destination, weight) to edges[origin]
+  hint: How do you fill the map?
+  why: One entry per edge, under the node it leaves.
+-- step Settle the earliest arrival
+3 settled = empty map from node to time
+  hint: Where do final arrival times go?
+  why: In a map, filled once per node.
+4 frontier = min-heap holding (0, k)
+  hint: Where and when does the signal start?
+  why: At k, at time 0.
+5 while frontier is not empty:
+  hint: When does the search end?
+  why: When no tentative arrivals remain.
+6     at, node = pop smallest from frontier
+  hint: Which arrival do you look at next?
+  why: The earliest one; any other route to that node starts with an edge at least as long.
+7     if node in settled: continue
+  hint: What if this node already has a time?
+  why: This is a stale, later entry. Skip it.
+8     settled[node] = at
+  hint: What do you record?
+  why: Its arrival time, final now.
+9     for each (destination, weight) leaving node:
+  hint: Where does the signal go from here?
+  why: Along every outgoing edge.
+10         if destination not settled: push (at + weight, destination)
+  hint: What arrival do you offer the neighbour?
+  why: This node's time plus the edge, as a tentative arrival.
+-- step The last node to hear it
+11 return the largest settled time if every node is settled, else -1
+  hint: What is the answer?
+  why: Every node must hear the signal, and the answer is the last one to.
+== pattern dp-1d
+complexity: O(V·E) time · O(V) space
+nudge: A shortest path has at most n-1 edges. If you relax every edge once per round, how many rounds until every arrival time is right?
+-- step Start at k
+1 settled = {k: 0}
+  hint: What arrival time do you know for sure?
+  why: The source hears it at time 0.
+-- step Relax every edge, n-1 times
+2 repeat n - 1 times:
+  hint: How many rounds are enough?
+  why: n-1, the most edges a shortest path can have; each round fixes at least one more edge of it.
+3     for each (origin, destination, weight) in times:
+  hint: Which edges does a round look at?
+  why: All of them, in any order.
+4         if origin has a time:
+  hint: Which edges can carry the signal yet?
+  why: Only those leaving a node already reached.
+5             arrival = settled[origin] + weight
+  hint: When would the signal arrive by this edge?
+  why: The origin's time plus the edge's weight.
+6             if destination has no time or arrival is earlier: settled[destination] = arrival
+  hint: When do you update the destination?
+  why: When this route is its first, or faster than the best so far.
+-- step The last node to hear it
+7 return the largest time if every node has one, else -1
+  hint: What is the answer?
+  why: Every node must be reached, and the latest arrival is when they all have heard it.

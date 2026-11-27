@@ -1,0 +1,18 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: The last move onto step n was one step or two. How many earlier answers does that leave you needing at any moment?
+-- step Seed the pair
+1 previous, current = 0, 1
+  hint: What are the two counts before you have climbed anything?
+  why: One way to stand at the bottom, and nothing before it, so the first roll gives one way to reach step 1.
+-- step Roll forward n times
+2 for each of the n steps:
+  hint: How many times do you advance the pair?
+  why: Once per step, so after n rolls current is the count for step n.
+3     previous, current = current, previous + current
+  hint: How are the ways to reach this step made from the last two?
+  why: Every route ends with a one-step from the step below or a two-step from the one before that, and those groups never overlap, so they add.
+-- step Return the count
+4 return current
+  hint: Which of the pair is the answer?
+  why: current holds the ways to reach step n once the loop has rolled n times.

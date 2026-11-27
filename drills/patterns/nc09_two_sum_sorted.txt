@@ -1,0 +1,60 @@
+== pattern two-pointers
+complexity: O(n) time · O(1) space
+nudge: The array is sorted. If the smallest plus the largest is too big, can the largest ever be part of the answer?
+-- step Start at both ends
+1 left, right = first index, last index
+  hint: Where do the pointers start?
+  why: At the smallest and the largest value.
+-- step Close in on the target
+2 while left < right:
+  hint: When do you stop looking?
+  why: When the pointers meet, every pair has been ruled out.
+3     total = numbers[left] + numbers[right]
+  hint: What do you compare against target?
+  why: The sum of the two values under the pointers.
+4     if total == target: return [left + 1, right + 1]
+  hint: What do you return on a hit?
+  why: The two positions, 1-based as the problem asks.
+5     else if total < target: left += 1
+  hint: The sum is too small. Which pointer moves?
+  why: The left one: only a larger value can raise the sum, and the smallest value cannot pair with anything bigger than the largest.
+6     else: right -= 1
+  hint: And when it is too large?
+  why: The right one moves down: the largest value is too big even with the smallest.
+-- step No pair
+7 return []
+  hint: What if the pointers meet?
+  why: No pair adds to target.
+== pattern binary-search
+complexity: O(n log n) time · O(1) space
+nudge: Fix each number in turn; its partner is a known value somewhere to its right in a sorted array. How do you find a known value in sorted data?
+-- step Fix each number
+1 for i, number in enumerate(numbers):
+  hint: What do you try in turn?
+  why: Each number as the first of the pair, keeping its index for the answer.
+2     wanted = target - number
+  hint: Which value would complete the pair?
+  why: The one that adds to number to make target.
+-- step Binary search the rest for its partner
+3     lo, hi = i + 1, last index
+  hint: Where can the partner be?
+  why: Only to the right of i; earlier numbers were already tried as the first of a pair.
+4     while lo <= hi:
+  hint: When does the search give up?
+  why: When the range is empty, lo has passed hi.
+5         mid = lo + (hi - lo) // 2
+  hint: Which element do you test?
+  why: The middle of the range, which halves it whatever the answer.
+6         if numbers[mid] == wanted: return [i + 1, mid + 1]
+  hint: What if the middle is the partner?
+  why: Return both positions, 1-based.
+7         if numbers[mid] < wanted: lo = mid + 1
+  hint: The middle is too small. Which half is left?
+  why: The right half: everything at or before mid is smaller still.
+8         else: hi = mid - 1
+  hint: And when it is too large?
+  why: The left half: everything at or after mid is larger still.
+-- step No pair
+9 return []
+  hint: What if no number finds its partner?
+  why: No pair adds to target.

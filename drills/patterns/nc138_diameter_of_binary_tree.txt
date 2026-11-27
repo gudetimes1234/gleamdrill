@@ -1,0 +1,24 @@
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: The longest path bends through some node, joining a walk down its left side to a walk down its right. What could each subtree hand its parent so that one walk answers everything?
+-- step Ask the root
+1 return widest part of measure(root)
+  hint: Which half of the root's report is the answer?
+  why: The widest path recorded anywhere, not the height: the longest path may sit deep inside one subtree.
+-- step Measure both children (in measure(node))
+2 if node is None: return (0, 0)
+  hint: What does an empty subtree report?
+  why: Height 0 and no path, the base case at every leaf's children.
+3 leftHeight, leftWidest = measure(node.left)
+  hint: What do you need from the left child?
+  why: Its height, to build paths through this node, and the widest path already found inside it.
+4 rightHeight, rightWidest = measure(node.right)
+  hint: And from the right child?
+  why: The same two numbers for the other side.
+-- step Return the height, record the width
+5 return (1 + max(leftHeight, rightHeight),
+  hint: What height does this node report to its parent?
+  why: One more than its taller side; the parent can only extend a path down one side.
+6     max(leftHeight + rightHeight, leftWidest, rightWidest))
+  hint: What is the widest path in this subtree?
+  why: Either the path bending here, left height plus right height in edges, or one already found below.

@@ -5,19 +5,19 @@ def merge(intervals):
     #
     # Sorting -delta ascending puts opens before closes at the same coordinate,
     # so touching intervals join.
-    edges = []
-    for start, end in intervals:
-        edges.append((start, 1))
-        edges.append((end, -1))
-    edges.sort(key=lambda edge: (edge[0], -edge[1]))
+    edges = []  # @1
+    for start, end in intervals:  # @2
+        edges.append((start, 1))  # @3
+        edges.append((end, -1))  # @3
+    edges.sort(key=lambda edge: (edge[0], -edge[1]))  # @4
 
-    out = []
-    depth = 0
-    start = 0
-    for position, delta in edges:
-        if depth == 0:
-            start = position
-        depth += delta
-        if depth == 0:
-            out.append([start, position])
-    return out
+    out = []  # @5
+    depth = 0  # @5
+    start = 0  # @5
+    for position, delta in edges:  # @6
+        if depth == 0:  # @7
+            start = position  # @7
+        depth += delta  # @8
+        if depth == 0:  # @9
+            out.append([start, position])  # @9
+    return out  # @10

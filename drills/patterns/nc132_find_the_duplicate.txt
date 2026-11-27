@@ -1,0 +1,52 @@
+== pattern fast-slow-pointers
+complexity: O(n) time · O(1) space
+nudge: Read the array as a linked list where index i points at nums[i]. Two indices point at the duplicate, so the list has a cycle; where does that cycle begin?
+-- step Meet inside the loop
+1 slow, fast = nums[0], nums[nums[0]]
+  hint: Where do the walkers start?
+  why: Slow one step from index 0, fast two steps.
+2 while slow != fast:
+  hint: How long do they run?
+  why: Until they meet, which they must inside the cycle.
+3     slow, fast = nums[slow], nums[nums[fast]]
+  hint: How does each move?
+  why: One link and two links.
+-- step Find the entrance
+4 slow = 0
+  hint: Where does slow restart?
+  why: At the start; the start and the meeting point are the same distance from the cycle's entrance.
+5 while slow != fast:
+  hint: How long do they walk now?
+  why: Until they agree.
+6     slow, fast = nums[slow], nums[fast]
+  hint: At what speed?
+  why: One link each.
+7 return slow
+  hint: What is the duplicate?
+  why: The entrance of the cycle: the value two indices point at.
+== pattern binary-search
+complexity: O(n log n) time · O(1) space
+nudge: Search the values, not the positions. With no duplicate, exactly v numbers are at most v. What does it mean when more are?
+-- step Search the value range
+1 low, high = 1, len(nums) - 1
+  hint: What values can the duplicate be?
+  why: Anything from 1 to n.
+2 while low < high:
+  hint: When is the search done?
+  why: When one value is left.
+3     middle = (low + high) // 2
+  hint: Which value do you test?
+  why: The middle of the range.
+-- step Count to decide which half
+4     if count of numbers <= middle is more than middle:
+  hint: How do you tell which half holds the repeat?
+  why: Count the numbers at most middle; by pigeonhole, more than middle of them means a repeat among them.
+5         high = middle
+  hint: Then where is the duplicate?
+  why: At or below middle.
+6     else: low = middle + 1
+  hint: Otherwise?
+  why: Above middle.
+7 return low
+  hint: What is the answer?
+  why: The one value left, the duplicate.

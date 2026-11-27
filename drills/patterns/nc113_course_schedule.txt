@@ -1,0 +1,97 @@
+== pattern topological-sort
+complexity: O(V+E) time · O(V+E) space
+nudge: A course with nothing outstanding can be taken now, and taking it releases what depended on it. What does it mean if that process stalls with courses left?
+-- step Count what each course waits for
+1 waiting = every course mapped to 0
+  hint: What do you track for each course?
+  why: How many of its prerequisites are still untaken.
+2 unlocks = every course mapped to an empty list
+  hint: What do you need when a course is taken?
+  why: The courses that depended on it, so each can be told.
+3 for course, prereq in prerequisites:
+  hint: How do you fill both maps?
+  why: One pair at a time.
+4     waiting[course] += 1
+  hint: What does a prerequisite do to its course?
+  why: It is one more thing the course waits for.
+5     unlocks[prereq].append(course)
+  hint: And to the prerequisite?
+  why: Taking it later will release this course.
+-- step Take whatever is ready
+6 ready = queue of every course with waiting == 0
+  hint: Which courses can be taken straight away?
+  why: The ones with no prerequisites at all.
+7 taken = 0
+  hint: What do you count?
+  why: The courses taken so far.
+8 while ready:
+  hint: How long do you keep taking courses?
+  why: While some course has nothing outstanding.
+9     course = take from the front of ready
+  hint: Which course next?
+  why: Any ready one; the queue takes them in order.
+10     taken += 1
+  hint: What does taking it change?
+  why: One more course is done.
+11     for following in unlocks[course]:
+  hint: Who is affected?
+  why: Every course that listed this one as a prerequisite.
+12         waiting[following] -= 1
+  hint: What changes for each of them?
+  why: One fewer prerequisite outstanding.
+13         if waiting[following] == 0: add it to ready
+  hint: When does a course become ready?
+  why: When its last prerequisite has been taken.
+-- step Did every course get taken?
+14 return taken == numCourses
+  hint: How do you read the answer from the count?
+  why: Courses left untaken depend on each other in a cycle, so the process stalled.
+== pattern dfs
+complexity: O(V+E) time · O(V+E) space
+nudge: Follow each course's prerequisites depth-first. Seen is not enough: which kind of revisit is a cycle, and which is harmless?
+-- step Build the graph
+1 needs = every course mapped to an empty list
+  hint: Which way do the edges go?
+  why: From a course to the courses it needs.
+2 for course, prereq in prerequisites:
+  hint: How do you fill it?
+  why: One pair at a time.
+3     needs[course].append(prereq)
+  hint: What does each pair add?
+  why: An edge from the course to its prerequisite.
+-- step Three states, not two
+4 onPath = empty set
+  hint: What tells a cycle apart from a harmless revisit?
+  why: The courses on the current path. Meeting one of them again is a cycle.
+5 done = empty set
+  hint: What records courses known to be fine?
+  why: The courses fully checked, so they are never walked again.
+-- step Visit a course
+6 if course in onPath: return False
+  hint: What if the walk comes back to a course still on its path?
+  why: That is a cycle, so the courses cannot all be finished.
+7 if course in done: return True
+  hint: What if the course was already checked?
+  why: Reaching it down another branch is fine.
+8 onPath.add(course)
+  hint: What do you record before going deeper?
+  why: That this course is on the current path.
+9 for prereq in needs[course]:
+  hint: What must be checked first?
+  why: Every prerequisite of this course.
+10     if not visit(prereq): return False
+  hint: What if a prerequisite hits a cycle?
+  why: Pass the failure straight back up.
+11 onPath.discard(course)
+  hint: What happens when you leave the course?
+  why: It is no longer on the path.
+12 done.add(course)
+  hint: What do you now know about it?
+  why: It and everything below it are acyclic.
+13 return True
+  hint: What does a clean visit return?
+  why: That this course can be finished.
+-- step Check every course
+14 return visit succeeds for every course
+  hint: Which courses must be visited?
+  why: All of them, since the graph need not be connected.

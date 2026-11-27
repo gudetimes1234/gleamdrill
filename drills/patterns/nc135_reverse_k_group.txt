@@ -1,0 +1,52 @@
+== pattern linked-list-pointers
+complexity: O(n) time · O(1) space
+nudge: Reversing k nodes is a drill you already own; the trouble is a short final group. When do you need to know that k nodes remain: before you start rewiring, or after?
+-- step Anchor a node before the head
+1 dummy = new node pointing at head
+  hint: What lets the first group be reconnected exactly like every other?
+  why: A node in front of the head, so there is always a node before the group whose next can be rewired.
+2 before = dummy
+  hint: Which node sits just ahead of the group you are about to reverse?
+  why: The dummy, for now. before is the node whose next must end up at the group's new first node.
+-- step Look ahead k nodes
+3 loop forever:
+  hint: How many groups will there be?
+  why: You do not know yet, so loop until the look-ahead finds a short group and returns.
+4     after = before
+  hint: Where does the look-ahead start?
+  why: At before, so k steps land on the last node of the group.
+5     repeat k times:
+  hint: How far ahead must you look?
+  why: Exactly k nodes, the size of one group.
+6         after = after.next
+  hint: How do you take one step of the look-ahead?
+  why: Follow the link; after ends on the group's last node.
+7         if after is None: return dummy.next
+  hint: What if the list runs out first?
+  why: Fewer than k nodes remain, so they stay as they are and the list is finished.
+-- step Reverse the group
+8     node, previous = before.next, after.next
+  hint: What should the group's first node point at once reversed?
+  why: The node after the group. Seeding previous with it leaves the reversed block already linked to the rest.
+9     first = node
+  hint: Which node must you remember before reversing?
+  why: The group's first node: it becomes the group's last, and the next before.
+10     repeat k times:
+  hint: How many links do you turn around?
+  why: One per node in the group, k in all.
+11         following = node.next
+  hint: What must you save before changing the link?
+  why: The next node, or the rest of the list is lost once node.next is overwritten.
+12         node.next = previous
+  hint: Which way should this node point now?
+  why: Back at the node behind it, the reversal itself.
+13         previous, node = node, following
+  hint: How do you step on?
+  why: The node you turned is now behind you, and you move to the one you saved.
+-- step Stitch the front and move on
+14     before.next = previous
+  hint: What should the node before the group point at now?
+  why: previous, the group's old last node and now its first.
+15     before = first
+  hint: Which node sits before the next group?
+  why: The old first node, now the end of this reversed group.

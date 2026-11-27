@@ -44,7 +44,7 @@ select rating, count(*)::int as total,
   from (
     select r.rating,
            lead(r.rating > 1 and not r.revealed and not r.auto_failed
-                and not r.recall)
+                and not r.recall and r.mode = 'free')
              over (partition by r.card_id order by r.reviewed_at)
              as next_pass
       from reviews r
@@ -79,7 +79,8 @@ pub type CleanSolvesRow {
 }
 
 /// The last five clean solves per card in one track, oldest first: passed,
-/// not revealed, not auto-failed, not a recall review, and timed. The
+/// not revealed, not auto-failed, not a recall review, not typed into Line
+/// Drill's blanks, and timed. The
 /// duration is never null here, which the "!" tells Squirrel.
 ///
 /// > 🐿️ This function was generated automatically using v4.7.0 of
@@ -106,7 +107,8 @@ pub fn clean_solves(
   }
 
   "-- The last five clean solves per card in one track, oldest first: passed,
--- not revealed, not auto-failed, not a recall review, and timed. The
+-- not revealed, not auto-failed, not a recall review, not typed into Line
+-- Drill's blanks, and timed. The
 -- duration is never null here, which the \"!\" tells Squirrel.
 select category, subcategory, title, at, duration_ms as \"duration_ms!\"
   from (
@@ -123,6 +125,7 @@ select category, subcategory, title, at, duration_ms as \"duration_ms!\"
        and not r.revealed
        and not r.auto_failed
        and not r.recall
+       and r.mode = 'free'
        and r.duration_ms is not null
   ) latest
  where recency <= 5
@@ -152,6 +155,7 @@ pub type ProblemHistoryRow {
     scheduled_days: Int,
     stability_after: Option(Float),
     recall: Bool,
+    mode: String,
   )
 }
 
@@ -177,6 +181,7 @@ pub fn problem_history(
     use scheduled_days <- decode.field(6, decode.int)
     use stability_after <- decode.field(7, decode.optional(decode.float))
     use recall <- decode.field(8, decode.bool)
+    use mode <- decode.field(9, decode.string)
     decode.success(ProblemHistoryRow(
       at:,
       rating:,
@@ -187,13 +192,14 @@ pub fn problem_history(
       scheduled_days:,
       stability_after:,
       recall:,
+      mode:,
     ))
   }
 
   "-- One problem's review log, oldest first, for the per-problem timeline.
 select extract(epoch from r.reviewed_at)::float8 as at, r.rating,
        r.duration_ms, r.revealed, r.auto_failed, r.state_before,
-       r.scheduled_days, r.stability_after, r.recall
+       r.scheduled_days, r.stability_after, r.recall, r.mode
   from reviews r
   join cards c on c.id = r.card_id
  where r.user_id = $1

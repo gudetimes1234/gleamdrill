@@ -1,0 +1,17 @@
+== pattern backtracking
+complexity: O(n·n!) time · O(n·n!) space
+nudge: Every permutation starts with some element. If you pick each element in turn to go first, what is left to arrange after it?
+-- step Stop at the empty list
+1 if nums is empty: return [[]]
+  hint: How many ways are there to arrange nothing?
+  why: One: the empty arrangement, which every caller extends.
+-- step Choose a first element, then permute the rest
+2 return [[value] + tail
+  hint: What does each permutation look like?
+  why: A chosen first value followed by an arrangement of everything else.
+3     for each index i and value in nums
+  hint: Which values can go first?
+  why: Every one of them in turn; the index says which copy to leave out.
+4     for each tail in permute(nums without position i)]
+  hint: What can follow the chosen value?
+  why: Every permutation of the remainder. Dropping position i is the in-place version's used set.

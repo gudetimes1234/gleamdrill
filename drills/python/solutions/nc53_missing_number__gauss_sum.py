@@ -3,5 +3,5 @@ def missingNumber(nums):
     # between that and the actual total is the missing value. One multiplication
     # instead of a pass of XORs -- but in a fixed-width language it overflows on
     # inputs the XOR version handles fine, which is the trade worth knowing.
-    n = len(nums)
-    return n * (n + 1) // 2 - sum(nums)
+    n = len(nums)  # @1
+    return n * (n + 1) // 2 - sum(nums)  # @2

@@ -51,6 +51,7 @@ fn drill(
     prompt_html: False,
     prompt: prompt,
     approach: [],
+    patterns: [],
     solutions: list.map(e.solutions, fn(s) {
       Solution(label: s.0, complexity: s.1, note: s.2, code: s.3)
     }),

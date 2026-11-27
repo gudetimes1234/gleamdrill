@@ -1,0 +1,26 @@
+== pattern backtracking
+complexity: O(n·2ⁿ) time · O(n·2ⁿ) space
+nudge: Each element is either in or out, independently. If you had every subset of the tail, how would you get every subset of the whole list?
+-- step Stop at the empty list
+1 if nums is empty: return [[]]
+  hint: What are the subsets of nothing?
+  why: Exactly one: the empty subset. Returning [] here would lose every answer.
+-- step Recurse on the tail
+2 without = subsets of nums after the first
+  hint: Which subsets leave the first element out?
+  why: Exactly the subsets of the rest of the list.
+-- step Take the head in, and out
+3 return (each of without with nums[0] added) + without
+  hint: How do you get the subsets that include the first element?
+  why: Add the head to each subset of the tail; together with those that skip it, that is all 2ⁿ.
+== pattern bit-manipulation
+complexity: O(n·2ⁿ) time · O(n·2ⁿ) space
+nudge: The in-or-out choices for n elements are n bits. What do you get if you count from 0 to 2ⁿ - 1 and read each number as a set of choices?
+-- step Read a subset off a mask
+1 return [the values whose position's bit is set in mask
+  hint: Which elements does a mask select?
+  why: Element i is in the subset when bit i of the mask is 1.
+-- step Count through every mask
+2     for every mask from 0 to 2ⁿ - 1]
+  hint: Which masks do you need?
+  why: Every number below 2ⁿ, each one a different set of choices, so every subset appears exactly once.

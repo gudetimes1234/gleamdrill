@@ -11,15 +11,15 @@ def diameterOfBinaryTree(root):
     # height. The answer is the largest such path, so it is never returned, only
     # tracked. That split between what a call returns and what it records is the
     # pattern worth keeping.
-    return measure(root)[1]
+    return measure(root)[1]  # @1
 
 
 def measure(node):
-    if node is None:
-        return 0, 0
-    leftHeight, leftWidest = measure(node.left)
-    rightHeight, rightWidest = measure(node.right)
-    return (
-        1 + max(leftHeight, rightHeight),
-        max(leftHeight + rightHeight, leftWidest, rightWidest),
+    if node is None:  # @2
+        return 0, 0  # @2
+    leftHeight, leftWidest = measure(node.left)  # @3
+    rightHeight, rightWidest = measure(node.right)  # @4
+    return (  # @5
+        1 + max(leftHeight, rightHeight),  # @5
+        max(leftHeight + rightHeight, leftWidest, rightWidest),  # @6
     )

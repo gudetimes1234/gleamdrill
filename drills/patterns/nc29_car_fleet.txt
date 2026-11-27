@@ -1,0 +1,33 @@
+== pattern greedy
+complexity: O(n log n) time · O(n) space
+nudge: A car can only be held up by a car ahead of it. Meet the cars from the one nearest the target backwards: what single fact about the fleet ahead decides whether this car joins it?
+-- step Meet the cars front first
+1 cars = (position, speed) pairs, sorted by position, nearest the target first
+  hint: In what order should you consider the cars?
+  why: Nearest the target first, so everything ahead of a car is settled before you reach it.
+2 fleets = 0
+  hint: What are you counting?
+  why: Fleets, none yet.
+3 lead_distance, lead_speed = 0, 1
+  hint: How do you describe the fleet ahead before there is one?
+  why: As arriving at time zero (distance 0 at speed 1), so the first car always starts a fleet.
+-- step Does this car catch the fleet ahead?
+4 for pos, spd in cars:
+  hint: How do you walk the cars?
+  why: In the sorted order, once.
+5     distance = target - pos
+  hint: How far does this car still have to go?
+  why: From its position to the target; its arrival time is distance / spd.
+6     if distance * lead_speed > lead_distance * spd:
+  hint: How do you compare the two arrival times without fractions?
+  why: Cross-multiply: distance / spd > lead_distance / lead_speed is the same test in integers. Strictly later means it never catches up.
+7         fleets += 1
+  hint: What does arriving strictly later mean?
+  why: The car heads a fleet of its own.
+8         lead_distance, lead_speed = distance, spd
+  hint: Which time must the cars behind now beat?
+  why: This new fleet's, since it is now the fleet directly ahead of them. A car that catches up changes nothing.
+-- step Count
+9 return fleets
+  hint: What is the answer?
+  why: The number of cars that started a new fleet.

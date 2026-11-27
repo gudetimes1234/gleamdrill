@@ -1,0 +1,56 @@
+== pattern bfs
+complexity: O(n) time · O(n) space
+nudge: Standing to the right of the tree, exactly one node per level shows. Which one, and why is it not simply whatever hangs off the right children? Try restating the problem level by level.
+-- step Start with the root as the first level
+1 seen = []
+  hint: What will the answer collect?
+  why: One value per level, top to bottom.
+2 frontier = [root] if root is not None else []
+  hint: What is the first level, and what if the tree is empty?
+  why: Just the root, or nothing, so an empty tree shows nothing.
+-- step Keep the last node of each level
+3 while frontier is not empty:
+  hint: When does the view end?
+  why: When a level has no nodes, there is nothing below to see.
+4     seen.append(value of the last node in frontier)
+  hint: Of a whole level, which node does someone on the right see?
+  why: The last one in left-to-right order, whichever subtree it hangs from.
+5     frontier = [child
+  hint: What replaces the frontier?
+  why: The children of every node on it: the next level.
+6         for each node in frontier, for each child in (node.left, node.right)
+  hint: In what order must the children go so that "last" still means rightmost?
+  why: Left to right, each node's left before its right.
+7         if child is not None]
+  hint: Which children belong on the next level?
+  why: Only real nodes.
+-- step Return the view
+8 return seen
+  hint: What is the answer?
+  why: The rightmost value of every level, top to bottom.
+== pattern dfs
+complexity: O(n) time · O(h) space
+nudge: Walk depth-first, but choose the order of the children so that the first node you reach at each depth is the one seen from the right. Which child goes first?
+-- step Start the walk
+1 seen = []
+  hint: What will the answer collect?
+  why: One value per depth, filled in as each depth is first reached.
+2 look(root, 0, seen)
+  hint: Where does the walk start?
+  why: At the root, depth 0.
+3 return seen
+  hint: What is the answer?
+  why: The values recorded, one per depth from the top.
+-- step Record the first node at each depth (in look(node, depth, seen))
+4 if node is None: return
+  hint: What does an empty child do?
+  why: Nothing; the walk stops here.
+5 if depth == len(seen): seen.append(node.val)
+  hint: How do you know this is the first node reached at this depth?
+  why: seen holds one value per depth already visited, so its length equals depth exactly when this depth is new.
+6 look(node.right, depth + 1, seen)
+  hint: Which child do you visit first?
+  why: The right one, so the first node to reach any depth is the rightmost on it.
+7 look(node.left, depth + 1, seen)
+  hint: Is the left child needed at all?
+  why: Yes: where the right side is short, a deeper left node is the one that shows.

@@ -1,0 +1,58 @@
+== pattern prefix-sums
+complexity: O(n) time · O(n) space
+nudge: Cut the array into blocks of k and keep running maxima inside each block, forwards and backwards. A window of width k crosses at most one block boundary, so which two precomputed values cover it?
+-- step Set up the two arrays
+1 if k <= 0 or there are fewer than k numbers: return []
+  hint: When is there no window at all?
+  why: A width of zero, or an array shorter than one window.
+2 n = length of nums; left, right = arrays of n zeros
+  hint: What do you precompute?
+  why: For each index, the maximum from its block's start up to it, and from it to its block's end.
+-- step Running maximum forwards within each block
+3 for i from 0 to n - 1:
+  hint: Which way does the first pass go?
+  why: Left to right, so each index can extend the one before it.
+4     left[i] = nums[i] if i starts a block, else max(left[i - 1], nums[i])
+  hint: When does the running maximum start again?
+  why: At every multiple of k, where a new block begins; otherwise it carries on from the left.
+-- step Running maximum backwards within each block
+5 for i from n - 1 down to 0:
+  hint: Which way does the second pass go?
+  why: Right to left, so each index can extend the one after it.
+6     right[i] = nums[i] if i ends a block or the array, else max(right[i + 1], nums[i])
+  hint: When does the backward maximum start again?
+  why: At the last index of each block, where i + 1 is a multiple of k, and at the very end.
+-- step Combine the two
+7 return max(right[i], left[i + k - 1]) for every window start i
+  hint: Which two values cover the window from i to i + k - 1?
+  why: The window is a suffix of i's block and a prefix of the next, so right[i] and left at its last index together see all of it.
+== pattern monotonic-stack
+complexity: O(n) time · O(k) space
+nudge: Keep only the indices whose value could still be a window's maximum, in decreasing order of value. What can a new number throw away for good, and when does the front stop counting?
+-- step Start empty
+1 if k <= 0: return []
+  hint: When is there nothing to report?
+  why: A window of width zero has no maximum.
+2 window = empty deque of indices; out = empty list
+  hint: What do you carry while scanning?
+  why: The candidate indices, front to back in decreasing value, and the answers so far.
+-- step Admit each number
+3 for i, num in enumerate(nums):
+  hint: How do you walk the array?
+  why: Once, keeping indices so you can tell when a candidate leaves the window.
+4     while window is not empty and nums[back of window] <= num: pop the back
+  hint: Which candidates can never be the maximum again?
+  why: Any smaller or equal value behind num: num is newer and at least as big, so it outlasts them in every window.
+5     push i onto the back
+  hint: Where does the new index go?
+  why: At the back; everything still ahead of it is larger.
+-- step Drop the expired, report the front
+6     if the front index <= i - k: pop the front
+  hint: When does the front stop counting?
+  why: Once it has slid out of the window ending at i.
+7     if i >= k - 1: append nums[front of window] to out
+  hint: When do you start reporting, and what?
+  why: Once the first full window is reached; the front is always the largest value inside it.
+8 return out
+  hint: What is the answer?
+  why: One maximum per window, in order.

@@ -9,6 +9,7 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleamdrill/content/problem
+import gleamdrill/domain/line_drill
 import gleamdrill/domain/walk
 import gleamdrill/model as shared_model
 import gleamdrill/page/sitting/model.{
@@ -16,14 +17,16 @@ import gleamdrill/page/sitting/model.{
 }
 import gleamdrill/page/sitting/msg.{
   type Msg, BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor,
-  EditorFocusRequested, ExitConfirmed, NoteFocusRequested, PanesNumberPicked,
-  QuizMoved, UserClickedExitDrill, UserClickedExitReport, UserClickedNext,
-  UserClickedRun, UserClickedScratchRun, UserClickedUndo, UserGraded,
-  UserPickedChoice, UserPickedPanel, UserRevealedRecall, UserRevealedWholeThing,
-  UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledHelp,
-  UserToggledNudge, UserToggledPane, UserToggledPrompt, UserToggledResults,
-  UserToggledSolutionPanel, WalkAdvanced, WalkBacked, WalkCodeShown,
-  WalkHintShown, WalkWhyShown,
+  EditorFocusRequested, ExitConfirmed, LineFocusRequested, LineHintShown,
+  LineModeToggled, LinePatternCancelled, LinePatternConfirmed, LinePatternCycled,
+  LineRevealed, LineWhyShown, NoteFocusRequested, PanesNumberPicked, QuizMoved,
+  RailPatternPicked, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedNext, UserClickedRun, UserClickedScratchRun, UserClickedUndo,
+  UserGraded, UserPickedChoice, UserPickedPanel, UserRevealedRecall,
+  UserRevealedWholeThing, UserSubmittedAnswer, UserSubmittedBoard,
+  UserToggledDiff, UserToggledHelp, UserToggledNudge, UserToggledPane,
+  UserToggledPrompt, UserToggledResults, UserToggledSolutionPanel, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/shared.{type Shared}
 import gleamdrill/ui/binding.{type Binding, Binding}
@@ -108,9 +111,10 @@ pub fn label(shared: Shared, page: Model) -> String {
         _, False ->
           case model.current_problem(page) {
             Ok(current) ->
-              case page.blitz {
-                Some(_) -> "BLITZ"
-                None -> "DRILL"
+              case page.blitz, page.line_mode {
+                Some(_), _ -> "BLITZ"
+                None, True -> "LINE"
+                None, False -> "DRILL"
               }
               <> " \u{b7} "
               <> string.uppercase(problem.language_label(current.language))
@@ -145,7 +149,11 @@ fn working(shared: Shared, page: Model) -> List(Binding(Msg)) {
     // The walkthrough no longer owns the keyboard, because it is no longer a
     // pane that opens: the rail is always up, and its keys live alongside the
     // editor's in `code_bindings`.
-    _, False -> code_bindings(shared, page)
+    _, False ->
+      case page.line_mode {
+        True -> line_bindings(shared, page)
+        False -> code_bindings(shared, page)
+      }
   }
 }
 
@@ -238,6 +246,8 @@ fn code_bindings(shared: Shared, page: Model) -> List(Binding(Msg)) {
     // first pushed the solution, the note and the prompt off the bar, which
     // is exactly backwards: those have no label anywhere else.
     rail_bindings(page),
+    // Past the cut too: the header's "Line drill" button already names it.
+    line_toggle_binding(page, False),
     results_binding(shared, page),
     diff_binding(shared),
     [
@@ -276,6 +286,7 @@ fn code_bindings(shared: Shared, page: Model) -> List(Binding(Msg)) {
 fn rail_bindings(page: Model) -> List(Binding(Msg)) {
   case model.current_problem(page) {
     Error(Nil) -> []
+    Ok(current) if current.patterns != [] -> pattern_rail_bindings(page)
     Ok(current) -> {
       let steps = walk.walk_steps(current.approach)
       let nudge = case walk.nudge_text(current.approach) {
@@ -347,6 +358,250 @@ fn rail_bindings(page: Model) -> List(Binding(Msg)) {
       }
       list.flatten([nudge, walk, whole])
     }
+  }
+}
+
+/// The rail of a problem with patterns: the same keys over the rail
+/// pattern's lines, plus `o` for the next pattern.
+fn pattern_rail_bindings(page: Model) -> List(Binding(Msg)) {
+  case model.rail_pattern(page) {
+    Error(Nil) -> []
+    Ok(pattern) -> {
+      let open = walk.layers_at(page.walk, page.walk.focus)
+      list.flatten([
+        [
+          Binding(
+            ["a"],
+            "nudge",
+            case page.nudge_shown {
+              True -> "Fold the nudge away"
+              False -> "Unfold the nudge"
+            },
+            UserToggledNudge,
+          ),
+          Binding(["j"], "next line", "Focus the next line", WalkAdvanced),
+          Binding(["k"], "prev line", "Focus the previous line", WalkBacked),
+        ],
+        case open.hint {
+          True -> []
+          False -> [
+            Binding(["h"], "hint", "Show this line's hint", WalkHintShown),
+          ]
+        },
+        case open.why {
+          True -> []
+          False -> [Binding(["y"], "why", "Explain this line", WalkWhyShown)]
+        },
+        case open.code {
+          True -> []
+          False -> [
+            Binding(
+              ["c"],
+              "code",
+              "Show this line's code (a reveal)",
+              WalkCodeShown,
+            ),
+          ]
+        },
+        case next_pattern(model.current_patterns(page), pattern.slug) {
+          Ok(next) -> [
+            Binding(
+              ["o"],
+              "pattern",
+              "Follow the next pattern: " <> next.name,
+              RailPatternPicked(next.slug),
+            ),
+          ]
+          Error(Nil) -> []
+        },
+        case page.whole_thing_shown {
+          True -> []
+          False -> [
+            Binding(
+              ["w"],
+              "whole thing",
+              "Show the whole pseudocode at once (a reveal)",
+              UserRevealedWholeThing,
+            ),
+          ]
+        },
+      ])
+    }
+  }
+}
+
+/// The pattern after `slug`, wrapping; none when there is only one.
+fn next_pattern(
+  patterns: List(problem.Pattern),
+  slug: String,
+) -> Result(problem.Pattern, Nil) {
+  case patterns {
+    [] | [_] -> Error(Nil)
+    [first, ..] ->
+      case list.drop_while(patterns, fn(p) { p.slug != slug }) {
+        [_, next, ..] -> Ok(next)
+        _ -> Ok(first)
+      }
+  }
+}
+
+/// `l`, on any code drill whose problem has patterns: Line Drill and the
+/// free editor, both ways.
+fn line_toggle_binding(page: Model, line: Bool) -> List(Binding(Msg)) {
+  case model.current_patterns(page) {
+    [] -> []
+    _ -> [
+      Binding(
+        ["l"],
+        case line {
+          True -> "free"
+          False -> "line"
+        },
+        case line {
+          True -> "Type freely instead of line by line"
+          False -> "Type it line by line (Line Drill)"
+        },
+        LineModeToggled,
+      ),
+    ]
+  }
+}
+
+/// Line Drill's keys. While the active blank has the focus, only Enter,
+/// Ctrl+Enter and Escape are the app's (the input keeps the rest); these are
+/// what work once Escape has handed the keyboard back.
+fn line_bindings(shared: Shared, page: Model) -> List(Binding(Msg)) {
+  let grades = case page.grading {
+    AwaitingGrade -> [
+      Binding(["1"], "again", "Grade: Again", UserGraded(fsrs.Again)),
+      Binding(["2"], "hard", "Grade: Hard", UserGraded(fsrs.Hard)),
+      Binding(["3"], "good", "Grade: Good", UserGraded(fsrs.Good)),
+      Binding(["4"], "easy", "Grade: Easy", UserGraded(fsrs.Easy)),
+    ]
+    _ -> []
+  }
+  let state = page.line_drill
+  let picking = case state {
+    Some(line_drill.LineState(picking: Some(_), ..)) -> True
+    _ -> False
+  }
+  let complete = case state {
+    Some(state) -> line_drill.complete(state)
+    None -> False
+  }
+  let line_keys = case state, complete {
+    Some(state), False -> {
+      let #(hint, why) = line_drill.shown_here(state)
+      list.flatten([
+        [
+          Binding(
+            ["i", "e", "Enter"],
+            "type",
+            "Type the next line",
+            LineFocusRequested,
+          ),
+        ],
+        case hint {
+          True -> []
+          False -> [
+            Binding(["h"], "hint", "This line's hint", LineHintShown),
+          ]
+        },
+        case why {
+          True -> []
+          False -> [Binding(["y"], "why", "Why this line", LineWhyShown)]
+        },
+        [
+          Binding(
+            ["c"],
+            "reveal",
+            "Reveal this line (logged as a reveal)",
+            LineRevealed,
+          ),
+        ],
+      ])
+    }
+    _, _ -> []
+  }
+  let pattern_keys = case state {
+    Some(state) ->
+      case list.length(state.patterns) > 1 {
+        True -> [
+          Binding(
+            ["o"],
+            "pattern",
+            "Switch to the next pattern",
+            LinePatternCycled,
+          ),
+        ]
+        False -> []
+      }
+    None -> []
+  }
+  case picking {
+    // The status bar is asking whether to switch: Enter does, Escape keeps.
+    True -> [
+      Binding(["Enter"], "switch", "Switch pattern", LinePatternConfirmed),
+      Binding(["o"], "next", "Propose the next pattern", LinePatternCycled),
+      Binding(["Escape"], "keep", "Keep this pattern", LinePatternCancelled),
+      help,
+    ]
+    False ->
+      list.flatten([
+        grades,
+        undo_binding(page),
+        line_keys,
+        pattern_keys,
+        line_toggle_binding(page, True),
+        case complete, runnable_check(shared, page) {
+          True, Ok(_) -> [
+            Binding(["t"], "test", "Run the tests again", UserClickedRun),
+          ]
+          _, _ -> []
+        },
+        solution_binding(page),
+        [
+          Binding(["m"], "note", "Write a note to future you", case page.slot {
+            NotePane -> UserToggledPane(NotePane)
+            _ -> NoteFocusRequested
+          }),
+          prompt_binding(shared),
+        ],
+        results_binding(shared, page),
+        diff_binding(shared),
+        [
+          Binding(
+            ["n"],
+            "skip",
+            "Skip without grading; it stays due",
+            UserClickedNext,
+          ),
+          case page.panel, page.slot {
+            CodePanel, NoPane ->
+              Binding(
+                ["Escape"],
+                "exit",
+                "Exit the sitting",
+                UserClickedExitDrill,
+              )
+            CodePanel, pane ->
+              Binding(
+                ["Escape"],
+                "close",
+                "Close the pane",
+                UserToggledPane(pane),
+              )
+            _, _ ->
+              Binding(
+                ["Escape"],
+                "code",
+                "Back to your code",
+                UserPickedPanel(CodePanel),
+              )
+          },
+          help,
+        ],
+      ])
   }
 }
 

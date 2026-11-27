@@ -1,0 +1,40 @@
+== pattern prefix-sums
+complexity: O(n) time · O(1) extra space
+nudge: The answer at each slot is everything before it times everything after it. Could one pass from each end build that, with no division?
+-- step Lay out the answer
+1 n = length of nums
+  hint: What will both passes need?
+  why: The length, for the ranges of both loops.
+2 result = n ones
+  hint: What does the answer array start as?
+  why: Ones, so each pass can multiply into it.
+-- step Multiply in everything to the left
+3 prefix = 1
+  hint: What is the product of nothing?
+  why: One. Nothing is to the left of the first slot.
+4 for i from 0 to n - 1:
+  hint: Which way does the first pass go?
+  why: Left to right, so the prefix holds everything before i.
+5     result[i] = prefix
+  hint: What goes into slot i first?
+  why: The product of everything before it, which does not include nums[i].
+6     prefix *= nums[i]
+  hint: How does the prefix move on?
+  why: Fold in nums[i] after using it, ready for the next slot.
+-- step Multiply in everything to the right
+7 suffix = 1
+  hint: What does the second running product start as?
+  why: One again: nothing is to the right of the last slot.
+8 for i from n - 1 down to 0:
+  hint: Which way does the second pass go?
+  why: Right to left, so the suffix holds everything after i.
+9     result[i] *= suffix
+  hint: What completes slot i?
+  why: Multiplying in the product of everything after it.
+10     suffix *= nums[i]
+  hint: How does the suffix move on?
+  why: Fold in nums[i] after using it, the mirror of the first pass.
+-- step Return
+11 return result
+  hint: What is left to do?
+  why: Each slot now holds its prefix times its suffix.

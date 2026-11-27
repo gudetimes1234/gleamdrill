@@ -1,0 +1,18 @@
+== pattern dp-1d
+complexity: O(n) time · O(n) space
+nudge: Every number is a smaller number with one more bit on the end. Which smaller number, and what does that extra bit add?
+-- step Make room for every answer
+1 counts = array of n + 1 zeros
+  hint: How many answers are there, and what is the first?
+  why: One for each of 0 through n; zero has no one bits, so the zero-filled array already holds it.
+-- step Build each count from a smaller one
+2 for i from 1 to n:
+  hint: In what order do you fill the array?
+  why: Increasing, so the smaller number each answer depends on is already done.
+3     counts[i] = counts[i shifted right by 1] + (lowest bit of i)
+  hint: How does i relate to i with its last bit dropped?
+  why: They share every bit except the last, so i's count is that number's count plus i's lowest bit.
+-- step Return the table
+4 return counts
+  hint: What is the answer?
+  why: The whole table, one count per number from 0 to n.

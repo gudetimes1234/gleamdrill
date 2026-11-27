@@ -10,9 +10,9 @@ def hasCycle(head):
     # place per step on the slow one, so it must eventually land on it. If there
     # is no loop the fast one runs off the end first. Constant memory, and no
     # node is ever marked.
-    slow = fast = head
-    while fast is not None and fast.next is not None:
-        slow, fast = slow.next, fast.next.next
-        if slow is fast:
-            return True
-    return False
+    slow = fast = head  # @1
+    while fast is not None and fast.next is not None:  # @2
+        slow, fast = slow.next, fast.next.next  # @3
+        if slow is fast:  # @4
+            return True  # @4
+    return False  # @5

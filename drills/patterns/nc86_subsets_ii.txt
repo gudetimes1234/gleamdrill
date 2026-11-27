@@ -1,0 +1,30 @@
+== pattern backtracking
+complexity: O(n·2ⁿ) time · O(n·2ⁿ) space
+nudge: With equal values side by side, when you decide to leave a value out, how many of its copies should you leave out with it?
+-- step Sort so copies sit together
+1 return build(nums sorted)
+  hint: What must be true of the input before the duplicate rule can work?
+  why: Equal values must be adjacent, so all copies of one value can be skipped together.
+-- step Stop at the empty list
+2 if sorted_nums is empty: return [[]]
+  hint: What are the subsets of nothing?
+  why: Exactly one, the empty subset.
+-- step Take the head, or skip every copy of it
+3 first = sorted_nums[0]
+  hint: Which value do you decide about?
+  why: The head of the sorted list.
+4 with_first = [first] + each subset of build(sorted_nums after the first)
+  hint: What are the subsets that take the head?
+  why: The head added to every subset of the rest; later copies may still be taken there.
+5 past = 1
+  hint: How do you find where the copies of the head end?
+  why: Start a scan just after the head.
+6 while past is in range and sorted_nums[past] == first:
+  hint: When does the scan keep going?
+  why: While it is still on a copy of the same value.
+7     past += 1
+  hint: Then?
+  why: Step over that copy.
+8 return with_first + build(sorted_nums from past)
+  hint: What are the subsets that skip the head?
+  why: Skip every copy at once. Skipping one and taking the next would rebuild a subset already found.

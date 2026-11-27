@@ -1,0 +1,57 @@
+== pattern dp-1d
+complexity: O(n) time · O(1) space
+nudge: Ask about the best subarray ending at each position. It either extends the best one ending just before, or starts fresh here: which, and how do you decide?
+-- step Start at the first number
+1 if nums is empty: return 0
+  hint: What if there is nothing to sum?
+  why: No subarray exists; return 0 rather than read nums[0].
+2 here = best = nums[0]
+  hint: What are the two values you carry, and where do they start?
+  why: The best sum ending at the current position and the best seen anywhere; for one number both are that number.
+-- step Extend or start fresh
+3 for n in nums from the second on:
+  hint: How do you walk the rest?
+  why: Once, left to right, each position building on the one before.
+4     here = max(n, here + n)
+  hint: What is the best sum ending at n?
+  why: Either n alone or n added to the best ending just before; a negative running total is dropped by starting fresh.
+5     best = max(best, here)
+  hint: What do you keep across positions?
+  why: The largest "ending here" value seen, since the best subarray ends somewhere.
+-- step Return the best
+6 return best
+  hint: What is the answer?
+  why: The best subarray sum anywhere; it is not clamped at zero, so an all-negative array gives its largest element.
+== pattern prefix-sums
+complexity: O(n) time · O(1) space
+nudge: A subarray's sum is one prefix sum minus an earlier one. For the subarray ending here to be best, which earlier prefix do you want to subtract?
+-- step Carry the prefix and its minimum
+1 if nums is empty: return 0
+  hint: What if there is nothing to sum?
+  why: No subarray exists.
+2 running = 0
+  hint: What sum do you keep as you go?
+  why: The prefix sum of everything so far.
+3 smallest = 0
+  hint: What is the smallest prefix before any number?
+  why: The empty prefix, 0, so a subarray may start at the very beginning.
+4 best = minus infinity
+  hint: What is the best before you have seen a subarray?
+  why: Minus infinity, so even an all-negative array finds its answer.
+-- step One pass
+5 for n in nums:
+  hint: How do you walk the array?
+  why: Once, extending the prefix by one number at a time.
+6     running += n
+  hint: What is the prefix ending here?
+  why: The previous prefix plus this number.
+7     best = max(best, running - smallest)
+  hint: What is the best subarray ending here?
+  why: This prefix minus the smallest prefix before it.
+8     smallest = min(smallest, running)
+  hint: What do you update after using it?
+  why: The smallest prefix, now including this one, for later positions. Updating after keeps the subarray non-empty.
+-- step Return the best
+9 return best
+  hint: What is the answer?
+  why: The largest difference found, which is the best subarray sum.

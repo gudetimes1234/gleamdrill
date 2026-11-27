@@ -47,7 +47,7 @@ pub fn to_state(record: CardRecord) -> wire.CardState {
 }
 
 /// One review-log row in the wire format, from its columns. Both readers of
-/// the log -- a problem's timeline and the archive -- select the same nine,
+/// the log -- a problem's timeline and the archive -- select the same ten,
 /// and their generated rows are distinct types, so they meet here.
 pub fn review_row(
   at at: Float,
@@ -59,6 +59,7 @@ pub fn review_row(
   scheduled_days scheduled_days: Int,
   stability_after stability_after: Option(Float),
   recall recall: Bool,
+  mode mode: String,
 ) -> wire.ReviewRow {
   wire.ReviewRow(
     at: fsrs.from_epoch(at),
@@ -72,6 +73,7 @@ pub fn review_row(
     scheduled_days:,
     stability_after:,
     recall:,
+    mode: wire.review_mode_from_string(mode),
   )
 }
 

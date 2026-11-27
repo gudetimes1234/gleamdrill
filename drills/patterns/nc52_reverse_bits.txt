@@ -1,0 +1,21 @@
+== pattern bit-manipulation
+complexity: O(1) time · O(1) space
+nudge: Peel bits off the bottom of the input and push them onto the bottom of the result. How many rounds, and why not stop when the input reaches zero?
+-- step Start with an empty result
+1 reversed_bits = 0
+  hint: What do you build into?
+  why: A result that starts with no bits.
+-- step Move one bit per round
+2 repeat 32 times:
+  hint: How many rounds?
+  why: Exactly 32: the width is part of the problem, and stopping at zero would drop leading zeros that must become trailing ones.
+3     reversed_bits = (reversed_bits shifted left by 1) OR (lowest bit of n)
+  hint: How do you push n's bottom bit onto the result?
+  why: Shift the result left to make room, then OR in n's lowest bit. The first bit out ends up highest.
+4     n = n shifted right by 1
+  hint: How do you expose the next bit of n?
+  why: Shift n right so its next bit becomes the lowest.
+-- step Return it
+5 return reversed_bits
+  hint: What is the answer after 32 rounds?
+  why: Every bit of n, in the opposite order.

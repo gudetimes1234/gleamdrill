@@ -9,27 +9,27 @@ def reorderList(head):
     # a slow and a fast pointer, reverse the back half, then weave the two
     # together. That decomposition is the whole trick -- none of the three needs
     # to know about the others.
-    if head is None or head.next is None:
-        return head
+    if head is None or head.next is None:  # @1
+        return head  # @1
 
-    slow, fast = head, head.next
-    while fast is not None and fast.next is not None:
-        slow, fast = slow.next, fast.next.next
+    slow, fast = head, head.next  # @2
+    while fast is not None and fast.next is not None:  # @3
+        slow, fast = slow.next, fast.next.next  # @4
 
-    second = slow.next
-    slow.next = None
+    second = slow.next  # @5
+    slow.next = None  # @6
 
-    previous = None
-    while second is not None:
-        following = second.next
-        second.next = previous
-        previous, second = second, following
+    previous = None  # @7
+    while second is not None:  # @8
+        following = second.next  # @9
+        second.next = previous  # @10
+        previous, second = second, following  # @11
 
-    first, second = head, previous
-    while second is not None:
-        first_next, second_next = first.next, second.next
-        first.next = second
-        second.next = first_next
-        first, second = first_next, second_next
+    first, second = head, previous  # @12
+    while second is not None:  # @13
+        first_next, second_next = first.next, second.next  # @14
+        first.next = second  # @15
+        second.next = first_next  # @16
+        first, second = first_next, second_next  # @17
 
-    return head
+    return head  # @18

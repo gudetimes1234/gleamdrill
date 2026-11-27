@@ -1,0 +1,85 @@
+== pattern dfs
+complexity: O(m·n) time · O(m·n) space
+nudge: Strictly increasing moves can never loop back, so the longest path from a square is fixed once known. Can you search from each square and cache what you learn?
+-- step Handle an empty matrix
+1 if the matrix is empty: return 0
+  hint: What if there are no squares?
+  why: No path at all.
+2 memo = empty map from square to its longest path
+  hint: Where do you cache answers?
+  why: One entry per square; the grid has no cycles, so an answer never changes once found.
+-- step Search from a square
+3 if (r, c) is not in memo:
+  hint: When do you search?
+  why: Only the first time a square is asked about.
+4     best = 1
+  hint: What is the shortest path from a square?
+  why: The square alone.
+5     for each of the four directions:
+  hint: Where can a path go next?
+  why: Up, down, left or right.
+6         nr, nc = the neighbour in that direction
+  hint: Which square is that?
+  why: One step from (r, c).
+7         if the neighbour is on the board:
+  hint: What must be true of it first?
+  why: It has to be inside the grid.
+8             if its value is greater than this square's:
+  hint: Can the path step there?
+  why: Only to a strictly larger value.
+9                 best = max(best, 1 + longest(nr, nc))
+  hint: How long is the path through it?
+  why: One for this square plus the longest path from the neighbour.
+10     memo[(r, c)] = best
+  hint: What do you record?
+  why: The best over all neighbours, so the square is never searched again.
+11 return memo[(r, c)]
+  hint: What does the call return?
+  why: The cached length for this square.
+-- step Try every square
+12 return the max of longest(r, c) over every square
+  hint: Where can the path start?
+  why: Anywhere; the answer is the longest from any square.
+== pattern topological-sort
+complexity: O(m·n log(m·n)) time · O(m·n) space
+nudge: Every move goes to a larger value, so sorting the squares by value is already a topological order. Processing from largest to smallest, what is known when a square is reached?
+-- step Handle an empty matrix
+1 if the matrix is empty: return 0
+  hint: What if there are no squares?
+  why: No path at all.
+-- step Order the squares by value
+2 cells = (value, r, c) for every square
+  hint: What do you need to sort?
+  why: Every square with its value first, so sorting orders by value.
+3 lengths = empty map from square to its longest path
+  hint: Where do the settled answers go?
+  why: One entry per square, filled in value order.
+-- step Settle each square from its larger neighbours
+4 for value, r, c in cells, largest value first:
+  hint: In which order do you visit squares?
+  why: Largest first, so every square a path can move to is already settled.
+5     best = 1
+  hint: What is the shortest path from a square?
+  why: The square alone.
+6     for each of the four directions:
+  hint: Where can a path go next?
+  why: Up, down, left or right.
+7         nr, nc = the neighbour in that direction
+  hint: Which square is that?
+  why: One step from (r, c).
+8         if the neighbour is on the board:
+  hint: What must be true of it first?
+  why: It has to be inside the grid.
+9             if its value is greater than value:
+  hint: Can the path step there?
+  why: Only to a strictly larger value, which was processed earlier.
+10                 best = max(best, 1 + lengths[(nr, nc)])
+  hint: How long is the path through it?
+  why: One for this square plus the neighbour's settled length.
+11     lengths[(r, c)] = best
+  hint: What do you record?
+  why: This square's length, ready for the smaller squares still to come.
+-- step Take the longest
+12 return the max of lengths
+  hint: What is the answer?
+  why: The longest path from any square.

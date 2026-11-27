@@ -1,0 +1,78 @@
+== pattern dp-1d
+complexity: O(k·E) time · O(V) space
+nudge: One round of relaxing every flight is one more flight taken, so the stop limit is a round limit. How do you stop two flights sneaking into the same round?
+-- step Start at the source
+1 costs = {src: 0}
+  hint: What do you know before any flight?
+  why: Reaching the source costs nothing.
+-- step One round per flight
+2 repeat k + 1 times:
+  hint: How many rounds?
+  why: k stops means at most k + 1 flights, one per round.
+3     previous = copy of costs
+  hint: What do this round's flights read from?
+  why: A snapshot of last round's costs. Reading the live table would let two flights chain within one round.
+4     for each (origin, destination, price) in flights:
+  hint: Which flights does a round try?
+  why: All of them.
+5         if origin in previous:
+  hint: Which flights can be taken this round?
+  why: Only those from a city reached in earlier rounds.
+6             total = previous[origin] + price
+  hint: What would this flight cost in all?
+  why: The cost of reaching its origin plus its price.
+7             if destination has no cost or total is cheaper: costs[destination] = total
+  hint: When do you update?
+  why: When this is the first route there or the cheapest so far.
+-- step Answer
+8 return costs[dst], or -1 if missing
+  hint: What if dst was never reached?
+  why: No route within the stop limit exists.
+== pattern bfs
+complexity: O(k·E) time · O(V+E) space
+nudge: Expand level by level, where a level is one more flight. How do you keep the frontier from exploding?
+-- step Build the flights
+1 outgoing = empty map from city to list
+  hint: What do you look up at each city?
+  why: The flights leaving it.
+2 for each (origin, destination, price): add (destination, price) to outgoing[origin]
+  hint: How do you fill the map?
+  why: One entry per flight under its origin.
+-- step Expand one flight per level
+3 best = {src: 0}
+  hint: What do you remember for each city?
+  why: The cheapest cost found to reach it so far.
+4 frontier = [(src, 0)]
+  hint: Where does the search start?
+  why: At the source, having spent nothing.
+5 repeat k + 1 times:
+  hint: How many levels?
+  why: k stops is at most k + 1 flights, one per level.
+6     following = []
+  hint: What do you build during a level?
+  why: The next level's frontier.
+7     for each (city, spent) in frontier:
+  hint: Which routes do you extend?
+  why: Each route in the current level.
+8         for each (destination, price) leaving city:
+  hint: Where can each route go?
+  why: Along any flight out of its city.
+9             total = spent + price
+  hint: What does the extended route cost?
+  why: What it had spent plus this flight.
+10             if destination has no best or total is cheaper:
+  hint: When is the extension worth keeping?
+  why: Only when it reaches destination for less than any route so far; that is what stops the blow-up.
+11                 best[destination] = total; add (destination, total) to following
+  hint: What do you record?
+  why: The new best, and the route itself for the next level.
+12     frontier = following
+  hint: What comes next?
+  why: The routes one flight longer.
+13     if frontier is empty: stop
+  hint: When can you stop early?
+  why: When no route improved anything.
+-- step Answer
+14 return best[dst], or -1 if missing
+  hint: What if dst was never reached?
+  why: No route within the stop limit exists.

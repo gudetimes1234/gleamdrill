@@ -10,12 +10,12 @@ def lowestCommonAncestor(root, p, q):
     # value go left, if both are above go right, and otherwise this node is the
     # split point -- which is the answer. No searching for either node first,
     # and no comparing of paths.
-    node = root
-    while node is not None:
-        if p < node.val and q < node.val:
-            node = node.left
-        elif p > node.val and q > node.val:
-            node = node.right
-        else:
-            return node.val
-    return -1
+    node = root  # @1
+    while node is not None:  # @2
+        if p < node.val and q < node.val:  # @3
+            node = node.left  # @3
+        elif p > node.val and q > node.val:  # @4
+            node = node.right  # @4
+        else:  # @5
+            return node.val  # @5
+    return -1  # @6

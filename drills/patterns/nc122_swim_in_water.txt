@@ -1,0 +1,103 @@
+== pattern heap
+complexity: O(n² log n) time · O(n²) space
+nudge: The water only has to rise once, so a path costs its highest cell, not the sum. With that cost, which shortest-path algorithm still works unchanged?
+-- step Set up
+1 if grid is empty: return 0
+  hint: What if there is nothing to swim?
+  why: No time is needed.
+2 n = size of grid; target = bottom-right cell
+  hint: Where are you going?
+  why: To the far corner, (n - 1, n - 1).
+-- step Settle the cheapest cell
+3 seen = empty set
+  hint: How do you avoid settling a cell twice?
+  why: Remember each cell once it is settled.
+4 frontier = min-heap holding (grid[0][0], 0, 0)
+  hint: What does it cost to stand on the start?
+  why: The start's own depth: you must wait for the water to cover it.
+5 while frontier is not empty:
+  hint: How long do you search?
+  why: Until the corner is settled.
+6     cost, r, c = pop smallest from frontier
+  hint: Which cell do you look at next?
+  why: The one reachable soonest, as in Dijkstra.
+7     if (r, c) is target: return cost
+  hint: When are you done?
+  why: The first time the corner comes off the heap, its cost is the least possible.
+8     if (r, c) in seen: continue
+  hint: What if this cell was already settled?
+  why: This is a stale entry. Skip it.
+9     add (r, c) to seen
+  hint: What do you record?
+  why: That this cell's cost is final.
+-- step Offer the neighbours
+10     for each of the four neighbours (nr, nc):
+  hint: Where can you swim from here?
+  why: Up, down, left and right.
+11         if (nr, nc) is inside the grid and not seen:
+  hint: Which neighbours count?
+  why: Ones on the grid that are not settled yet.
+12             push (max(cost, grid[nr][nc]), nr, nc)
+  hint: What does reaching the neighbour cost?
+  why: The higher of the path so far and the neighbour's depth: the largest step, not a sum.
+-- step Unreachable
+13 return -1
+  hint: What if the heap empties?
+  why: The corner was never reached, which a valid grid never does.
+== pattern binary-search
+complexity: O(n² log n) time · O(n²) space
+nudge: Once the corner is reachable at some time, it stays reachable. That makes "is it possible yet?" monotone. How do you find the first time it says yes?
+-- step Set up
+1 if grid is empty: return 0
+  hint: What if there is nothing to swim?
+  why: No time is needed.
+2 n = size of grid; target = bottom-right cell
+  hint: Where are you going?
+  why: To the far corner, (n - 1, n - 1).
+-- step Can you reach the corner by time limit?
+3     if grid[0][0] > limit: return False
+  hint: Can you even stand on the start?
+  why: Not until the water covers it.
+4     seen = empty set; stack = [(0, 0)]
+  hint: How does the flood fill start?
+  why: From the start cell, with nothing visited.
+5     while stack is not empty:
+  hint: How long does the fill run?
+  why: Until no reachable cell is left to look at.
+6         r, c = pop from stack
+  hint: Which cell next?
+  why: Any; order does not matter for reachability.
+7         if (r, c) in seen or grid[r][c] > limit: continue
+  hint: Which cells do you skip?
+  why: Ones already visited, and ones still under water too deep at this time.
+8         if (r, c) is target: return True
+  hint: When is the answer yes?
+  why: As soon as the passable corner is reached.
+9         add (r, c) to seen
+  hint: What do you record?
+  why: That this cell has been visited.
+10         push every neighbour inside the grid
+  hint: Where can you go from here?
+  why: The four neighbours on the grid; the checks above filter them when they come off.
+11     return False
+  hint: What if the fill runs out?
+  why: The corner cannot be reached by this time.
+-- step Binary search the time
+12 low, high = grid[0][0], n * n - 1
+  hint: What range can the answer be in?
+  why: No earlier than the start's depth, and no later than the deepest possible cell.
+13 while low < high:
+  hint: When has the search narrowed to one time?
+  why: When low and high meet.
+14     middle = (low + high) // 2
+  hint: Which time do you test?
+  why: The middle of the range.
+15     if reaches(middle): high = middle
+  hint: What if the corner is reachable by middle?
+  why: The answer is middle or earlier, so keep middle in the range.
+16     else: low = middle + 1
+  hint: And if it is not?
+  why: The answer is later than middle.
+17 return low
+  hint: What is the answer?
+  why: The first time the corner is reachable.

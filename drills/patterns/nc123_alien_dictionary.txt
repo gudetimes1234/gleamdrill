@@ -1,0 +1,133 @@
+== pattern topological-sort
+complexity: O(C) time · O(V+E) space
+nudge: The graph is over letters, not words. Two adjacent words agree up to their first difference; what is the one thing that difference tells you about the alphabet?
+-- step Collect the letters
+1 letters = every letter in any word
+  hint: Which letters must the alphabet contain?
+  why: Every letter that appears anywhere, even ones no pair says anything about.
+2 waiting = 0 for every letter
+  hint: What do you count per letter for a topological sort?
+  why: How many letters must come before it and are not out yet.
+3 unlocks = empty list for every letter
+  hint: What does a letter release when it is emitted?
+  why: The letters that must come after it.
+-- step One edge per adjacent pair
+4 for each adjacent pair (first, second) in words:
+  hint: Which pairs of words carry information?
+  why: Adjacent ones; the order is transitive, so neighbours are enough.
+5     for each (a, b) zipped from first and second:
+  hint: How do you find where they differ?
+  why: Compare position by position.
+6         if a != b:
+  hint: Which position matters?
+  why: The first one where the letters differ.
+7             add b to unlocks[a]; waiting[b] += 1
+  hint: What does that difference say?
+  why: a comes before b in the alphabet.
+8             stop comparing
+  hint: Do later positions say anything?
+  why: No. After the first difference the words are already ordered, so the rest is noise.
+9     if no difference was found:
+  hint: What if one word is a prefix of the other?
+  why: There is no letter edge, but there may be a contradiction.
+10         if first is longer than second: return ""
+  hint: Can a word come before its own prefix?
+  why: No alphabet puts "apple" before "app", so the input is invalid.
+-- step Emit letters with nothing left before them
+11 ready = letters whose waiting is 0
+  hint: Which letters can go first?
+  why: Those with nothing required before them.
+12 order = []
+  hint: What do you build?
+  why: The alphabet, one letter at a time.
+13 while ready is not empty:
+  hint: When does emitting stop?
+  why: When no letter is free to go.
+14     letter = pop from ready
+  hint: Which letter next?
+  why: Any ready one; all of them are valid now.
+15     append letter to order
+  hint: What do you do with it?
+  why: It is the next letter of the alphabet.
+16     for each following in unlocks[letter]:
+  hint: Who was waiting on it?
+  why: The letters it must come before.
+17         waiting[following] -= 1
+  hint: What changes for each?
+  why: One fewer letter to wait for.
+18         if waiting[following] == 0: add following to ready
+  hint: When does a letter become ready?
+  why: When everything before it has been emitted.
+-- step Detect a contradiction
+19 return order joined if it has every letter, else ""
+  hint: What does a short order mean?
+  why: The leftover letters wait on each other in a cycle, so no alphabet fits the words.
+== pattern dfs
+complexity: O(C) time · O(V+E) space
+nudge: Visit a letter's followers before recording the letter, then reverse. How do you notice a letter that has to come before itself?
+-- step Collect the letters and edges
+1 letters = every letter in any word
+  hint: Which letters must the alphabet contain?
+  why: Every letter that appears anywhere.
+2 after = empty list for every letter
+  hint: What do you store per letter?
+  why: The letters that must come after it.
+3 for each adjacent pair (first, second) in words:
+  hint: Which pairs carry information?
+  why: Adjacent ones; order is transitive.
+4     for each (a, b) zipped from first and second:
+  hint: How do you find where they differ?
+  why: Compare position by position.
+5         if a != b:
+  hint: Which position matters?
+  why: The first difference.
+6             add b to after[a]
+  hint: What does the difference say?
+  why: a comes before b.
+7             stop comparing
+  hint: Do later positions matter?
+  why: No, only the first difference orders the pair.
+8     if no difference was found:
+  hint: What if one word is a prefix of the other?
+  why: No edge, but maybe a contradiction.
+9         if first is longer than second: return ""
+  hint: Can a word come before its own prefix?
+  why: No alphabet can explain that.
+-- step Visit depth-first, recording on the way out
+10 onPath, done, order = empty set, empty set, []
+  hint: What three things does the search track?
+  why: Letters on the current path (for cycles), letters finished, and the finishing order.
+11     if letter in onPath: return False
+  hint: What if you meet a letter already on the current path?
+  why: It must come before itself: a cycle, so the words contradict.
+12     if letter in done: return True
+  hint: What if the letter is already finished?
+  why: Its followers are recorded; nothing more to do.
+13     add letter to onPath
+  hint: What do you mark before going deeper?
+  why: That the letter is on the current path.
+14     for each following in after[letter]:
+  hint: What must be recorded before this letter?
+  why: Every letter that comes after it.
+15         if not visit(following): return False
+  hint: What if a follower finds a cycle?
+  why: Pass the failure straight up.
+16     remove letter from onPath
+  hint: What changes when you leave a letter?
+  why: It is no longer on the current path.
+17     add letter to done; append letter to order
+  hint: When is a letter recorded?
+  why: Only after all its followers, so in the finishing order it comes after them.
+18     return True
+  hint: What does a clean visit report?
+  why: No cycle below this letter.
+-- step Visit every letter, then reverse
+19 for each letter in letters:
+  hint: Which letters do you start from?
+  why: All of them, since some have no edges at all.
+20     if not visit(letter): return ""
+  hint: What if any visit finds a cycle?
+  why: There is no valid alphabet.
+21 return order reversed and joined
+  hint: Why reverse?
+  why: Each letter was recorded after everything that follows it, so reversing puts it in front.

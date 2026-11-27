@@ -1,0 +1,21 @@
+== pattern backtracking
+complexity: O(n·4ⁿ) time · O(n·4ⁿ) space
+nudge: Each digit offers a few letters, chosen independently. If you had every combination for the digits after the first, how would you build the full list?
+-- step Handle no digits
+1 if digits is empty: return []
+  hint: What do no digits give?
+  why: No combinations at all, by the problem's rule; not one empty string.
+2 return build(digits)
+  hint: Otherwise?
+  why: Hand the digits to the recursion.
+-- step Stop at the end of the digits
+3 if digits is empty: return [""]
+  hint: What does the recursion return when no digits are left?
+  why: One empty string, so the callers have something to prepend to.
+-- step Pick a letter for the first digit
+4 tails = build(digits after the first)
+  hint: What can follow the first letter?
+  why: Every combination of the remaining digits, built once and reused for each letter.
+5 return [letter + tail for each letter of the first digit, for each tail in tails]
+  hint: How do you combine them?
+  why: Every letter on the first digit's key in front of every tail: the cross product.

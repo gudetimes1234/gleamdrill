@@ -1,0 +1,33 @@
+== pattern greedy
+complexity: O(n log n) time · O(n) space
+nudge: Look at the smallest card left. Which group can it possibly belong to, and what does that tell you about every copy of it?
+-- step Rule out impossible hands and count
+1 if groupSize <= 0 or len(hand) is not a multiple of groupSize: return False
+  hint: What makes the hand impossible before looking at any card?
+  why: The cards cannot split into equal groups unless the hand size is a multiple of the group size.
+2 counts = count of each card value
+  hint: What do you need to know about each card value?
+  why: How many copies are left, so groups can be taken without searching a list.
+-- step Start every group at the smallest card left
+3 for smallest in card values, in increasing order:
+  hint: In what order do you visit the card values?
+  why: Increasing, because the smallest remaining card has no smaller neighbour and must start a group.
+4     copies = counts[smallest]
+  hint: How many groups must start here?
+  why: One for every remaining copy, since each copy needs its own group and none can sit later in a run.
+5     if copies == 0: continue
+  hint: What if earlier groups already used them all?
+  why: Nothing starts here, so move on.
+6     for card from smallest to smallest + groupSize - 1:
+  hint: Which cards do those groups need?
+  why: The run of groupSize consecutive values beginning at smallest.
+7         if counts[card] < copies: return False
+  hint: When does the run fail?
+  why: When some card in it has fewer copies than the groups that need it.
+8         counts[card] -= copies
+  hint: How do you take the run?
+  why: Remove one copy of each card per group, all the groups at once.
+-- step Every card fit
+9 return True
+  hint: What if every value was consumed without a shortfall?
+  why: Every card landed in a run, so the hand splits.

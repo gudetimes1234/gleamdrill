@@ -6,8 +6,8 @@
 insert into reviews (
   user_id, card_id, rating, state_before, reviewed_at,
   elapsed_days, scheduled_days, stability_after, difficulty_after,
-  duration_ms, auto_failed, revealed, recall)
+  duration_ms, auto_failed, revealed, recall, mode)
 select $1, id, $5, $6, to_timestamp($7::float8),
-       0, $8, float8_or_null($9), null, int_or_null($10), $11, $12, $13
+       0, $8, float8_or_null($9), null, int_or_null($10), $11, $12, $13, $14
   from cards
  where user_id = $1 and category = $2 and subcategory = $3 and title = $4

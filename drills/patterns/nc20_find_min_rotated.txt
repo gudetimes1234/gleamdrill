@@ -1,0 +1,24 @@
+== pattern binary-search
+complexity: O(log n) time · O(1) space
+nudge: The minimum is the one place the order breaks. Compare the middle with the right end: which half must hold the break?
+-- step Bound the whole array
+1 left, right = 0, last index
+  hint: Where can the minimum be at first?
+  why: Anywhere in the array.
+-- step Halve towards the break
+2 while left < right:
+  hint: When do you stop?
+  why: When the range is one element, and that element is the minimum.
+3     mid = left + (right - left) // 2
+  hint: Which element do you test?
+  why: The middle of the range.
+4     if nums[mid] > nums[right]: left = mid + 1
+  hint: The middle is larger than the right end. Where is the break?
+  why: To the right of mid: the order drops somewhere after it, and mid cannot be the minimum.
+5     else: right = mid
+  hint: And if the middle is smaller?
+  why: From mid to right is sorted, so the minimum is mid or to its left. Keep mid in range.
+-- step Return
+6 return nums[left]
+  hint: What is the answer once the bounds meet?
+  why: The one element left is the minimum.
