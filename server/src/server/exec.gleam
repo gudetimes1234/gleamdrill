@@ -265,8 +265,11 @@ fn interpret(language: Language, outcome: #(Int, String)) -> RunResult {
   let noise = string.join(noise, "\n")
 
   case code, report {
-    // 128 + SIGKILL: `timeout` ran out of patience.
-    137, _ ->
+    // `timeout` ran out of patience. GNU and busybox exit 128 + SIGKILL;
+    // uutils (Ubuntu 26.04's coreutils) exits 124 even with `-s KILL`.
+    // A CPU-bound attempt that hits `ulimit -t` first is SIGKILLed by the
+    // kernel, which also reads as 137.
+    124, _ | 137, _ ->
       RunResult(
         cases: [],
         stdout: "",
